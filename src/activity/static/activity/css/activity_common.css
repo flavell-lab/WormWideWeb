@@ -1,0 +1,173 @@
+body {
+    background-color: var(--background-light);
+}
+
+.card {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.card-body {
+    padding: 1.0rem;
+}
+
+.inner-card {
+    border-radius: 0.3rem;
+    border: 1px solid #e0e0e0;
+    /* Subtle border */
+    box-shadow: none;
+    /* Remove shadow for minimalism */
+    /* background-color: #f9f9f9; */
+    /* Light gray background */
+    margin-top: 1rem;
+    /* Space between outer and inner card */
+}
+
+.inner-card-body {
+    padding: 1.0rem;
+}
+
+/* Typography */
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333333;
+}
+
+.card-text {
+    font-size: 1rem;
+    color: #555555;
+}
+
+.cor-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1rem 0.1rem;
+    /* margin: 0.2rem; */
+    background-color: #efefef;
+    /* Light gray background */
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    /* Small size */
+}
+
+/*
+    tom-select dropbox
+*/
+.tom-select-container .ts-wrapper {
+    position: relative;
+    /* ensures absolutely positioned elements anchor here */
+    height: 31px !important;
+    /* match .btn-group-sm height */
+    line-height: 31px !important;
+    border-radius: 0.25rem !important;
+    /* match input style */
+    border: 1px solid #ced4da !important;
+    /* match input style */
+}
+
+/* Each item / chip */
+/* .tom-select-container .ts-control .item {
+    display: inline-block;
+    max-width: 80%;
+    or a calc(100% - 2rem) approach, etc.
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    margin-right: 0.25rem;
+    vertical-align: middle;
+} */
+
+/* Badge that shows the number of items */
+.ts-n-items {
+    position: absolute;
+    right: 0px;
+    top: 50%;
+    transform: translateY(-50%);
+    /* height: 22px; */
+    /* line-height: 22px; */
+    padding: 0 0.5em;
+    box-shadow: 0 0 0.5em 1em #fff;
+    border: 1px solid var(--accent-color) !important;
+    background: white !important;
+    border-radius: 3em !important;
+    text-align: center;
+    color: var(--accent-color) !important;
+}
+
+/* Dropdown menu */
+.ts-wrapper .ts-dropdown {
+    border-radius: 0.5rem;
+    margin-top: 4px;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+}
+
+/* Dropdown items */
+.ts-wrapper .ts-dropdown .option {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.ts-wrapper .ts-dropdown .active {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.ts-wrapper .ts-dropdown .option {
+    display: flex;
+    align-items: center;
+    /* Vertically center checkbox + text */
+    /* gap: 0.5rem;         Optional space between checkbox and text */
+}
+
+.ts-wrapper .ts-dropdown .option input[type="checkbox"] {
+    margin: 0;
+    /* Remove default checkbox margin that might misalign it */
+    margin-right: 0.5rem;
+    /* put your spacing here */
+}
+
+/* Focus state */
+.ts-wrapper.focus .ts-control {
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Search box */
+.ts-wrapper .ts-dropdown .dropdown-input {
+    display: block;
+    width: 100%;
+    border: 1px solid #ced4da;
+    /* or none, if you prefer the 'floating' style */
+    border-radius: 0.25rem;
+    /* match .ts-dropdown .option border-radius */
+    margin-bottom: 0.5rem;
+    /* space between input and option list */
+    padding: 0.375rem 0.75rem;
+    /* typical Bootstrapy form-control spacing */
+    box-shadow: none;
+    /* remove default shadows */
+    font-size: 0.875rem;
+    /* or whatever size you want to match */
+}
+
+/* Force .ts-dropdown narrower if desired */
+/* .ts-dropdown {
+    width: 200px;
+} */
+
+
+@media (min-width: 2000px) {
+    .container-xxxl {
+      max-width: 2000px;
+    }
+}
+.container-xxxl {
+    width: 100%;
+    padding-right: var(--bs-gutter-x, 0.75rem);
+    padding-left: var(--bs-gutter-x, 0.75rem);
+    margin-right: auto;
+    margin-left: auto;
+}

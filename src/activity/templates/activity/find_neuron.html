@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Neural Activity - Find Neuron{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.bootstrap5.min.css"
+    integrity="sha512-JSzoYh+JmOgeqypu22l1ePSza/E8xx3GHYWoY84eTdYKv7ojcA3XLundlKhNItzxgRJuvwW02ylrjslDUb3zrw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.0/bootstrap-table.min.css"
+    integrity="sha512-IC9zdRfWwUKZHAhgI6YpOCwrwInau7JLKUmm8lrB654jCMqh3jKA/VcYTyrg2bU1wDcv9mHOyz+hjg3KiLjjXg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
+<link rel="stylesheet" href="{% static 'activity/css/find_neuron.css' %}">
+{% endblock %}
+
+{% block main %}
+<div class="container-lg py-3">
+    <h4>Find by Neuron Class (NeuroPAL Datasets Only)</h4>
+    <p>Find datasets with specific neuron classes (e.g. find datasets with AVA and SMDV).
+        <br>
+        Select one or multiple neuron classes.
+        <br>
+        Select multiple datasets and click "<i class="bi bi-graph-up"></i>Plot selected" to browse through the selected set of neurons across multiple datasets.
+    </p>
+    <div class="card card-body">
+        <!-- control -->
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="tom-select-container">
+                <input style="width:300px" id="select-neuron" autocomplete="off" type="text"
+                    class="form-control form-control-sm" placeholder="Neurons">
+            </div>
+            <div class="btn-group btn-group-sm">
+                <button id="clearSelector" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                    data-bs-title="Clear the selector">
+                    Clear
+                </button>
+                <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#modalInfo">
+                    <i class="bi bi-info-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="Additional information"></i>
+                </button>
+            </div>
+
+            <div class="btn-group btn-group-sm">
+                <button id="plotSelected" class="btn btn-light" data-bs-toggle="tooltip"
+                    data-bs-placement="top" data-bs-title="Plot selected">
+                    <i class="bi bi-graph-up"></i> Plot selected
+                </button>
+                <button id="downloadSelected" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                    data-bs-title="Download selected">
+                    <i class="bi bi-download"></i> Download selected
+                </button>
+            </div>
+        </div>
+        <!-- table -->
+        <table id="datasetTable" data-mobile-responsive="true" data-unique-id="id">
+            <thead>
+                <tr>
+                    <th data-checkbox="true"></th>
+                    <th data-field="id" data-sortable="true">Dataset</th>
+                    <th data-field="dataset_type" data-sortable="true">Type</th>
+                    <th data-field="n_neuron" data-sortable="true">N(recorded)</th>
+                    <th data-field="n_labeled" data-sortable="true">N(labeled)</th>
+                    <th data-field="action" data-sortable="false"></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+
+<!-- modal label info -->
+<div class="modal fade" id="modalInfo" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="modalInfoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalInfoLabel">Information</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5>NeuroPAL label</h5>
+                <p>
+
+                    <b>What does ? mean in the neuron labels?</b><br>
+                    For a neuron class with Dorsal/Ventral (D/V) and/or Left/Right (L/R) split, ? notes that it was not
+                    possible to determine that attribute.<br>
+                    <b>Example</b><br>
+                    For RMD class, RMD?L (was not possible to determine D/V). RMD?? (was not possible to determine both
+                    L/R and D/V).
+                </p>
+
+                <h5>Table legend</h5>
+                <p><b>Dataset</b>: unique dataset identifier<br>
+                    <b>Type</b>: dataset types (see below)<br>
+                    <b>N(recorded)</b>: number of neurons recorded<br>
+                    <b>N(labeled)</b>: number of neurons identified using NeuroPAL
+                </p>
+                <h5>Dataset type</h5>
+                <p>
+                    <span class="badge rounded-pill text-bg-secondary">Baseline</span> baseline data<br>
+                    <span class="badge rounded-pill text-bg-danger">Heat</span> heat stimulation experiment data<br>
+                    <span class="badge rounded-pill text-bg-primary">NeuroPAL</span> labeled with NeuroPAL (i.e.
+                    identities of the recorded neurons are available)
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END modal -->
+
+<!-- toast -->
+<div class="toast-container position-fixed top-0 start-0 p-3">
+    <div id="toastHelp" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto">Suggestion</strong>
+            <small>Just now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            Search for neurons. Double click a row to plot.
+        </div>
+    </div>
+</div>
+<!-- END toast  -->
+
+<!-- Embed JSON data using json_script -->
+<!-- {{ data|json_script:"data-data" }} -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/js/tom-select.complete.js"
+    integrity="sha512-4C/xXn1q4nHq8VQ7980qwUp2brDFW/22/0eqa8506uQUxCh06teLlJQZ/kcdmpd4AJkeKVnk9CPiYzhV6HOb0A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+    integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.0/bootstrap-table.min.js"
+    integrity="sha512-qrizL06k1LbZ9ESjZSmcnGcBLTg+0BugeICDjvAY3GxqvLF8Z12JvHt4xXn8FdoA4idU+12B9NsPWSgg5Pn4PQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.0/extensions/mobile/bootstrap-table-mobile.min.js"
+    integrity="sha512-SyuyxutFb1PZXKp12r2uOmtYk9p2ovpkAAwJ1rB7YJequ1GOBiirc/8MzV5KjgQONHR9/bmOZKSBumekM91wUw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script>const data = JSON.parse('{{ data|safe }}');</script>
+<!-- <script>const data = JSON.parse(document.getElementById('data-data').textContent);</script> -->
+<script type="module" src="{% static 'activity/js/activity_common.js' %}" defer></script>
+<script type="module" src="{% static 'activity/js/views/find_neuron.js' %}" defer></script>
+{% endblock %}

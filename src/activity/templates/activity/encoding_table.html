@@ -1,0 +1,108 @@
+<div id="{{prefix}}_tableEncodingTool" class="d-flex align-items-center flex-wrap gap-2">
+  <!-- Search Bar -->
+  <input style="width:150px" id="{{prefix}}_customSearch" class="form-control form-control-sm flex-grow-1" type="text"
+    placeholder="Search neuron" aria-label="Encoding table neuron search">
+
+  <!-- Buttons Group -->
+  <div class="btn-group btn-group-sm" role="group" aria-label="Table toolbar">
+    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#{{prefix}}_collapseConfigure"
+      aria-expanded="true" aria-controls="{{ prefix }}_collapseConfigure">
+      <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Configure the encoding table">
+        <i class="bi bi-gear-wide-connected"></i>
+      </span>
+    </button>
+    <button type="button" class="btn btn-sm btn-light" data-bs-toggle="collapse" data-bs-target="#{{prefix}}_collapseLegend"
+      aria-expanded="true" aria-controls="{{prefix}}_collapseLegend">
+      <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Legend for the encoding table">
+        <i class="bi bi-info-circle"></i>
+      </span>
+    </button>
+  </div>
+</div>
+<table id="{{prefix}}_encodingTable" class="table-sm" data-show-fullscreen="true" data-search="true" data-show-multi-sort="true"
+  data-buttons-prefix="btn-sm btn" data-buttons-class="light" data-height="600" data-buttons-align="right"
+  data-search-selector="#{{prefix}}_customSearch" data-search-align="right" data-toolbar="#{{prefix}}_tableEncodingTool"
+  data-toolbar-align="left" {% if pagination %}data-pagination="true" data-page-size="100"{% endif %}>
+  <thead>
+    <tr>
+      <!-- <th rowspan=2 data-field="label" data-sortable="true" data-searchable="true">Label</th> -->
+      <!-- <th rowspan=2 data-checkbox="true" data-align="center" data-show-select-title="true"><i class="bi bi-graph-up"></i></th> -->
+      {% if show_dataset %}
+      <th rowspan=2 data-field="dataset" data-sortable="true" data-searchable="true">Dataset</th>
+      {% endif %}
+      <th rowspan=2 data-field="neuron" data-sortable="true" data-searchable="true">Neuron</th>
+      <th colspan=10 data-align="center" data-sortable="false" data-searchable="false">Velocity tuning</th>
+      <th colspan=10 data-align="center" data-sortable="false" data-searchable="false">Head curvature tuning</th>
+      <th colspan=10 data-align="center" data-sortable="false" data-searchable="false">Feeding tuning</th>
+      <th rowspan="2" data-align="center" data-field="ewma" data-sortable="true" data-searchable="false">Timescale (s)</th>
+      <th rowspan="2" data-align="center" data-field="enc_change" data-sortable="true" data-visible="false" data-sort-order="desc" data-searchable="false">Enc. {{encChangeName}}</th>
+      {% if plotbutton %}<th rowspan="2" data-align="center" data-field="action" data-searchable="false" data-sortable="false">Plot</th>{% endif %}
+    </tr>
+    <tr>
+      <th data-field="strength_v" data-sortable="true" data-visible="false"
+        data-title-tooltip="Velocity encoding strength" data-searchable="false">Strength</th>
+      <th data-field="fwdness" data-sortable="true" data-visible="false" data-title-tooltip="Forwardness"
+        data-searchable="false">Fwd-ness
+      </th>
+      <th data-field="fwd" data-align="center" data-sortable="true" data-visible="true" data-searchable="false">Fwd</th>
+      <th data-field="rev" data-align="center" data-sortable="true" data-visible="true" data-searchable="false">Rev</th>
+      <th data-field="fwd_slope_p" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Fwd slope +</th>
+      <th data-field="fwd_slope_n" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Fwd slope -</th>
+      <th data-field="rev_slope_p" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Rev slope +</th>
+      <th data-field="rev_slope_n" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Rev slope -</th>
+      <th data-field="slope_1" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Fwd slope > Rev slope</th>
+      <th data-field="slope_2" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Fwd slope < Rev slope</th>
+
+      <th data-field="strength_hc" data-align="center" data-sortable="true" data-visible="false" data-searchable="false"
+        data-title-tooltip="Head curvature encoding strength">Strength</th>
+      <th data-field="dorsalness" data-align="center" data-sortable="true" data-visible="false" data-title-tooltip="Dorsalness"
+        data-searchable="false">
+        Dor-ness
+      </th>
+      <th data-field="dorsal" data-align="center" data-sortable="true" data-visible="true" data-searchable="false">Dorsal</th>
+      <th data-field="ventral" data-align="center" data-sortable="true" data-visible="true" data-searchable="false">Ventral</th>
+      <th data-field="fd" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Dorsal during F</th>
+      <th data-field="fv" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Ventral during F</th>
+      <th data-field="rd" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Dorsal during R</th>
+      <th data-field="rv" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Ventral during R</th>
+      <th data-field="mdf" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">More D during F</th>
+      <th data-field="mvf" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">More V during F</th>
+
+      <th data-field="strength_feeding" data-align="center" data-sortable="true" data-visible="false" data-searchable="false"
+        data-title-tooltip="Feeding encoding strength">Strength</th>
+      <th data-field="feedingness" data-align="center" data-sortable="true" data-visible="false" data-title-tooltip="Dorsalness"
+        data-searchable="false">
+        Dor-ness
+      </th>
+      <th data-field="act" data-align="center" data-sortable="true" data-visible="true" data-searchable="false">Act</th>
+      <th data-field="inh" data-align="center" data-sortable="true" data-visible="true" data-searchable="false">Inh</th>
+      <th data-field="fa" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Act during F</th>
+      <th data-field="fi" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Inh during F</th>
+      <th data-field="ra" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Act during R</th>
+      <th data-field="ri" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">Inh during R</th>
+      <th data-field="maf" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">More A during F</th>
+      <th data-field="mif" data-align="center" data-sortable="true" data-visible="false" data-searchable="false">More I during F</th>
+    </tr>
+  </thead>
+</table>
+
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.0/bootstrap-table.min.css"
+  integrity="sha512-IC9zdRfWwUKZHAhgI6YpOCwrwInau7JLKUmm8lrB654jCMqh3jKA/VcYTyrg2bU1wDcv9mHOyz+hjg3KiLjjXg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+  integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.0/bootstrap-table.min.js"
+  integrity="sha512-qrizL06k1LbZ9ESjZSmcnGcBLTg+0BugeICDjvAY3GxqvLF8Z12JvHt4xXn8FdoA4idU+12B9NsPWSgg5Pn4PQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.0/extensions/multiple-sort/bootstrap-table-multiple-sort.min.js"
+  integrity="sha512-GQSPxOOtQpeAQ7Mkt32jPPwhZabJT5K+BqXoc5K55pVzTwhALGV8HPXloJJsJy03SYomR/FEN9KBmJtuuT096w=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% endblock %}

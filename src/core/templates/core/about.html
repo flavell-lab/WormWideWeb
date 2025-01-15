@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}About{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/about.css' %}">
+{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- About Section -->
+    <section class="mb-5">
+        <div class="bg-light p-5 rounded-3">
+            <h1 class="display-5 fw-bold mb-3">About</h1>
+            
+            <div class="d-flex mt-4 align-items-center"> 
+                <div>
+                    <img src="/static/core/img/mit-logo.svg" alt="MIT Logo" style="height: 75px;">
+                </div>
+                <div>
+                    <img src="/static/core/img/flavell-lab-logo-only.webp" alt="Flavell Lab Logo" style="height: 60px;">
+                </div>
+            </div>
+
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="lead">
+                        This website was created by <a href="https://github.com/goldenratio1618">Adam Atanas</a> and <a href="https://jungsoo.kim">Jungsoo Kim</a>
+                        <br>
+                        It is maintained by the <a href="https://flavell.mit.edu/">Flavell Lab</a> at the Massachusetts Institute of Technology (MIT).
+                    </p>
+                </div>
+                <div class="col-md-6 d-flex justify-content-center">
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="text-center">
+                            <img src="/static/core/img/adam_atanas.webp" class="rounded-circle" alt="Adam Atanas" style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">Adam Atanas</p>
+                            <!-- <div class="btn-group mt-2" role="group">
+                                <a href="https://github.com/goldenratio1618" class="btn btn-secondary btn-sm">
+                                    <i class="bi bi-person-circle"></i>
+                                </a>
+                                <a href="https://scholar.google.com/citations?user=0nZxhrYAAAAJ&hl=en" class="btn btn-secondary btn-sm">
+                                    <i class="bi bi-journal"></i>
+                                </a>
+                            </div> -->
+                        </div>
+                        <div class="text-center">
+                            <img src="/static/core/img/jungsoo_kim.webp" class="rounded-circle" alt="Jungsoo Kim" style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">Jungsoo Kim</p>
+                            <!-- <div class="btn-group mt-2" role="group">
+                                <a href="https://jungsoo.kim" class="btn btn-secondary btn-sm">
+                                    <i class="bi bi-person-circle"></i>
+                                </a>
+                                <a href="https://scholar.google.com/citations?user=SMfD-sUAAAAJ&hl=en" class="btn btn-secondary btn-sm">
+                                    <i class="bi bi-journal"></i>
+                                </a>
+                            </div> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="mt-2">Additional information (experiments, methods, modeling, statistics, etc.) can be found in the <a href="#paper_kfc">paper</a>.</p>
+            <p class="mt-2">To cite this work (datasets, methods, modeling, code, etc.), please refer to the article.</p>
+        </div>
+    </section>
+
+    <!-- Citation and Website Section -->
+    <section class="row g-4">
+        <div class="col-lg-6" id="paper_kfc">
+            <div class="h-100 p-4 bg-white shadow-sm rounded-3">
+                <h3 class="fw-semibold">Citation</h3>
+                <div class="card border-0">
+                    <div class="row g-0 align-items-center">
+                        <h5 class="card-title mb-3">Brain-wide representations of behavior spanning multiple timescales and states in <i>C. elegans</i></h5>
+                        <div class="col-md-3">
+                            <img src="/static/core/img/cell_cover.webp" class="img-fluid rounded" alt="Paper Thumbnail" style="height: 100%; max-height: 250px; object-fit: cover; margin-right: -1rem;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <strong>Adam A. Atanas*</strong>, <strong>Jungsoo Kim*</strong>, Ziyu Wang, Eric Bueno, McCoy Becker, Di Kang,
+                                    Jungyeon Park, Talya S. Kramer, Flossie K. Wan, Saba Baskoylu, Ugur Dag, Elpiniki Kalogeropoulou,
+                                    Matthew A. Gomes, Cassi Estrem, Netta Cohen, Vikash K. Mansinghka, Steven W. Flavell
+                                </p>
+                                <p class="card-text text-muted">* equal contribution</p>
+                                <!-- <a href="https://pubmed.ncbi.nlm.nih.gov/37607537/" class="btn btn-primary">PubMed</a> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group mt-2" role="group">
+                    <a href="https://doi.org/10.1016/j.cell.2023.07.035" class="btn btn-custom-primary">Cell</a>
+                    <a href="https://pubmed.ncbi.nlm.nih.gov/37607537/" class="btn btn-custom-primary">PubMed</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="h-100 p-4 bg-white shadow-sm rounded-3">
+                <h3 class="fw-semibold">Website</h3>
+                <p class="mb-4">To view the source or file a technical issue for this website, visit the GitHub repository.<p>
+                <a href="https://github.com/flavell-lab/CePNEM-web" class="btn btn-custom-primary">
+                    <i class="bi bi-github"></i> Website
+                </a>
+
+                <br><br>
+                <h3 class="fw-semibold" id="connectome_data">Connectome</h3>
+                <p class="mb-4">The connectome datasets used in this website are from NemaNode. To cite the connectome data, see <a href="https://pubmed.ncbi.nlm.nih.gov/34349261/">Witvliet et al., 2020</a>. Please also cite the original datasets (see Dataset Details).</p>
+                <div class="btn-group" role="group">
+                    <a href="https://github.com/zhenlab-ltri/NemaNode" class="btn btn-custom-primary">
+                        <i class="bi bi-github"></i> NemaNode
+                    </a>
+                    <button type="button" class="btn btn-custom-primary" data-bs-toggle="modal" data-bs-target="#datasetsModal">
+                        Dataset Details
+                    </button>                      
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Section -->
+    <section class="my-5">
+        <div class="p-4 bg-white shadow-sm rounded-3">
+            <h3 class="fw-semibold">Code</h3>
+            <p class="mb-4">All software developed for this project is available below, including:</p>
+            <ul class="list-unstyled">
+                <li>&#8226; The ANTSUN pipeline for extracting neural traces from GCaMP volumes</li>
+                <li>&#8226; The CePNEM model for neural trace analysis and behavioral encoding</li>
+                <li>&#8226; Stage control software for tracking worms during imaging</li>
+                <li>&#8226; Example Jupyter notebooks for data analysis and plotting</li>
+                <li>&#8226; Additional downloadable data for neural network weights, posterior distributions, and more</li>
+            </ul>
+            <a href="https://github.com/flavell-lab/AtanasKim-Cell2023" class="btn btn-custom-primary">
+                <i class="bi bi-github"></i> Explore Code
+            </a>
+        </div>
+    </section>    
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="datasetsModal" tabindex="-1" aria-labelledby="datasetsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="datasetsModalLabel">Connectome Datasets</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <p>The following dataset description is from NemaNode:</p>
+            <h5>White et al., 1986, compilation</h5>
+            <p>This dataset is a compilation of multiple partially overlapping animals. The cells making up the somatic nervous system were reconstructed by <b>White et al., 1986</b> and compiled by <b>Varshney et al., 2011</b>. The cells making up the pharyngeal nervous systems were reconstructed by <b>Albertson and Thomson, 1976</b> and cleaned up by Nikhil Bhatla, developer of WormWeb.org. Non-neuronal cells were not annotated individually but are grouped by cell type (e.g. Body wall muscles).</p>
+                
+            <h5>Witvliet et al., 2020, datasets 1-8</h5>
+            <p>Chemical synapses for all eight datasets were acquired from <b>Witvliet et al., 2020.</b> Chemical synapes were annotated independently by three annotators and only chemical synapses that at least two annotators agreed to were included in the final dataset. Gap junctions were not thoroughly annotated but have been provided by the authors for anyone interested. The gap junction annotation is by no means exhaustive, and should not be treated as such.</p>
+            <h5>White et al., 1986, JSH and N2U</h5>
+            <p>The two datasets were reconstructed by <b>White et al., 1986</b> and compiled by <b>Durbin, 1987</b>. Individual muscle cells were not annotated by <b>White et al., 1986</b>. To allow comparison to other datasets, individual muscle cells (and synapses onto them) were annotated in scans of the original EM micrographs by the Zhen Lab. These synapses have been added to the datasets instead of the originally listed anonymous neuromuscular junctions.</p>
+            <h5>White et al., 1986, JSE</h5>
+            <p>The dataset was reconstructed by <b>White et al., 1986</b> and compiled by <b>Hall and Russell, 1991</b>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

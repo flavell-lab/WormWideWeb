@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Connectome - Shortest Path{% endblock %}
+{% block extra_css %}
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.bootstrap5.min.css" integrity="sha512-JSzoYh+JmOgeqypu22l1ePSza/E8xx3GHYWoY84eTdYKv7ojcA3XLundlKhNItzxgRJuvwW02ylrjslDUb3zrw==" crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.min.css"
+  integrity="sha512-dV0cHrb/JTqn0t9UxaPyHhP4aBjgeEpBpUVULdDnuNsQq55DdKEP4nkiPffoLGVN6FXAEUCPZEZSnI3fxY64vg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{% static 'connectome/css/path.css' %}">
+<link rel="stylesheet" href="{% static 'connectome/css/connectome_common.css' %}">
+{% endblock %}
+{% block main %}
+<div class="container-xxl py-3">
+  <h4 class="mb-2">Connectome - Shortest Path</h4>
+  <p class="mb-3">Find the shortest paths between two neurons in a connectome dataset.</p>
+  <div class="row">
+    <!-- Group the first three columns -->
+    <div class="col-lg-8">
+      <div class="row">
+        <div class="col-lg-6 mb-3">
+          <div class="card card-body h-100">
+            <div class="d-flex align-items-center mb-1">
+              <h5 class="me-2 mb-0">Dataset</h5>
+              <a class="btn btn-light btn-sm" href="/about/#connectome_data" data-bs-toggle="tooltip"
+                data-bs-title="Info on datasets">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
+            <select class="tom-select" id="select-dataset" autocomplete="off" placeholder="Select a dataset">
+            </select>
+          </div>
+        </div>
+        <div class="col-lg-3 mb-3">
+          <div class="card card-body h-100">
+            <h5 class="mb-2">Start Neuron</h5>
+            <select id="select-start-neuron" autocomplete="off" placeholder="Select a neuron">
+            </select>
+          </div>
+        </div>
+        <div class="col-lg-3 mb-3">
+          <div class="card card-body h-100">
+            <h5 class="mb-2">End Neuron</h5>
+            <select id="select-end-neuron" autocomplete="off" placeholder="Select a neuron">
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keep the fourth column separate -->
+    <div class="col-lg-4 mb-3">
+      <div class="card card-body">
+        <div class="row mb-2">
+          <!-- Menu Bar -->
+          <div class="d-flex align-items-center gap-3">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Button group">
+              <!-- node type plot dropdown -->
+              <div class="dropdown btn-group btn-group-sm">
+                <button class="btn btn-light dropdown-toggle" type="button" id="dropdownColor"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+                  Neuron color
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownColor">
+                  <li><a class="dropdown-item" href="#" role="menuitem" data-value="type">Type</a></li>
+                  <li><a class="dropdown-item" href="#" role="menuitem" data-value="nt">Neurotransmitter</a></li>
+                  <li>
+                    <hr class="dropdown-divider">
+                  </li>
+                  <li><a class="dropdown-item" href="#" role="menuitem" data-value="custom" data-bs-toggle="modal"
+                      data-bs-target="#modalLayout">Custom</a></li>
+                </ul>
+              </div>
+              <!-- more settings -->
+              <!-- <button class="btn btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig"><i class="bi bi-gear-wide-connected"></i></button> -->
+            </div>
+          </div> <!-- menu bar -->
+        </div>
+
+        <hr class="divider" role="separator" style="margin-top: 0.5rem; margin-bottom: 0.5rem;"/>
+        <!-- switches -->
+        <div class="row mb-2">
+          <div class="col-6">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="switchClass">
+              <label class="form-check-label" for="switchClass">Neuron class</label>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="SwitchGapJunction" checked>
+              <label class="form-check-label" for="SwitchGapJunction">No gap junction</label>
+            </div>
+          </div>
+        </div>
+        <!-- <div class="row">
+                    <div class="col-6">
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch" id="switchWeight" checked>
+                        <label class="form-check-label" for="switchWeight">Weight</label>
+                      </div>
+                    </div>
+                </div> -->
+        <button id="searchButton" type="button" class="btn btn-primary" style="width: 100px;">Search</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div class="col-lg-8 mb-3">
+      <div class="mb-2" id="path-graph">
+        <div id="connectome-legend">
+          <div id="connectome-legend-items"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 mb-3">
+      <div class="card card-body">
+        <h5>Results</h5>
+        <div class="alert alert-danger" role="alert" id="resultAlert"></div>
+        <div id="path-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalLayout" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+  aria-labelledby="modalLayoutLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modalLayoutLabel">Custom</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="customExplanation"></p>
+        <div id="node-position-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button id="updateCustomLayout" type="button" class="btn btn-primary">Update</button>
+        <button id="updateCustomColor" type="button" class="btn btn-primary">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/js/tom-select.complete.js"
+  integrity="sha512-4C/xXn1q4nHq8VQ7980qwUp2brDFW/22/0eqa8506uQUxCh06teLlJQZ/kcdmpd4AJkeKVnk9CPiYzhV6HOb0A=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- cytoscape -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
+  integrity="sha512-xpXUCbrkyJCwC5noJXZqec9rSXdRgFfDoL7Q9/pCPe54Y04OlqwPobMcNuA5NPJ7DRR51OIr6xcOH2wUspyKDQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- layout extensions -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"
+  integrity="sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+
+<script>const datasets = JSON.parse('{{ datasets_json|safe }}');</script>
+<script type="module" src="{% static 'connectome/js/path.js' %}" defer></script>
+{% endblock %}

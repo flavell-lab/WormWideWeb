@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Connectome{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'connectome/css/index.css' %}">
+{% endblock %}
+
+{% block main %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-3 fw-bold mb-4">Explore the <i>C. elegans</i> Connectome</h1>
+                <p class="lead mb-5">Discover, analyze, and visualize the complete neural connectivity of C. elegans through our interactive platform.</p>
+                <a href="#explore" class="btn btn-custom-primary btn-lg">Get Started</a>
+            </div>
+            <div class="col-lg-6">
+                <br>
+                <img src="/static/connectome/img/screenshot1.webp" alt="C. elegans visualization" class="img-fluid feature-image hero-image">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Network Visualization Section -->
+<section class="feature-section" id="explore">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <img src="/static/connectome/img/screenshot2.webp" alt="Network visualization" class="img-fluid feature-image">
+            </div>
+            <div class="col-lg-6">
+                <h2 class="section-title">Interactive Network Visualization</h2>
+                <p class="section-description mb-4">
+                    Explore the complete neural network. Search and interact with individual neurons and their connections in real-time
+                </p>
+                <a href="{% url 'connectome-explore' %}" class="btn btn-custom-primary">Explore</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Path Analysis Section -->
+<section class="feature-section">
+    <div class="container">
+        <div class="row align-items-center flex-lg-row-reverse">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <img src="/static/connectome/img/screenshot3.webp" alt="Path analysis" class="img-fluid feature-image">
+            </div>
+            <div class="col-lg-6">
+                <h2 class="section-title">Neural Path Analysis</h2>
+                <p class="section-description mb-4">
+                    Identify and analyze neural pathways between any two neurons. Understand signal transmission routes and discover potential alternative paths.
+                </p>
+                <a href="{% url 'connectome-path' %}" class="btn btn-custom-primary">Analyze Paths</a>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- 
+<section class="feature-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <img src="/static/connectome/img/screenshot1.png" alt="Statistics dashboard" class="img-fluid feature-image">
+            </div>
+            <div class="col-lg-6">
+                <h2 class="section-title">Network Statistics</h2>
+                <p class="section-description mb-4">
+                    Access comprehensive statistics about the connectome. View centrality measures, clustering coefficients, and other network metrics in an interactive dashboard.
+                </p>
+                <a href="#" class="btn btn-custom-primary">View Statistics</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="feature-section">
+    <div class="container">
+        <div class="row align-items-center flex-lg-row-reverse">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <img src="/static/connectome/img/screenshot1.png" alt="Search interface" class="img-fluid feature-image">
+            </div>
+            <div class="col-lg-6">
+                <h2 class="section-title">Advanced Neuron Search</h2>
+                <p class="section-description mb-4">
+                    Find specific neurons and their connections using our powerful search tool. Filter by type, location, connectivity patterns, and more.
+                </p>
+                <a href="#" class="btn btn-custom-primary">Search Neurons</a>
+            </div>
+        </div>
+    </div>
+</section> -->
+{% endblock %}

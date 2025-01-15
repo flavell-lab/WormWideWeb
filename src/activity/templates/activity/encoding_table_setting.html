@@ -1,0 +1,303 @@
+<div class="collapse" id="{{ prefix }}_collapseConfigure">
+    <div class="inner-card inner-card-body">
+        <div class="row">
+            <div class="col-lg-3">
+                <center>
+                    <h6>Velocity encoding</h6>
+                    <button id="{{ prefix }}_button_v_all" type="button" class="btn btn-light btn-sm">Select All</button>
+                </center>
+
+                <div class="list-group mt-2">
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_v_s" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Strength
+                            <small class="d-block text-muted">Velocity encoding strength</small>
+                        </span>
+                    </label>
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_v_fwdness" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Forwardness
+                            <small class="d-block text-muted">Forwardness</small>
+                        </span>
+                    </label>
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_v_fwd" class="form-check-input flex-shrink-0" type="checkbox" value="" checked>
+                        <span>
+                            Forward
+                            <small class="d-block text-muted">Forward tuning</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_v_rev" class="form-check-input flex-shrink-0" type="checkbox" value="" checked>
+                        <span>
+                            Reverse
+                            <small class="d-block text-muted">Reverse tuning</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_fwd_slope_p" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Fwd slope +
+                            <small class="d-block text-muted">Positive slope during forward</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_fwd_slope_n" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Fwd slope -
+                            <small class="d-block text-muted">Negative slope during Forward</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_rev_slope_p" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Rev slope +
+                            <small class="d-block text-muted">Positive slope during reverse</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_rev_slope_n" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Rev slope -
+                            <small class="d-block text-muted">Negative slope during reverse</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_slope_1" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Fwd slope > Rev slope
+                            <small class="d-block text-muted">Tuning curve slope greater during forward</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_slope_2" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Fwd slope < Rev slope <small class="d-block text-muted">Tuning curve slope greater during
+                                reverse</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <center>
+                    <h6>Head curvature encoding</h6>
+                    <button id="{{ prefix }}_button_hc_all" type="button" class="btn btn-light btn-sm">Select All</button>
+                </center>
+
+                <div class="list-group mt-2">
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_s" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Strength
+                            <small class="d-block text-muted">Head curvature encoding strength</small>
+                        </span>
+                    </label>
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_dorsalness" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Dorsalness
+                            <small class="d-block text-muted">Dorsalness</small>
+                        </span>
+                    </label>
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_dorsal" class="form-check-input flex-shrink-0" type="checkbox" value=""
+                            checked>
+                        <span>
+                            Dorsal
+                            <small class="d-block text-muted">Dorsal tuning</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_ventral" class="form-check-input flex-shrink-0" type="checkbox" value=""
+                            checked>
+                        <span>
+                            Ventral
+                            <small class="d-block text-muted">Ventral tuning</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_fd" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Dorsal during F
+                            <small class="d-block text-muted">Dorsal during forward</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_fv" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Ventral during F
+                            <small class="d-block text-muted">Ventral during forward</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_rd" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Dorsal during R
+                            <small class="d-block text-muted">Dorsal during reverse</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_rv" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Ventral during R
+                            <small class="d-block text-muted">Ventral during reverse</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_mdf" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            More D during F
+                            <small class="d-block text-muted">More dorsal during forward</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_hc_mvf" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            More V during F
+                            <small class="d-block text-muted">More ventral during forward</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <center>
+                    <h6>Feeding encoding</h6>
+                    <button id="{{ prefix }}_button_f_all" type="button" class="btn btn-light btn-sm">Select All</button>
+                </center>
+                <div class="list-group mt-2">
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_f_strength" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Strength
+                            <small class="d-block text-muted">Feeding encoding strength</small>
+                        </span>
+                    </label>
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_feedness" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Feedingness
+                            <small class="d-block text-muted">Feedingness</small>
+                        </span>
+                    </label>
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_f_act" class="form-check-input flex-shrink-0" type="checkbox" value="" checked>
+                        <span>
+                            Activated
+                            <small class="d-block text-muted">Feeding activated</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_f_inh" class="form-check-input flex-shrink-0" type="checkbox" value="" checked>
+                        <span>
+                            Inhibited
+                            <small class="d-block text-muted">Feeding inhibited</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_f_fa" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Act during F
+                            <small class="d-block text-muted">Activated during forward</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_f_fi" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Inh during F
+                            <small class="d-block text-muted">Inhibited during forward</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_f_ra" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Act during R
+                            <small class="d-block text-muted">Activated during reverse</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_f_ri" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Inh during R
+                            <small class="d-block text-muted">Inhibited during reverse</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_f_maf" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            More A during F
+                            <small class="d-block text-muted">More activated during forward</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_f_mif" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            More I during F
+                            <small class="d-block text-muted">More inhibited during forward</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <center>
+                    <h6>Others</h6>
+                    <button id="{{ prefix }}_button_o_all" type="button" class="btn btn-light btn-sm">Select All</button>
+                </center>
+                <div class="list-group mt-2">
+                    <!-- <label class="list-group-item d-flex gap-2">
+                        <input id="check_o_label" class="form-check-input flex-shrink-0" type="checkbox" value=""
+                            checked>
+                        <span>
+                            Label
+                            <small class="d-block text-muted">Neuron label (NeuroPAL only)</small>
+                        </span>
+                    </label> -->
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_o_ewma" class="form-check-input flex-shrink-0" type="checkbox" value=""
+                            checked>
+                        <span>
+                            Timescale (s)
+                            <small class="d-block text-muted">EWMA decay constant</small>
+                        </span>
+                    </label>
+
+                    <label class="list-group-item d-flex gap-2">
+                        <input id="{{ prefix }}_check_o_enc_change" class="form-check-input flex-shrink-0" type="checkbox" value="">
+                        <span>
+                            Enc. {{encChangeName}}
+                            <small class="d-block text-muted">Encoding {{encChangeName}}</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group btn-group-sm mt-3">
+            <button id="{{ prefix }}_buttonUpdateColumn" type="button" class="btn btn-primary btn-sm">Update</button>
+            <button id="{{ prefix }}_buttonSelectDefault" type="button" class="btn btn-primary btn-sm">Default</button>
+        </div>
+    </div>
+</div>

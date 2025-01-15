@@ -1,0 +1,449 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Neural Activity - Plot {{ dataset_id }}{% endblock %}
+{% block extra_css %}
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.min.css" integrity="sha512-dV0cHrb/JTqn0t9UxaPyHhP4aBjgeEpBpUVULdDnuNsQq55DdKEP4nkiPffoLGVN6FXAEUCPZEZSnI3fxY64vg==" crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.bootstrap5.min.css"
+  integrity="sha512-JSzoYh+JmOgeqypu22l1ePSza/E8xx3GHYWoY84eTdYKv7ojcA3XLundlKhNItzxgRJuvwW02ylrjslDUb3zrw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{% static 'activity/css/explore.css' %}">
+<link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
+<link rel="stylesheet" href="{% static 'activity/css/encoding_table.css' %}">
+{% endblock %}
+
+{% load dataset_badge %}
+
+{% block main %}
+<div class="container-xxxl py-3">
+  <!-- Title -->
+  <h4>Explore Dataset</h4>
+  <div class="d-flex align-items-center">
+    <h5 class="text-muted mb-0">{{ dataset_id }}</h5>
+    {% for type in dataset_type %}
+    <span class="badge rounded-pill text-bg-{{ type|get_type_class }} ms-1">
+      {{ type|get_type_name }}
+    </span>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="container-xxxl mb-3">
+  <div class="row g-3 align-items-stretch">
+    <div id="col-plot" class="{% if show_connectome %}col-lg-6{% else %}col-lg-12{% endif %} mb-3 mb-lg-0">
+      <div class="card card-body">
+        <h5>Neural & Behavior Data Plot</h5>
+
+        <!-- error -->
+        <div id="error_plot" class="alert alert-danger" role="alert" style="display:none"></div>
+
+        <!-- Control Panel Container -->
+        <div class="control-panel">
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <div class="tom-select-container">
+              <input style="width:300px" id="select-neuron" autocomplete="off" type="text"
+                class="form-control form-control-sm" placeholder="Neurons">
+            </div>
+            <div class="tom-select-container">
+              <input style="width:200px" id="select-behavior" autocomplete="off" type="text"
+                class="form-control form-control-sm" placeholder="Behaviors">
+            </div>
+
+            <div class="btn-group btn-group-sm">
+              <button id="clearSelectors" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="Clear the selections">
+                Clear
+              </button>
+              <button id="button_reset_scale" class="btn btn-light">
+                <i class="bi bi-aspect-ratio" data-bs-toggle="tooltip" data-bs-placement="top"
+                  data-bs-title="Reset scale"></i>
+              </button>
+              <button class="btn btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePlotConfig"
+                aria-expanded="false" aria-controls="collapsePlotConfig">
+                <i class="bi bi-gear-wide-connected" data-bs-toggle="tooltip" data-bs-placement="top"
+                  data-bs-title="Plot configurations"></i>
+              </button>
+              <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#modalInfo">
+                <i class="bi bi-info-circle" data-bs-toggle="tooltip" data-bs-placement="top"
+                  data-bs-title="Additional information"></i>
+              </button>
+              <button id="button_csv_export" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="Download currently plotted neurons(s)/behavior(s) as a CSV file">
+                <i class="bi bi-download"></i>
+              </button>
+              <button id="button_copy_url" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="Copy a link to this plot to the clipboard">
+                <i class="bi bi-link-45deg"></i>
+              </button>
+            </div>
+
+            <div class="btn-group btn-group-sm">
+              <button id="button_cor" class="btn btn-light" data-bs-toggle="collapse" aria-expanded="false"
+                data-bs-target="#collapseCor" aria-controls="collapseCor">
+                <span class="bi bi-calculator" data-bs-toggle="tooltip" data-bs-placement="top"
+                  data-bs-title="Compute Pearson cor among the neural trace(s) and behavior(s)">Correlation</span>
+              </button>            
+
+              <button id="button_connectome_visibility" class="disabled btn btn-light" data-bs-toggle="tooltip"
+                data-bs-placement="top" data-bs-title="Show/Hide connectome" style="display: none;">
+                <i class="bi bi-diagram-2-fill"></i>Connectome
+              </button>
+            </div>
+
+            <div id="spinnerStatus" class="spinner-border spinner-border-sm" role="status" style="display:block">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- config -->
+        <div class="collapse mt-2" id="collapsePlotConfig">
+          <h5 class="card-title d-inline-flex align-items-center">
+            Settings
+          </h5>
+          <div class="container mt-2">
+            <div class="row g-3 align-items-center">
+              <!-- First Column -->
+              <div class="col-md-6">
+                <h6>Events</h6>
+                <!-- Reversal Switch -->
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input" type="checkbox" role="switch" id="switchShowReversal">
+                  <label class="form-check-label" for="switchShowReversal">
+                    Reversal (plot the animal's reversal events)
+                  </label>
+                </div>
+
+                <!-- Event Switch -->
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" role="switch" id="switchShowEvent">
+                  <label class="form-check-label" for="switchShowEvent">
+                    Event (e.g., heat stim)
+                  </label>
+                </div>
+              </div>
+
+              <!-- Second Column: Slider and Button -->
+              <div class="col-md-6">
+                <h6>Plot - Height</h6>
+                <!-- Plot Height Slider -->
+                <div class="d-flex align-items-center mb-2">
+                  <label for="plotHeightSlider" class="me-2 mb-0">Height</label>
+                  <input type="range" class="form-range" min="400" max="2400" step="100" id="plotHeightSlider"
+                    style="max-width: 300px;">
+                </div>
+
+                <!-- Update Button -->
+                <button type="button" class="btn btn-primary btn-sm" id="updatePlotHeight">
+                  Update
+                </button>
+              </div>
+            </div>
+            <hr>
+          </div> <!--container mt-2 -->
+        </div> <!-- config -->
+
+        <!-- plot -->
+        <div id="plot_main"></div>
+      </div>
+    </div>
+
+    <!-- connectome column -->
+    <div id="col-connectome" class="{% if show_connectome is not True %}d-none hidden-forced{% endif %} col-lg-6 d-flex flex-column">
+      <div class="card card-body d-flex flex-column flex-fill">
+        <h5>Connectome</h5>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <!-- First group of buttons -->
+          <div class="btn-group btn-group-sm" role="group" aria-label="Dataset and layout options">
+            <!-- Dataset button with tooltip -->
+            <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseData"
+              aria-expanded="false" aria-controls="collapseData" data-bs-toggle="tooltip"
+              title="Customize which connectomes to use">
+              Dataset
+            </button>
+
+            <!-- Layout dropdown -->
+            <div class="dropdown btn-group btn-group-sm">
+              <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="dropdownLayout"
+                data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select layout">
+                Layout
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="dropdownLayout" role="menu">
+                <li><a class="dropdown-item" href="#" role="menuitem" data-value="grid">Grid</a></li>
+                <li><a class="dropdown-item" href="#" role="menuitem" data-value="circle">Circle</a></li>
+                <li><a class="dropdown-item active" href="#" role="menuitem" data-value="concentric">Concentric</a></li>
+                <li><a class="dropdown-item" href="#" role="menuitem" data-value="breadthfirst">Hierarchy (BFS)</a></li>
+                <li><a class="dropdown-item" href="#" role="menuitem" data-value="dagre">Hierarchy (Dagre)</a></li>
+                <li><a class="dropdown-item" href="#" role="menuitem" data-value="cose">Compound Spring Embedder</a>
+                </li>
+                <li>
+                  <hr class="dropdown-divider" role="separator" />
+                </li>
+                <li>
+                  <a class="dropdown-item" href="#" role="menuitem" data-value="custom" data-bs-toggle="modal"
+                    data-bs-target="#modalLayout">
+                    Custom
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Neuron Color dropdown -->
+            <div class="dropdown btn-group btn-group-sm">
+              <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="dropdownColor"
+                data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select neuron color">
+                Neuron Color
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="dropdownColor" role="menu">
+                <li><a class="dropdown-item" href="#" role="menuitem" data-value="gcamp">Dataset</a></li>
+                <li><a class="dropdown-item" href="#" role="menuitem" data-value="type">Type</a></li>
+                <li><a class="dropdown-item" href="#" role="menuitem" data-value="nt">Neurotransmitter</a></li>
+                <li>
+                  <hr class="dropdown-divider" role="separator" />
+                </li>
+                <li>
+                  <a class="dropdown-item" href="#" role="menuitem" data-value="custom" data-bs-toggle="modal"
+                    data-bs-target="#modalLayout">
+                    Custom
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Second group of buttons -->
+          <div class="btn-group btn-group-sm" role="group" aria-label="Download and settings">
+            <!-- Settings/gear button -->
+            <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse"
+              data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig"
+              aria-label="More settings">
+              <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div> <!-- connectome menu buttons -->
+      </div> <!-- card -->
+
+      <!-- collapse: dataset -->
+      <div class="collapse mt-3" id="collapseData">
+        <div class="card card-body">
+          <h5 class="card-title d-inline-flex align-items-center">
+            Dataset
+            <a class="btn btn-light btn-sm ms-2" href="/about/#connectome_data" data-bs-toggle="tooltip"
+              data-bs-title="Info on datasets"><i class="bi bi-info-circle"></i></a>
+          </h5>
+          <p><b>White et al. 1986</b> must be selected for the neurons outside of the head ganglia (e.g. NSM).</p>
+          <!-- tom-select-container -->
+          <input id="select-dataset" autocomplete="off" placeholder="Select dataset(s)" class="form-control form-control-sm">
+        </div>
+      </div>
+
+      <!-- collapse: settings -->
+      <div class="collapse mt-3" id="collapseConfig">
+        <div class="card card-body">
+          <h5 class="card-title d-inline-flex align-items-center">
+            Settings
+          </h5>
+          <div class="container mt-2">
+
+            <div class="row d-flex align-items-stretch">
+              <!-- settings section: neurons -->
+              <div class="col-lg-6 column">
+                <h6>Neurons</h6>
+                <!-- <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" role="switch" id="switchIndividual">
+                  <label class="form-check-label" for="switchIndividual">Show individual neuron (i.e. split D/V &
+                    L/R)</label>
+                </div> -->
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" role="switch" id="switchConnected" checked>
+                  <label class="form-check-label" for="switchConnected">Show connected neuron</label>
+                </div>
+              </div>
+              <!-- settings section: synapses -->
+              <div class="col-lg-6 column">
+                <h6>Synapses</h6>
+                <div class="mb-2">Show edges with at least:</div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <!-- Chemical -->
+                  <div class="col-md-3 column">
+                    <div>Chemical</div>
+                    <div class="input-group input-group-sm flex-nowrap" style="width: 100px;">
+                      <button class="btn btn-secondary btn-sm" id="minus-c">-</button>
+                      <input type="number" id="threshold-c" class="form-control form-control-sm text-center" value="1"
+                        min="1" style="width: 40px;">
+                      <button class="btn btn-secondary btn-sm" id="plus-c">+</button>
+                    </div>
+                  </div>
+
+                  <!-- Spacer -->
+                  <div class="extra-space" style="width: 15px;"></div>
+
+                  <!-- Electrical -->
+                  <div class="col-md-3 column">
+                    <div>Electrical</div>
+                    <div class="input-group input-group-sm flex-nowrap" style="width: 100px;">
+                      <button class="btn btn-secondary btn-sm" id="minus-e">-</button>
+                      <input type="number" id="threshold-e" class="form-control form-control-sm text-center" value="1"
+                        min="1" style="width: 40px;">
+                      <button class="btn btn-secondary btn-sm" id="plus-e">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <hr>
+            <div class="row d-flex align-items-stretch">
+              <div class="col-lg-6 column">
+                <h6>Layout</h6>
+                <div class="input-group input-group-sm flex-nowrap">
+                  <label for="sliderSpacing" class="form-label">Spacing</label>
+                  <div class="extra-space" style="width: 15px;"></div>
+                  <input type="range" class="form-range" min="0.25" max="1.5" step="0.05" id="sliderSpacing"
+                    style="max-width: 300px;">
+                </div>
+              </div>
+
+              <div class="col-lg-6 column">
+                <h6>Edge scaling</h6>
+                <div class="input-group input-group-sm flex-nowrap">
+                  <label for="sliderEdgeScale" class="form-label">Factor</label>
+                  <div class="extra-space" style="width: 15px;"></div>
+                  <input type="range" class="form-range" min="0.1" max="3.0" step="0.05" id="sliderEdgeScale"
+                    style="max-width: 300px;">
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div> <!-- collapseConfig -->
+
+      <!-- connectome -->
+      <div id="connectome-graph" class="flex-lg-fill">
+        <div id="connectome-legend">
+          <div id="connectome-legend-items"></div>
+        </div>
+  
+      </div>
+    </div> <!-- connectome column-->
+  </div> <!-- row -->
+</div>
+
+<div class="container-xxxl collapse mb-3" id="collapseCor">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card card-body">
+        <h5>Neural Correlation</h5>
+        <p>Correlation among the selected neurons</p>
+        <div id="cor_neuron"></div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card card-body mb-3">
+        <h5>Top 3 Correlated Neurons</h5>
+        <p>Top 3 correlated neurons for each selected neuron</p>
+        <div id="cor_others"></div>
+      </div>
+      <div class="card card-body">
+        <h5>Behavioral Correlation</h5>
+        <p>Correlation to behaviors for each selected neuron</p>
+        <div id="cor_behavior"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-xxxl mb-3">
+  <div class="card card-body">
+    <div>
+      <h5>Encoding Table</h5>
+      <p>CePNEM encoding table for the neurons and behaviors for this dataset.</p>
+      {% include 'activity/encoding_table_setting.html' with prefix="dataset" encChangeName="change" %}
+      {% include 'activity/encoding_table_legend.html' with prefix="dataset" %}
+      {% include 'activity/encoding_table.html' with prefix="dataset" encChangeName="change" %}
+    </div>
+  </div>
+</div>
+
+<!-- modal label info -->
+<div class="modal fade" id="modalInfo" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+  aria-labelledby="modalInfoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modalInfoLabel">Information</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <h5>NeuroPAL label</h5>
+        <h6>What does ? mean in the neuron labels?</h6>
+        <p>For neuron class with Dorsal/Ventral (D/V) and/or Left/Right (L/R) differentiation, ? notes that
+          it was not possible to determine that attribute.</p>
+        <h6>Example</h6>
+        <p>For the class RMD:
+        <ul>
+          <li>RMD?L: was not possible to determine D/V.</li>
+          <li>RMD??: was not possible to determine both L/R and D/V.</li>
+        </ul>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END modal -->
+
+<!-- modal connecotme node -->
+<div class="modal fade" id="modalLayout" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+  aria-labelledby="modalLayoutLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modalLayoutLabel">Custom</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="customExplanation"></p>
+        <div id="node-position-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button id="updateCustomLayout" type="button" class="btn btn-primary">Update</button>
+        <button id="updateCustomColor" type="button" class="btn btn-primary">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% include 'info_panel.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- plotly -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.0-rc.2/plotly.min.js"
+  integrity="sha512-e0Ghul62Rp8nPD2xkVBad41P5Prp/D/OcF2kyGPue/wnnsdUfkXrvL9OT7L86/gGMKrwgSb+kC/OoFfrHPmnJg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- tomselect -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/js/tom-select.complete.js"
+  integrity="sha512-4C/xXn1q4nHq8VQ7980qwUp2brDFW/22/0eqa8506uQUxCh06teLlJQZ/kcdmpd4AJkeKVnk9CPiYzhV6HOb0A=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- cytoscape -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
+  integrity="sha512-xpXUCbrkyJCwC5noJXZqec9rSXdRgFfDoL7Q9/pCPe54Y04OlqwPobMcNuA5NPJ7DRR51OIr6xcOH2wUspyKDQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- layout extensions -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"
+  integrity="sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+
+<script>const data = JSON.parse('{{ data| safe }}');</script>
+<script>const datasets = JSON.parse('{{ datasets_json|safe }}');</script>
+
+<script type="module" src="{% static 'activity/js/activity_common.js' %}" defer></script>
+<script type="module" src="{% static 'activity/js/views/explore.js' %}" defer></script>
+{% endblock %}

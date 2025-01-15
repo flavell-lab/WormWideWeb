@@ -1,0 +1,139 @@
+:root {
+    --primary-color: #2D3142;
+    --secondary-color: #4F5D75;
+    --accent-color: #0d6efd;
+    --background-light: #fbfbfd;
+}
+
+/*
+    Navbar
+*/
+/* Navbar Container */
+.navbar {
+    background-color: white;
+    box-shadow: 0px 0.3px 0px gray;
+    padding-top: 2.5px;
+    padding-bottom: 5px;
+}
+
+.navbar .navbar-brand {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: black;
+}
+
+.navbar-nav .nav-link {
+    color: gray !important;
+    padding: 5px 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    transition: background-color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover, .dropdown-item:hover {
+    color: black !important;
+}
+
+.navbar-toggler {
+    background-color: white;
+}
+
+.navbar-nav .nav-item.active .nav-link, .dropdown-item.active{
+    color: black !important;
+}
+
+/* Icon and button styles */
+.material-icons {
+    font-size: 1.8rem;
+}
+
+.b-divider {
+    height: 3rem;
+    background-color: rgba(0, 0, 0, .1);
+    border: solid rgba(0, 0, 0, .15);
+    border-width: 1px 0;
+    box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    color: var(--primary-color);
+}
+
+footer {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 1rem 0;
+}
+
+/* buttons */
+.btn-custom-primary {
+    background-color: var(--accent-color);
+    border: none;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-custom-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+
+/*
+    Bootstrap dropdown
+*/
+/* Dropdown button */
+/* .dropdown-toggle {
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0.5rem 1rem;
+    background: white;
+    color: #333;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+  } */
+
+/* Dropdown menu */
+.dropdown-menu {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 0.25rem;
+    margin-top: 4px;
+    background: white;
+    font-size: 1rem;
+}
+
+/* Dropdown items */
+.dropdown-item {
+    padding: 0.5rem;
+    /* padding: 0.35rem 0.75rem; */
+    border-radius: 0.25rem;
+    /* Reduced padding */
+    color: #333;
+    transition: all 0.15s ease;
+    font-size: 1rem;
+    line-height: 1.2;
+    /* Tighter line height */
+}
+
+.dropdown-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-item:active {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+/* Dropdown header - slightly smaller than items */
+.dropdown-header {
+    color: #6c757d;
+    font-size: 0.875rem;
+    padding: 0.35rem 0.75rem;
+    /* Matching item padding */
+}

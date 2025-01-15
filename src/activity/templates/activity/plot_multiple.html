@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Neural Activity-Multiple Plot{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.bootstrap5.min.css"
+  integrity="sha512-JSzoYh+JmOgeqypu22l1ePSza/E8xx3GHYWoY84eTdYKv7ojcA3XLundlKhNItzxgRJuvwW02ylrjslDUb3zrw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
+{% endblock %}
+
+{% load dataset_badge %}
+
+{% block main %}
+<div class="container-xxl py-3">
+  <h4>Plot Multiple Datasets</h4>
+  <p>
+    Click the "Explore this dataset" button to dive deeper into the dataset.<br>
+    Click on the legend items to toggle visiblity.
+  </p>
+  <!-- Container with d-flex and align-items-center to keep items inline and vertically centered -->
+  <div id="progressContainer" class="d-flex align-items-center">
+  <!-- Progress bar -->
+    <span class="me-2" id="plotProgressLabel">Generating Plots</span>
+    <div class="progress" style="width: 300px;">
+      <div
+        id="plotProgressBar"
+        class="progress-bar"
+        role="progressbar"
+        aria-valuenow="0"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        style="width: 0%"
+      ></div>
+    </div>  
+  </div>
+</div>
+
+<div class="container-xxxl mb-3">
+  {% for dataset in list_dataset_meta %}
+  <!-- Open a new row every 3 plots -->
+  {% if forloop.counter0|divisibleby:2 %}
+      <div class="row mb-4">
+  {% endif %}
+  <!-- Column for each plot -->
+  <div class="col-xl-6 col-sm-12 mb-4">
+      <div class="card card-body">
+          <!-- <h5 class="text-muted mb-0">{{ dataset_id }}</h5> -->
+          <div class="d-flex align-items-center">
+            <h5 class="text-muted mb-0">{{ dataset.dataset_id }}</h5>
+            {% for type in dataset.dataset_type %}
+            <span class="badge rounded-pill text-bg-{{ type|get_type_class }} ms-1">
+              {{ type|get_type_name }}
+            </span>
+            {% endfor %}        
+          </div>
+      
+          <div class="mb-2" id="plot_{{ forloop.counter0 }}"></div>
+          
+          <div class="d-flex justify-content-end"> 
+            <a id="button_{{ forloop.counter0 }}">
+              <button class="btn btn-sm btn-primary">Explore this dataset</button>
+            </a>
+          </div>
+      </div>
+  </div>
+  <!-- Close the row after the 2nd plot or if it's the last plot -->
+  {% if forloop.counter|divisibleby:2 or forloop.last %}
+      </div>
+  {% endif %}
+  {% empty %}
+  <div class="card card-body">
+    <p>No plots available. Please select datasets/neurons to plot.</p>
+    <div>
+      <a href="{% url 'activity-find-neuron' %}" class="btn btn-primary">Find Neuron</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- {{ data|json_script:"data-data" }} -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/js/tom-select.complete.js"
+  integrity="sha512-4C/xXn1q4nHq8VQ7980qwUp2brDFW/22/0eqa8506uQUxCh06teLlJQZ/kcdmpd4AJkeKVnk9CPiYzhV6HOb0A=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.0-rc.2/plotly.min.js"
+  integrity="sha512-e0Ghul62Rp8nPD2xkVBad41P5Prp/D/OcF2kyGPue/wnnsdUfkXrvL9OT7L86/gGMKrwgSb+kC/OoFfrHPmnJg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- <script>const data = JSON.parse(document.getElementById('data-data').textContent);</script> -->
+<script>const data = JSON.parse('{{ plots|safe }}');</script>
+<script type="module" src="{% static 'activity/js/views/plot_multiple.js' %}" defer></script>
+{% endblock %}

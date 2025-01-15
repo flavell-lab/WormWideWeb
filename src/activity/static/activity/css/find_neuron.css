@@ -1,0 +1,112 @@
+/* 1) Basic table styling: no vertical borders, subtle horizontal lines */
+.table-material {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    /* Remove any default border from Bootstrap table, if present */
+    border: none;
+}
+
+.table-material thead th {
+    /* Google often uses a subtle gray background for the header */
+    background-color: #f5f5f5;
+    color: #333;
+    font-weight: 500;
+    border: none;
+
+    /* Remove top/bottom borders if any */
+    /* Add a subtle bottom border to separate header from body */
+    /* border-bottom: 1px solid #ddd; */
+    /* Slightly larger padding for a “material” feel */
+    padding: 8px 8px;
+}
+
+/* 2) Table body cells: subtle horizontal borders only */
+.table-material tbody td {
+    border-top: 1px solid #eee;
+    /* Some more padding for a cleaner look */
+    padding: 8px 8px;
+    vertical-align: middle;
+}
+
+/* 3) Remove the last horizontal line if desired (optional) */
+.table-material tbody tr:last-of-type td {
+    border-bottom: 0;
+}
+
+/* 4) Hover effect on table rows */
+.table-material tbody tr:hover {
+    background-color: #fafafa;
+}
+
+/* 5) Clean up pagination/search toolbar if desired (bootstrap-table) */
+.fixed-table-toolbar .btn,
+.fixed-table-toolbar .form-control {
+    border-radius: 4px;
+}
+
+/* Even more "Material" look, you can lighten the shadow 
+     on hover or add transition, e.g.:
+  .table-material tbody tr:hover {
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+  */
+
+
+/* The container for the buttons, ensuring they're right-aligned 
+   if you're not already using "align: 'right'" in the column. */
+.actions-column {
+    text-align: right;
+}
+
+/* The custom icon-only button */
+.action-btn {
+    display: inline-flex;
+    /* so we can center the icon horizontally/vertically */
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    /* circle size: adjust as you like */
+    height: 32px;
+    border: none;
+    /* remove any default border */
+    border-radius: 50%;
+    /* circular shape */
+    background: transparent;
+    /* no background by default */
+    cursor: pointer;
+    /* show pointer on hover */
+    margin-right: 3px;
+    /* space between buttons */
+    transition: background-color 0.2s ease;
+}
+
+/* Remove right margin from the last button, if desired */
+.actions-column .action-btn:last-of-type {
+    margin-right: 0;
+}
+
+/* Hover effect: "light color highlight in a circle" */
+.action-btn:hover {
+    background-color: #f0f0f0;
+    /* or #e8e8e8, #f2f2f2, etc. */
+}
+
+/* The icon itself */
+.action-btn i {
+    font-size: 16px;
+    /* adjust icon size */
+    color: #555;
+    /* icon color */
+}
+
+/* 
+    Toast
+*/
+.toast-container {
+    position: fixed; /* Stay in place */
+    top: 20px; /* Adjust as needed */
+    right: 20px; /* Adjust as needed */
+    z-index: 1050; /* Ensure it's on top */
+}

@@ -1,0 +1,107 @@
+body {
+    background-color: var(--background-light);
+}
+
+.card {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.card-body {
+    padding: 1.0rem;
+}  
+
+#connectome-legend {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    background-color: rgba(255, 255, 255, 1.0);
+    /* padding: 10px; */
+    padding: 1rem;
+    /* border: 1px solid #ccc; */
+    border-radius: 0.5rem;
+    /* border-radius: 0.75rem; */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    z-index: 2;
+}
+
+/* Legend items */
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+/* Legend color box */
+.legend-color {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    border: 0.5px solid #999;
+}
+
+
+/* 
+    tom select
+*/
+/* Main wrapper */
+.ts-wrapper {
+    border-radius: 0.5rem;
+    /* box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); */
+    border: none;
+}
+
+/* Input field */
+.ts-wrapper .ts-control {
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+    min-height: 40px;
+    background: white;
+}
+
+/* Dropdown menu */
+.ts-wrapper .ts-dropdown {
+    border-radius: 0.5rem;
+    margin-top: 4px;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+}
+
+/* Selected items */
+.ts-wrapper .ts-control .item {
+    background: #f0f0f0;
+    border-radius: 0.25rem;
+    padding: 2px 8px;
+    margin: 2px 4px 2px 0;
+}
+
+/* Dropdown items */
+.ts-wrapper .ts-dropdown .option {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.ts-wrapper .ts-dropdown .active {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Remove button */
+.ts-wrapper .ts-control .item .remove {
+    /* border-radius: 50%; */
+    padding: 0 4px;
+}
+
+/* Focus state */
+.ts-wrapper.focus .ts-control {
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Placeholder */
+.ts-wrapper .ts-control input::placeholder {
+    color: #999;
+}

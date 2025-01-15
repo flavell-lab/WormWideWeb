@@ -1,0 +1,30 @@
+#connectome-graph {
+    width: 100%;
+    /* height: 85vh; */
+    height: calc(100vh - 175px); /* Adjust this value based on other UI elements */
+    /* border: 1px solid #ccc; */
+    /* background-color: red; */
+}
+
+@media (max-width: 768px) {
+    #connectome-graph {
+      height: 70vh; /* Adjust height on smaller screens */
+    }
+}
+
+.select_dataset_opt {
+    font-weight: normal;
+    opacity: 0.5;
+    margin: 0 0 0 2px;
+}
+
+/* Remove spinner buttons for number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield; /* Remove spinners in Firefox */
+}

@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Connectome{% endblock %}
+{% block extra_css %}
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.bootstrap5.min.css" integrity="sha512-JSzoYh+JmOgeqypu22l1ePSza/E8xx3GHYWoY84eTdYKv7ojcA3XLundlKhNItzxgRJuvwW02ylrjslDUb3zrw==" crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.min.css"
+  integrity="sha512-dV0cHrb/JTqn0t9UxaPyHhP4aBjgeEpBpUVULdDnuNsQq55DdKEP4nkiPffoLGVN6FXAEUCPZEZSnI3fxY64vg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{% static 'connectome/css/explore.css' %}">
+<link rel="stylesheet" href="{% static 'connectome/css/connectome_common.css' %}">
+{% endblock %}
+
+{% block main %}
+<div class="container-xxl mt-3">
+  <!-- Title -->
+  <!-- <h4>Connectome - Explore</h4> -->
+
+  <!-- Menu Bar -->
+  <div class="card card-body">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+      <!-- First group of buttons -->
+      <div class="btn-group btn-group-sm" role="group" aria-label="Dataset and layout options">
+        <!-- Dataset button with tooltip -->
+        <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseData"
+          aria-expanded="false" aria-controls="collapseData" data-bs-toggle="tooltip"
+          title="Customize which connectomes to use">
+          Dataset
+        </button>
+
+        <!-- Layout dropdown -->
+        <div class="dropdown btn-group btn-group-sm">
+          <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="dropdownLayout"
+            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select layout">
+            Layout
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownLayout" role="menu">
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="grid">Grid</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="circle">Circle</a></li>
+            <li><a class="dropdown-item active" href="#" role="menuitem" data-value="concentric">Concentric</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="breadthfirst">Hierarchy (BFS)</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="dagre">Hierarchy (Dagre)</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="cose">Compound Spring Embedder</a></li>
+            <li><hr class="dropdown-divider" role="separator" /></li>
+            <li>
+              <a class="dropdown-item" href="#" role="menuitem" data-value="custom" data-bs-toggle="modal"
+                data-bs-target="#modalLayout">
+                Custom
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Neuron Color dropdown -->
+        <div class="dropdown btn-group btn-group-sm">
+          <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="dropdownColor"
+            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select neuron color">
+            Neuron Color
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownColor" role="menu">
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="type">Type</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="nt">Neurotransmitter</a></li>
+            <li>
+              <hr class="dropdown-divider" role="separator" />
+            </li>
+            <li>
+              <a class="dropdown-item" href="#" role="menuitem" data-value="custom" data-bs-toggle="modal"
+                data-bs-target="#modalLayout">
+                Custom
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Second group of buttons -->
+      <div class="btn-group btn-group-sm" role="group" aria-label="Download and settings">
+        <!-- Settings/gear button -->
+        <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig"
+          aria-expanded="false" aria-controls="collapseConfig" aria-label="More settings">
+          <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+        </button>
+
+        <!-- Download button -->
+        <button id="downloadEdgeJSON" class="btn btn-light btn-sm" type="button" data-bs-toggle="tooltip"
+          title="Download the currently plotted data" aria-label="Download JSON">
+          <i class="bi bi-download" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+
+    <input id="select-neuron" autocomplete="off" placeholder="Select neuron(s) or neuron class(es)">
+  </div> <!-- menu bar -->
+
+  <!-- collapse: dataset -->
+  <div class="collapse mt-3" id="collapseData">
+    <div class="card card-body">
+      <h5 class="card-title d-inline-flex align-items-center">
+        Dataset
+        <a class="btn btn-light btn-sm ms-2" href="/about/#connectome_data" data-bs-toggle="tooltip"
+          data-bs-title="Info on datasets"><i class="bi bi-info-circle"></i></a>
+      </h5>
+      <input id="select-dataset" autocomplete="off" placeholder="Select dataset(s)">
+    </div>
+  </div>
+
+
+  <!-- collapse: settings -->
+  <div class="collapse mt-3" id="collapseConfig">
+    <div class="card card-body">
+      <h5 class="card-title d-inline-flex align-items-center">
+        Settings
+      </h5>
+      <div class="container mt-2">
+
+        <div class="row d-flex align-items-stretch">
+          <!-- settings section: neurons -->
+          <div class="col-lg-6 column">
+            <h6>Neurons</h6>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="switchIndividual">
+              <label class="form-check-label" for="switchIndividual">Show individual neuron (i.e. split D/V &
+                L/R)</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" role="switch" id="switchConnected" checked>
+              <label class="form-check-label" for="switchConnected">Show connected neuron</label>
+            </div>
+          </div>
+          <!-- settings section: synapses -->
+          <div class="col-lg-6 column">
+            <h6>Synapses</h6>
+            <div class="mb-2">Show edges with at least:</div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <!-- Chemical -->
+              <div class="col-md-3 column">
+                <div>Chemical</div>
+                <div class="input-group input-group-sm flex-nowrap" style="width: 100px;">
+                  <button class="btn btn-secondary btn-sm" id="minus-c">-</button>
+                  <input type="number" id="threshold-c" class="form-control form-control-sm text-center" value="1"
+                    min="1" style="width: 40px;">
+                  <button class="btn btn-secondary btn-sm" id="plus-c">+</button>
+                </div>
+              </div>
+
+              <!-- Spacer -->
+              <div class="extra-space" style="width: 15px;"></div>
+
+              <!-- Electrical -->
+              <div class="col-md-3 column">
+                <div>Electrical</div>
+                <div class="input-group input-group-sm flex-nowrap" style="width: 100px;">
+                  <button class="btn btn-secondary btn-sm" id="minus-e">-</button>
+                  <input type="number" id="threshold-e" class="form-control form-control-sm text-center" value="1"
+                    min="1" style="width: 40px;">
+                  <button class="btn btn-secondary btn-sm" id="plus-e">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <hr>
+        <div class="row d-flex align-items-stretch">
+          <div class="col-lg-6 column">
+            <h6>Layout</h6>
+            <div class="input-group input-group-sm flex-nowrap">
+              <label for="sliderSpacing" class="form-label">Spacing</label>
+              <div class="extra-space" style="width: 15px;"></div>
+              <input type="range" class="form-range" min="0.25" max="1.5" step="0.05" id="sliderSpacing"
+                style="max-width: 300px;">
+            </div>
+          </div>
+
+          <div class="col-lg-6 column">
+            <h6>Edge scaling</h6>
+            <div class="input-group input-group-sm flex-nowrap">
+              <label for="sliderEdgeScale" class="form-label">Factor</label>
+              <div class="extra-space" style="width: 15px;"></div>
+              <input type="range" class="form-range" min="0.1" max="3.0" step="0.05" id="sliderEdgeScale"
+                style="max-width: 300px;">
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div> <!-- collapseConfig -->
+</div>
+
+<!-- connectome graph -->
+<div id="connectome-graph">
+  <div id="connectome-legend">
+    <div id="connectome-legend-items"></div>
+  </div>
+</div>
+
+{% include 'info_panel.html' %}
+
+<!-- Modal -->
+<div class="modal fade" id="modalLayout" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+  aria-labelledby="modalLayoutLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modalLayoutLabel">Custom</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="customExplanation"></p>
+        <div id="node-position-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button id="updateCustomLayout" type="button" class="btn btn-primary">Update</button>
+        <button id="updateCustomColor" type="button" class="btn btn-primary">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/js/tom-select.complete.js"
+  integrity="sha512-4C/xXn1q4nHq8VQ7980qwUp2brDFW/22/0eqa8506uQUxCh06teLlJQZ/kcdmpd4AJkeKVnk9CPiYzhV6HOb0A=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- cytoscape -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"
+  integrity="sha512-xpXUCbrkyJCwC5noJXZqec9rSXdRgFfDoL7Q9/pCPe54Y04OlqwPobMcNuA5NPJ7DRR51OIr6xcOH2wUspyKDQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- layout extensions -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"
+  integrity="sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+
+
+<script>const datasets = JSON.parse('{{ datasets_json|safe }}');</script>
+<script type="module" src="{% static 'connectome/js/explore.js' %}" defer></script>
+{% endblock %}

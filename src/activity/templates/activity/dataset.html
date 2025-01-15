@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Neural Activity - Find Neuron{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.bootstrap5.min.css"
+    integrity="sha512-JSzoYh+JmOgeqypu22l1ePSza/E8xx3GHYWoY84eTdYKv7ojcA3XLundlKhNItzxgRJuvwW02ylrjslDUb3zrw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.0/bootstrap-table.min.css"
+    integrity="sha512-IC9zdRfWwUKZHAhgI6YpOCwrwInau7JLKUmm8lrB654jCMqh3jKA/VcYTyrg2bU1wDcv9mHOyz+hjg3KiLjjXg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
+<link rel="stylesheet" href="{% static 'activity/css/find_neuron.css' %}">
+{% endblock %}
+
+{% block main %}
+<div class="container-lg py-3">
+    <h4>Datasets</h4>
+    <p>Explore, plot, and download datasets.</p>
+
+    <div class="card card-body">
+        <h5>Dataset Type</h5>
+        <div class="row justify-content-start">
+            <div class="col-md-1">
+                <span class="badge rounded-pill text-bg-secondary">Baseline</span>
+            </div>
+            <div class="col-md-6">
+                Baseline data
+            </div>
+        </div>
+        <div class="row justify-content-start">
+            <div class="col-md-1">
+                <span class="badge rounded-pill text-bg-danger">Heat</span>
+            </div>
+            <div class="col-md-6">
+                Heat stimulation experiment data
+            </div>
+        </div>
+        <div class="row justify-content-start">
+            <div class="col-md-1">
+                <span class="badge rounded-pill text-bg-primary">NeuroPAL</span>
+            </div>
+            <div class="col-md-6">
+                Datasets with NeuroPAL (i.e. identities of the recorded neurons are available)
+            </div>
+        </div>
+        <div class="row justify-content-start">
+            <div class="col-md-1">
+                <span class="badge rounded-pill text-bg-success">GFP</span>
+            </div>
+            <div class="col-md-6">
+                Control data with the GFP expression strain
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-body mt-3">
+        <h5>Data Info - JSON</h5>
+        <p>
+            The datasets are offered in JSON format.
+            JSON is a standard data format, which can be imported in virtually any language.<br>
+            For information about the data structure, please check out the information file below.
+        </p>
+        <div class="btn-group-sm">
+            <a href="readme_data.md" type="button" class="btn btn-sm btn-primary" download=/static/activity/readme_data.md>JSON Info</a>
+        </div>
+    </div>
+
+    <div class="card card-body mt-3">
+        <h5>Datasets</h5>
+
+        <!-- control -->
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="tom-select-container">
+                <input style="width:300px" id="datasetSelector" autocomplete="off" type="text"
+                    class="form-control form-control-sm" placeholder="Filter with dataset type">
+            </div>
+            <div class="btn-group btn-group-sm">
+                <button id="clearSelector" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                    data-bs-title="Clear the selector">
+                    Clear
+                </button>
+                <button id="downloadSelected" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                    data-bs-title="Download selected">
+                    <i class="bi bi-download"></i>
+                </button>
+            </div>
+        </div>
+        <!-- table -->
+        <table id="datasetTable" data-pagination="true" data-height="600" data-page-size="25" data-unique-id="id">
+            <thead>
+                <tr>
+                    <th data-checkbox="true"></th>
+                    <th data-field="id" data-sortable="true">Dataset</th>
+                    <th data-field="n_neuron" data-sortable="true">N(recorded)</th>
+                    <th data-field="n_labeled" data-sortable="true">N(labeled)</th>
+                    <th data-field="dataset_type" data-sortable="true">Type</th>
+                    <th data-field="length" data-sortable="true">Length (min)</th>
+                    <th data-field="action" data-sortable="false"></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<!-- Embed JSON data using json_script -->
+<!-- {{ data|json_script:"data-data" }} -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/js/tom-select.complete.js"
+    integrity="sha512-4C/xXn1q4nHq8VQ7980qwUp2brDFW/22/0eqa8506uQUxCh06teLlJQZ/kcdmpd4AJkeKVnk9CPiYzhV6HOb0A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+    integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.0/bootstrap-table.min.js"
+    integrity="sha512-qrizL06k1LbZ9ESjZSmcnGcBLTg+0BugeICDjvAY3GxqvLF8Z12JvHt4xXn8FdoA4idU+12B9NsPWSgg5Pn4PQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.0/extensions/mobile/bootstrap-table-mobile.min.js"
+    integrity="sha512-SyuyxutFb1PZXKp12r2uOmtYk9p2ovpkAAwJ1rB7YJequ1GOBiirc/8MzV5KjgQONHR9/bmOZKSBumekM91wUw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script>const data = JSON.parse('{{ datasets|safe }}');</script>
+<script>const datasetTypes = JSON.parse('{{ dataset_types|safe }}');</script>
+
+<!-- <script>const data = JSON.parse(document.getElementById('data-data').textContent);</script> -->
+<script type="module" src="{% static 'activity/js/activity_common.js' %}" defer></script>
+<script type="module" src="{% static 'activity/js/views/dataset.js' %}" defer></script>
+{% endblock %}

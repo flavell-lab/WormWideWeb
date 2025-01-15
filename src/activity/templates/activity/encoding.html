@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Encoding - Summary Table{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.bootstrap5.min.css"
+    integrity="sha512-JSzoYh+JmOgeqypu22l1ePSza/E8xx3GHYWoY84eTdYKv7ojcA3XLundlKhNItzxgRJuvwW02ylrjslDUb3zrw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
+<link rel="stylesheet" href="{% static 'activity/css/encoding_table.css' %}">
+{% endblock %}
+
+{% block main %}
+<div class="container-lg mt-3">
+    <h4>Encoding Summary - CePNEM Model</h4>
+    <p>
+        Explore neuronal encodings of behaviors.<br>
+        We fit the model (the C. elegans probabilistic neural encoding model, or CePNEM) on the recorded neurons to determine beahavioral encoding.<br>
+        For more details, please refer to the paper.
+    </p>
+    <div class="card card-body">
+        <div>
+            {% include 'activity/encoding_table_setting.html' with prefix="summary" encChangeName="var" %}
+            {% include 'activity/encoding_table_legend.html' with prefix="summary" %}
+            {% include 'activity/encoding_table.html' with prefix="summary" encChangeName="var" %}
+        </div>
+    </div>
+</div>
+
+<div class="container-lg mt-3">
+    <h4>Neuron Encoding - CePNEM Model</h4>
+    <p>Explore neuronal encodings of a given neuron class across different datasets.</p>
+    <div class="card card-body">
+        <div>
+            {% include 'activity/encoding_table_setting.html' with prefix="neuron" encChangeName="var" %}
+            {% include 'activity/encoding_table_legend.html' with prefix="neuron" %}
+            {% include 'activity/encoding_table.html' with prefix="neuron" encChangeName="var" show_dataset="true" pagination="true" plotbutton="true" %}
+        </div>
+    </div>
+</div>
+
+<!-- Embed JSON data using json_script -->
+<!-- {{ data|json_script:"data-data" }} -->
+{% endblock %}
+
+{% block extra_js %}
+<!-- <script>const data = JSON.parse('{{ data|safe }}');</script> -->
+<!-- <script>const data = JSON.parse(document.getElementById('data-data').textContent);</script> -->
+<!-- <script type="module" src="{% static 'activity/js/activity_common.js' %}" defer></script> -->
+<!-- <script type="module" src="{% static 'activity/js/find_neuron.js' %}" defer></script> -->
+ <script type="module" src="{% static 'activity/js/views/encoding.js' %}" defer></script>
+{% endblock %}
