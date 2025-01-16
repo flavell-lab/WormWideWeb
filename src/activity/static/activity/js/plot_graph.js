@@ -12,12 +12,16 @@ export class PlotGraph {
         
         this.corNeuron = data.cor.neuron // neuron-pair correlation
 
+        console.log(data)
+
+        this.neuronToIdxNeuron = {}
         this.availableNeurons = []
         const datasetNeuronData = data.neuron
         Object.keys(datasetNeuronData).forEach(idx_neuron => {
             const label = datasetNeuronData[idx_neuron].label
-            if (label != "" && !label.includes("?")) {
-                this.availableNeurons.push(label)
+            if (label != "") {
+                this.neuronToIdxNeuron[label] = parseInt(idx_neuron)
+                if (!label.includes("?")) this.availableNeurons.push(label)
             }
         })
 
@@ -250,6 +254,7 @@ export class PlotGraph {
             const urlWormAtlas = `https://www.wormatlas.org/search_results.html?q=${cellClass}`
             const urlWormBase = `https://www.wormbase.org/species/all/anatomy_term/${cellClass}`
             const url3DViewer = `https://zhen-tools.com/#/3d-viewer?neurons=${cellClass}`
+
             // set the html to id=panel-content
             document.getElementById("info-panel-content").innerHTML = `<div class="p-2">
         <!-- Cell Information Section -->
@@ -270,19 +275,23 @@ export class PlotGraph {
         </div>
     
         <!-- this plot -->
-        <h5 class="info-section-title">Activity</h5>
-        <div class="mb-4">
-            <a href="${urlWWW}" class="btn btn-light w-100 external-link d-flex align-items-center justify-content-between mb-2">
-                <span>Plot activity</span>
-                <i class="bi bi-activity"></i>
-            </a>
+        <div id="sectionPlotActivityButton">
+            <h5 class="info-section-title">Activity</h5>
+            <div class="mb-4">
+                <p>Plot this neuron's activity</p>
+                <button id="addNeuron" class="btn btn-secondary w-100 external-link d-flex align-items-center justify-content-between mb-2">
+                    <span>Plot Activity</span>
+                    <i class="bi bi-activity"></i>
+                </button>
+            </div>
         </div>
 
         <!-- WormWideWeb Section -->
         <h5 class="info-section-title">WormWideWeb</h5>
         <div class="mb-4">
+            <p>Find the neural activity of this neuron in other datasets</p>
             <a href="${urlWWW}" class="btn btn-light w-100 external-link d-flex align-items-center justify-content-between mb-2">
-                <span>Find neural activity</span>
+                <span>Find Neural Activity</span>
                 <i class="bi bi-activity"></i>
             </a>
         </div>
@@ -305,6 +314,19 @@ export class PlotGraph {
         </div>
     </div>
     `
+        const addNeuronButton = document.getElementById("addNeuron")
+
+        if (nodeId in this.manifest) {
+            document.getElementById("sectionPlotActivityButton").classList.add("d-none")
+            // addNeuronButton.disabled = true
+        } else {
+            addNeuronButton.addEventListener('click', () => {
+                if (nodeId in this.neuronToIdxNeuron) {
+                    this.addNeuronActivity(this.neuronToIdxNeuron[nodeId])
+                    this.infoPanel.hidePanel()
+                }
+            });
+        }
     }
     
     /*
@@ -575,7 +597,5 @@ export class PlotGraph {
         this.nodeManager.adjustNodeLabelWrap()
         this.nodeManager.highlightNode(manifest.classes.concat(manifest.neurons), 5, "black")
         this.filterEdge()
-
-        console.log(this.jsonData)
     }
 }

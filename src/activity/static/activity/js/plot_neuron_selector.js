@@ -12,6 +12,9 @@ export class NeuronSelector {
         // Initialize the TomSelect selector
         this.selector = this.initSelector();
 
+        // on the connectome graph, add item when selecting a node
+        connectomeGraph.addNeuronActivity = (idxNeuron) => { this.selector.addItem(idxNeuron) };
+
         const neuronData = this.plotManager.data.neuron;
         if (!neuronData || typeof neuronData !== 'object') {
             console.warn('No neuron data available to populate the selector.');
