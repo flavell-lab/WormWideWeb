@@ -284,6 +284,14 @@ export class PlotGraph {
                     </div>
                 </div>
 
+                <!-- correlation -->
+                <div id="selectedCorrelation">
+                    <h5 class="info-section-title">Correlation</h5>
+                    <p>with connected neurons</p>
+                    <div class="mb-4" id="selectedCorrelationList">
+                    </div>
+                </div>
+
                 <!-- WormWideWeb Section -->
                 <h5 class="info-section-title">WormWideWeb</h5>
                 <div class="mb-4">
@@ -311,6 +319,8 @@ export class PlotGraph {
                     </a>
                 </div>
             </div>`
+
+        // add/remove plot button
         const activityButton = document.getElementById("activityButton")
         if (nodeId in this.neuronToIdxNeuron) { // neuron is labeled
             const activityButtonText = document.getElementById("activityButtonLabel")
@@ -333,6 +343,69 @@ export class PlotGraph {
             // hide the add/remove neuron activity section
             document.getElementById("sectionPlotActivityButton").classList.add("d-none")
         }
+
+        // correlation section
+        if (Object.prototype.hasOwnProperty.call(this.neuronToIdxNeuron, nodeId)) {
+            const corList = [];
+            const thisIdx = this.neuronToIdxNeuron[nodeId];
+          
+            this.jsonData.synapses.forEach((synapse) => {
+              // Only proceed if it's a valid, non-self synapse
+              if (
+                synapse.pre !== synapse.post &&
+                synapse.pre in this.neuronToIdxNeuron &&
+                synapse.post in this.neuronToIdxNeuron
+              ) {
+                // Check if current node is either the 'pre' or 'post'
+                if (synapse.pre === nodeId || synapse.post === nodeId) {
+                  // figure out idxPre / idxPost
+                  const idxPre = synapse.pre === nodeId
+                    ? thisIdx
+                    : this.neuronToIdxNeuron[synapse.pre];
+                  const idxPost = synapse.post === nodeId
+                    ? thisIdx
+                    : this.neuronToIdxNeuron[synapse.post];
+          
+                  // retrieve correlation (fallback to 0 if undefined)
+                  const corVal =
+                    this.corNeuron[`${idxPre},${idxPost}`] ??
+                    this.corNeuron[`${idxPost},${idxPre}`] ??
+                    0;
+          
+                  corList.push({
+                    pre: synapse.pre,
+                    post: synapse.post,
+                    cor: corVal,
+                    type: synapse.type,
+                  });
+                }
+              }
+            });
+          
+            // Sort by absolute correlation in descending order
+            corList.sort((a, b) => Math.abs(b.cor) - Math.abs(a.cor));
+          
+            // Build the HTML table
+            let textCor = "<table>";
+            corList.forEach((syn) => {
+              // Use arrow for chemical (“c”), or dash for electrical
+              const arrow = syn.type === "c" ? "→" : "—";
+              textCor += `
+                <tr>
+                  <td>${syn.pre}</td>
+                  <td>${arrow}</td>
+                  <td>${syn.post}</td>
+                  <td style="padding-left: 20px;">${syn.cor}</td>
+                </tr>`;
+            });
+            textCor += "</table>";
+          
+            // Inject into DOM
+            document.getElementById("selectedCorrelation").style.display = "block"
+            document.getElementById("selectedCorrelationList").innerHTML = textCor;
+        } else {
+            document.getElementById("selectedCorrelation").style.display = "none"
+        }  
     }
     
     /*
