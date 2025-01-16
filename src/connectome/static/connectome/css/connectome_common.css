@@ -11,6 +11,13 @@ body {
     padding: 1.0rem;
 }  
 
+#watermark {
+    position: absolute;
+    bottom: 10px;
+    left: 20px;
+    font-size: 12px;
+}
+
 #connectome-legend {
     position: absolute;
     top: 10px;

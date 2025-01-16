@@ -29,10 +29,15 @@ input[type="number"] {
   -moz-appearance: textfield; /* Remove spinners in Firefox */
 }
 
-
 /*
   Colorbar
 */
+#watermark-cbar {
+  position:relative;
+  bottom: 10px;
+  left: 10px;
+  font-size: 12px;
+}
 
 #connectome-legend-cbar{
   position: absolute;
