@@ -109,7 +109,7 @@ def get_encoding(request, dataset_id):
 
     return JsonResponse(get_dataset_encoding(dataset))
 
-# @cache_page(60*60*24*14)
+@cache_page(60*60*24*14)
 def get_behavior(request, dataset_id):
     dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
     data = {
