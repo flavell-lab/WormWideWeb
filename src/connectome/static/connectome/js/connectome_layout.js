@@ -65,9 +65,9 @@ export class GraphLayoutManager {
     }
 
     updateLayout() {
-        if (this.layoutSetting.config.name == "dagre" && this.graph.nodes(":visible").length > 50) {
+        if (this.layoutSetting.config.name == "dagre" && this.graph.nodes(":visible").length > 75) {
             // confirm from user to proceed
-            const proceed = confirm("This layout (dagre) smay take a while to render. It could also freeze your browser. Do you want to proceed?");
+            const proceed = confirm("This layout (dagre) might take a while to render. It could also freeze your browser. Do you want to proceed?");
             if (!proceed) {
                 return;
             }
