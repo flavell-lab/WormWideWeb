@@ -96,7 +96,10 @@ export class NeuronSelector {
             this.plotManager.plotNeuronSequential(value, optionData.name);
             
             // connectome plot
-            if (this.connectomeGraph) this.addLabelToConnectome(optionData)
+            if (this.connectomeGraph) {
+                this.addLabelToConnectome(optionData)
+                this.connectomeGraph.this.infoPanel.hidePanel()
+            }
         } else {
             console.warn(`Option data not found for value: ${value}`);
         }
