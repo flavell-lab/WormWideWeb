@@ -41,7 +41,7 @@ async function initPage() {
         Connectome
     */
     const isNeuroPAL = data.dataset_type.includes("neuropal");
-    const plotGraph  = isNeuroPAL ? new PlotGraph("connectome-graph", data.neuron) : null;
+    const plotGraph  = isNeuroPAL ? new PlotGraph("connectome-graph", data) : null;
     const datasetSelector = isNeuroPAL ? new DatasetSelector("select-dataset", plotGraph) : null;
 
     /*

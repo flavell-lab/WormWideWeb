@@ -7,10 +7,13 @@ import { InfoPanel } from '/static/core/js/info_panel.js'
 const edgeRequestURL = "/connectome/api/get-edges/"
 
 export class PlotGraph {
-    constructor(graphId, datasetNeuronData) {
+    constructor(graphId, data) {
         this.element = document.getElementById(graphId);
+        
+        this.corNeuron = data.cor.neuron // neuron-pair correlation
 
         this.availableNeurons = []
+        const datasetNeuronData = data.neuron
         Object.keys(datasetNeuronData).forEach(idx_neuron => {
             const label = datasetNeuronData[idx_neuron].label
             if (label != "" && !label.includes("?")) {
@@ -222,6 +225,7 @@ export class PlotGraph {
             });
         }
     
+        // this.corNeuron
         renderInfoPanel(node) {
             const nodeData = node.data();
             const nodeId = nodeData.id;
@@ -571,5 +575,7 @@ export class PlotGraph {
         this.nodeManager.adjustNodeLabelWrap()
         this.nodeManager.highlightNode(manifest.classes.concat(manifest.neurons), 5, "black")
         this.filterEdge()
+
+        console.log(this.jsonData)
     }
 }
