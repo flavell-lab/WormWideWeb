@@ -98,7 +98,7 @@ export class NeuronSelector {
             // connectome plot
             if (this.connectomeGraph) {
                 this.addLabelToConnectome(optionData)
-                this.connectomeGraph.this.infoPanel.hidePanel()
+                this.connectomeGraph.infoPanel.hidePanel()
             }
         } else {
             console.warn(`Option data not found for value: ${value}`);
@@ -117,6 +117,8 @@ export class NeuronSelector {
         if (this.connectomeGraph) {
             const optionData = this.selector.options[value];
             this.removeLabelFromConnectome(optionData)
+
+            this.connectomeGraph.infoPanel.hidePanel()
         }
     }
 }
