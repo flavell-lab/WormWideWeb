@@ -57,7 +57,7 @@ export class ConnectomeLegend {
             gcamp: [
                 { label: "In plot", color: this.colorScheme[2], shape: "circle" },
                 { label: "Available", color: this.colorScheme[5], shape: "circle" },
-                { label: "Not available", color: this.colorScheme[0], shape: "circle" },
+                { label: "Not labeled", color: this.colorScheme[0], shape: "circle" },
         ]
         };
 

@@ -12,8 +12,6 @@ export class PlotGraph {
         
         this.corNeuron = data.cor.neuron // neuron-pair correlation
 
-        console.log(data)
-
         this.neuronToIdxNeuron = {}
         this.availableNeurons = []
         const datasetNeuronData = data.neuron
@@ -257,75 +255,83 @@ export class PlotGraph {
 
             // set the html to id=panel-content
             document.getElementById("info-panel-content").innerHTML = `<div class="p-2">
-        <!-- Cell Information Section -->
-        <h5 class="info-section-title">Cell Information</h5>
-        <div class="mb-4">
-            <div class="info-row">
-                <span class="fw-medium">Cell</span>
-                <span class="text-muted" id="node-id">${cellClass}</span>
-            </div>
-            <div class="info-row">
-                <span class="fw-medium">Type</span>
-                <span class="text-muted" id="cell-type">${cellTypeFullStr}</span>
-            </div>
-            <div class="info-row">
-                <span class="fw-medium">Neurotransmitter</span>
-                <span class="text-muted" id="nt-type">${ntTypeFullStr}</span>
-            </div>
-        </div>
-    
-        <!-- this plot -->
-        <div id="sectionPlotActivityButton">
-            <h5 class="info-section-title">Activity</h5>
-            <div class="mb-4">
-                <p>Plot this neuron's activity</p>
-                <button id="addNeuron" class="btn btn-secondary w-100 external-link d-flex align-items-center justify-content-between mb-2">
-                    <span>Plot Activity</span>
-                    <i class="bi bi-activity"></i>
-                </button>
-            </div>
-        </div>
+            <!-- Cell Information Section -->
+            <h5 class="info-section-title">Cell Information</h5>
+                <div class="mb-4">
+                    <div class="info-row">
+                        <span class="fw-medium">Cell</span>
+                        <span class="text-muted" id="node-id">${cellClass}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="fw-medium">Type</span>
+                        <span class="text-muted" id="cell-type">${cellTypeFullStr}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="fw-medium">Neurotransmitter</span>
+                        <span class="text-muted" id="nt-type">${ntTypeFullStr}</span>
+                    </div>
+                </div>
+            
+                <!-- this plot -->
+                <div id="sectionPlotActivityButton">
+                    <h5 class="info-section-title">Activity</h5>
+                    <div class="mb-4">
+                        <p>Plot this neuron's activity</p>
+                        <button id="activityButton" class="btn btn-secondary w-100 external-link d-flex align-items-center justify-content-between mb-2">
+                            <span id="activityButtonLabel">Plot Activity</span>
+                            <i class="bi bi-activity"></i>
+                        </button>
+                    </div>
+                </div>
 
-        <!-- WormWideWeb Section -->
-        <h5 class="info-section-title">WormWideWeb</h5>
-        <div class="mb-4">
-            <p>Find the neural activity of this neuron in other datasets</p>
-            <a href="${urlWWW}" class="btn btn-light w-100 external-link d-flex align-items-center justify-content-between mb-2">
-                <span>Find Neural Activity</span>
-                <i class="bi bi-activity"></i>
-            </a>
-        </div>
-    
-        <!-- External Resources Section -->
-        <h5 class="info-section-title">External Resources</h5>
-        <div class="d-grid gap-2">
-            <a href="${urlWormAtlas}" target="_blank" rel="noopener noreferrer" class="btn btn-light d-flex align-items-center justify-content-between">
-                <span>WormAtlas</span>
-                <i class="bi bi-box-arrow-up-right"></i>
-            </a>
-            <a href="${urlWormBase}" target="_blank" rel="noopener noreferrer" class="btn btn-light d-flex align-items-center justify-content-between">
-                <span>WormBase</span>
-                <i class="bi bi-box-arrow-up-right"></i>
-            </a>
-            <a href="${url3DViewer}" target="_blank" rel="noopener noreferrer" class="btn btn-light d-flex align-items-center justify-content-between">
-                <span>3D View (Zhen lab)</span>
-                <i class="bi bi-box-arrow-up-right"></i>
-            </a>
-        </div>
-    </div>
-    `
-        const addNeuronButton = document.getElementById("addNeuron")
+                <!-- WormWideWeb Section -->
+                <h5 class="info-section-title">WormWideWeb</h5>
+                <div class="mb-4">
+                    <p>Find the neural activity of this neuron in other datasets</p>
+                    <a href="${urlWWW}" class="btn btn-light w-100 external-link d-flex align-items-center justify-content-between mb-2">
+                        <span>Find Neural Activity</span>
+                        <i class="bi bi-search"></i>
+                    </a>
+                </div>
+                
+                <!-- External Resources Section -->
+                <h5 class="info-section-title">External Resources</h5>
+                <div class="d-grid gap-2">
+                    <a href="${urlWormAtlas}" target="_blank" rel="noopener noreferrer" class="btn btn-light d-flex align-items-center justify-content-between">
+                        <span>WormAtlas</span>
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <a href="${urlWormBase}" target="_blank" rel="noopener noreferrer" class="btn btn-light d-flex align-items-center justify-content-between">
+                        <span>WormBase</span>
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <a href="${url3DViewer}" target="_blank" rel="noopener noreferrer" class="btn btn-light d-flex align-items-center justify-content-between">
+                        <span>3D View (Zhen Lab)</span>
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </div>
+            </div>`
+        const activityButton = document.getElementById("activityButton")
+        if (nodeId in this.neuronToIdxNeuron) { // neuron is labeled
+            const activityButtonText = document.getElementById("activityButtonLabel")
+            if (nodeId in this.manifest) {
+                activityButtonText.textContent = "Remove Activity"
+            } else {
+                activityButtonText.textContent = "Plot Activity"
+            }
 
-        if (nodeId in this.manifest) {
-            document.getElementById("sectionPlotActivityButton").classList.add("d-none")
-            // addNeuronButton.disabled = true
-        } else {
-            addNeuronButton.addEventListener('click', () => {
-                if (nodeId in this.neuronToIdxNeuron) {
+            activityButton.addEventListener('click', () => {
+                if (nodeId in this.manifest) {
+                    this.removeNeuronActivity(this.neuronToIdxNeuron[nodeId])
+                    this.infoPanel.hidePanel()
+                } else {
                     this.addNeuronActivity(this.neuronToIdxNeuron[nodeId])
                     this.infoPanel.hidePanel()
                 }
             });
+        } else {
+            // hide the add/remove neuron activity section
+            document.getElementById("sectionPlotActivityButton").classList.add("d-none")
         }
     }
     
