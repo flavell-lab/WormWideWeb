@@ -376,11 +376,18 @@ export class NodeManager {
      */
     removeAllNodeOutline() {
         this.graph.nodes().forEach(node => {
-            node.style({
-                'border-width': '0px', // Reset border width
-                'border-color': 'none' // Optional: Reset border color
-            });
-        });
+            // Read the current style values
+            const currentBorderWidth = node.style('border-width');
+            const currentBorderColor = node.style('border-color');
+          
+            // Check if those style properties are actually defined
+            if (currentBorderWidth !== undefined && currentBorderColor !== undefined) {
+              node.style({
+                'border-width': '0px',
+                'border-color': 'transparent'
+              });
+            }
+        });          
     }
 
     initUpdateButton() {

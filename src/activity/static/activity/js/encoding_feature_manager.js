@@ -130,44 +130,44 @@ export class EncodingFeatureManager {
     initializeSelector() {
         const options = [
             // --- Velocity encoding ---
-            { behavior: "v", value: "strength_v",    name: "Velocity strength",  desc: "Velocity encoding strength" },
-            { behavior: "v", value: "fwdness",       name: "Forwardness",        desc: "Forwardness" },
-            { behavior: "v", value: "fwd",           name: "Forward",            desc: "Forward tuning" },
-            { behavior: "v", value: "rev",           name: "Reverse",            desc: "Reverse tuning" },
-            { behavior: "v", value: "fwd_slope_p",   name: "Fwd slope +",        desc: "Positive slope during forward" },
-            { behavior: "v", value: "fwd_slope_n",   name: "Fwd slope -",        desc: "Negative slope during Forward" },
-            { behavior: "v", value: "rev_slope_p",   name: "Rev slope +",        desc: "Positive slope during reverse" },
-            { behavior: "v", value: "rev_slope_n",   name: "Rev slope -",        desc: "Negative slope during reverse" },
-            { behavior: "v", value: "slope_1",       name: "Fwd slope > Rev slope", desc: "Tuning curve slope greater during forward" },
-            { behavior: "v", value: "slope_2",       name: "Fwd slope < Rev slope", desc: "Tuning curve slope greater during reverse" },
+            { behavior: "v", value: "strength_v",    name: "Velocity strength",  desc: "Velocity encoding strength" , min:0, max:0.5, cmap: "Viridis"},
+            { behavior: "v", value: "fwdness",       name: "Forwardness",        desc: "Forwardness", min:-5, max:5, cmap: "PiYG" },
+            { behavior: "v", value: "fwd",           name: "Forward",            desc: "Forward tuning", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "v", value: "rev",           name: "Reverse",            desc: "Reverse tuning", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "v", value: "fwd_slope_p",   name: "Fwd slope +",        desc: "Positive slope during forward", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "v", value: "fwd_slope_n",   name: "Fwd slope -",        desc: "Negative slope during Forward", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "v", value: "rev_slope_p",   name: "Rev slope +",        desc: "Positive slope during reverse", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "v", value: "rev_slope_n",   name: "Rev slope -",        desc: "Negative slope during reverse", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "v", value: "slope_1",       name: "Fwd slope > Rev slope", desc: "Tuning curve slope greater during forward", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "v", value: "slope_2",       name: "Fwd slope < Rev slope", desc: "Tuning curve slope greater during reverse", min:0, max:0.8, cmap: "Viridis" },
           
             // --- Head curvature encoding ---
-            { behavior: "hc", value: "strength_hc",  name: "Head curvature strength",           desc: "Head curvature encoding strength" },
-            { behavior: "hc", value: "dorsalness",   name: "Dorsalness",         desc: "Dorsalness" },
-            { behavior: "hc", value: "dorsal",       name: "Dorsal",             desc: "Dorsal tuning" },
-            { behavior: "hc", value: "ventral",      name: "Ventral",            desc: "Ventral tuning" },
-            { behavior: "hc", value: "fd",           name: "Dorsal during F",    desc: "Dorsal during forward" },
-            { behavior: "hc", value: "fv",           name: "Ventral during F",   desc: "Ventral during forward" },
-            { behavior: "hc", value: "rd",           name: "Dorsal during R",    desc: "Dorsal during reverse" },
-            { behavior: "hc", value: "rv",           name: "Ventral during R",   desc: "Ventral during reverse" },
-            { behavior: "hc", value: "mdf",          name: "More D during F",    desc: "More dorsal during forward" },
-            { behavior: "hc", value: "mvf",          name: "More V during F",    desc: "More ventral during forward" },
+            { behavior: "hc", value: "strength_hc",  name: "Head curvature strength", desc: "Head curvature encoding strength", min:0, max:0.5, cmap: "Viridis"},
+            { behavior: "hc", value: "dorsalness",   name: "Dorsalness",         desc: "Dorsalness", min:-0.5, max:0.5, cmap: "PiYG"},
+            { behavior: "hc", value: "dorsal",       name: "Dorsal",             desc: "Dorsal tuning", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "hc", value: "ventral",      name: "Ventral",            desc: "Ventral tuning", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "hc", value: "fd",           name: "Dorsal during F",    desc: "Dorsal during forward", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "hc", value: "fv",           name: "Ventral during F",   desc: "Ventral during forward", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "hc", value: "rd",           name: "Dorsal during R",    desc: "Dorsal during reverse", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "hc", value: "rv",           name: "Ventral during R",   desc: "Ventral during reverse", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "hc", value: "mdf",          name: "More D during F",    desc: "More dorsal during forward", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "hc", value: "mvf",          name: "More V during F",    desc: "More ventral during forward", min:0, max:0.8, cmap: "Viridis" },
           
             // --- Feeding encoding ---
-            { behavior: "f", value: "strength_feeding",  name: "Feeding strength", desc: "Feeding encoding strength" },
-            { behavior: "f", value: "feedingness",       name: "Feedingness",    desc: "Feedingness" },
-            { behavior: "f", value: "act",               name: "Activated",      desc: "Feeding activated" },
-            { behavior: "f", value: "inh",               name: "Inhibited",      desc: "Feeding inhibited" },
-            { behavior: "f", value: "fa",                name: "Act during F",   desc: "Activated during forward" },
-            { behavior: "f", value: "fi",                name: "Inh during F",   desc: "Inhibited during forward" },
-            { behavior: "f", value: "ra",                name: "Act during R",   desc: "Activated during reverse" },
-            { behavior: "f", value: "ri",                name: "Inh during R",   desc: "Inhibited during reverse" },
-            { behavior: "f", value: "maf",               name: "More A during F",desc: "More feeding activated during forward" },
-            { behavior: "f", value: "mif",               name: "More I during F",desc: "More feeding inhibited during forward" },
+            { behavior: "f", value: "strength_feeding",  name: "Feeding strength", desc: "Feeding encoding strength", min:0, max:0.5, cmap: "Viridis"},
+            { behavior: "f", value: "feedingness",       name: "Feedingness",    desc: "Feedingness", min:-0.5, max:0.5, cmap: "PiYG"},
+            { behavior: "f", value: "act",               name: "Activated",      desc: "Feeding activated", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "f", value: "inh",               name: "Inhibited",      desc: "Feeding inhibited", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "f", value: "fa",                name: "Act during F",   desc: "Activated during forward", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "f", value: "fi",                name: "Inh during F",   desc: "Inhibited during forward", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "f", value: "ra",                name: "Act during R",   desc: "Activated during reverse", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "f", value: "ri",                name: "Inh during R",   desc: "Inhibited during reverse", min:0, max:0.8, cmap: "Viridis" },
+            { behavior: "f", value: "maf",               name: "More A during F",desc: "More feeding activated during forward", min:0, max:0.8, cmap: "Viridis"},
+            { behavior: "f", value: "mif",               name: "More I during F",desc: "More feeding inhibited during forward", min:0, max:0.8, cmap: "Viridis"},
           
             // --- Others ---
-            { behavior: "o", value: "ewma",         name: "Timescale", desc: "EWMA decay constant" },
-            { behavior: "o", value: "enc_change",   name: "Encoding variability", desc: "Encoding var" },
+            { behavior: "o", value: "ewma",         name: "Timescale", desc: "EWMA decay constant", min:0, max:30, cmap: "Viridis"},
+            { behavior: "o", value: "enc_change",   name: "Encoding variability", desc: "Encoding var", min:0, max:2.0, cmap: "Viridis"},
         ];
 
         this.selector = new TomSelect(this.selectorElement, {
@@ -187,7 +187,7 @@ export class EncodingFeatureManager {
             labelField: "name",
             searchField: ["name", "desc"],
             // sortField: [{ field: "name" }],
-            // onChange: (valuesStr) => this.selectorDatasetUpdate(valuesStr),
+            onChange: (valuesStr) => this.selectorUpdate(valuesStr),
             // // onClear: () => this.selectorDataset.close(),
             render: {
                 option: (data, escape) => {
@@ -197,6 +197,15 @@ export class EncodingFeatureManager {
                     `<div class="optgroup-header"><strong>${escape(data.label)}</strong></div>`,
             },
         });
+    }
+
+    selectorUpdate(valueStr) {
+        const selected = this.selector.options[valueStr]
+        this.vminInputElement.value = selected.min
+        this.vmaxInputElement.value = selected.max
+        this.colormapSelectElement.value = selected.cmap
+
+        document.getElementById("cbarLegendLabel").innerHTML = selected.name
     }
 
     async initTableDataSummary() {
