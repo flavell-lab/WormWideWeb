@@ -25,13 +25,15 @@ export class SelectorDatasetNeuron {
         }
 
         this.connectomeGraph = connectomeGraph;
+        this.keyPrefix = connectomeGraph.keyPrefix;
 
         // Initialize selectors
         this.initializeNeuronSelector();
         this.initializeDatasetSelector();
 
         // Retrieve previously selected dataset(s) from localStorage
-        const selectedDatasetStr = getLocalStr("connectome_selected_dataset_str", "witvliet_2020_8");
+
+        const selectedDatasetStr = getLocalStr(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_selected_dataset_str`, "witvliet_2020_8");
         this.selectorDataset.setValue(selectedDatasetStr.split(","));
         this.selectorDataset.refreshOptions();
     }
@@ -147,8 +149,8 @@ export class SelectorDatasetNeuron {
             this.selectorNeuronUpdate(data);
 
             // Save data to localStorage
-            setLocalJSON("neuron_data", data);
-            setLocalStr("connectome_selected_dataset_str", valuesStr);
+            setLocalJSON(`${this.keyPrefix ? this.keyPrefix + "_" : ""}neuron_data`, data);
+            setLocalStr(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_selected_dataset_str`, valuesStr);
 
             // Update the graph
             this.connectomeGraph.updateGraph();

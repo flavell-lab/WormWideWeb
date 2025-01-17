@@ -443,7 +443,7 @@ export class ConnectomeGraph {
             if (!this.graph.getElementById(neuron).length) {
                 this.graph.add({
                     group: 'nodes',
-                    data: getNeuronClassProperty(neuron)
+                    data: getNeuronClassProperty(neuron, `${this.keyPrefix ? this.keyPrefix + "_" : ""}neuron_data`)
                 });
             }
         });
