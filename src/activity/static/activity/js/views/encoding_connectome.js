@@ -1,4 +1,4 @@
-import { SelectorDatasetNeuron } from '/static/connectome/js/connectome_selector.js';
+import { SelectorDatasetNeuron, getNeuronClassProperty } from '/static/connectome/js/connectome_selector.js';
 import { ConnectomeGraph } from '/static/connectome/js/connectome_graph.js';
 import { EncodingFeatureManager } from '../encoding_feature_manager.js';
 import { setLocalStr } from '/static/core/js/utility.js'
@@ -17,11 +17,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const featureManager = new EncodingFeatureManager(connectomeGraph, "select-feature", matchData)
 
     function selectAllOptions(tomSelectInstance) {
-        // Collect all option values
-        const allValues = Object.keys(tomSelectInstance.options).map(
-          key => tomSelectInstance.options[key].value
-        );
-        // Update the selection
-        tomSelectInstance.setValue(allValues);
+        const listNeuronOptions = []
+        Object.keys(tomSelectInstance.options).forEach(optionKey => {
+          let option = tomSelectInstance.options[optionKey]
+          let cellType = getNeuronClassProperty(option.value, "encoding_neuron_data")["cell_type"]
+
+          if (option.value in featureManager.matchData) {
+            listNeuronOptions.push(option.value)
+          }
+        });
+
+        tomSelectInstance.setValue(listNeuronOptions);
     }
+
+    const buttonAllNeurons = document.getElementById("buttonAllNeurons")
+    buttonAllNeurons.addEventListener('click', () => {
+      selectAllOptions(selectorDatasetNeuron.selectorNeuron)
+    });
 });

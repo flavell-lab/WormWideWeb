@@ -30,6 +30,14 @@ export class EncodingFeatureManager {
         this.tableDataPromise.then(() => {
             this.initUpdateButton()
 
+            // initial encoding feature
+            const featureKey = "fwdness"
+            this.selector.setValue(featureKey)
+            document.getElementById("connectome-legend-cbar").classList.remove("d-none")
+            document.getElementById("connectome-legend").style.display = "none"
+            this.applyFeatureColor(featureKey) 
+
+            // callback for graph so that changing the nodes calls updating features
             this.graphParent.drawGraphCallback = () => {
                 
                 const featureKey = this.selector.getValue()
