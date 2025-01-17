@@ -133,23 +133,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         tour.on('complete', () => {
-            const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
-            const colorType = document.querySelector('.dropdown-item[data-value="type"]');
-            layoutConcentric.click();
-            colorType.click();
+        //     selectorDatasetNeuron.clearNeuronSelector();
 
-            selectorDatasetNeuron.clearNeuronSelector();
+        //     const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
+        //     const colorType = document.querySelector('.dropdown-item[data-value="type"]');
+        //     layoutConcentric.click();
+        //     colorType.click();
 
             setLocalBool("tour-connectome-general", false);
         });
 
         tour.on('cancel', () => {
-            const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
-            const colorType = document.querySelector('.dropdown-item[data-value="type"]');
-            layoutConcentric.click();
-            colorType.click();
+        //     selectorDatasetNeuron.clearNeuronSelector();
 
-            selectorDatasetNeuron.clearNeuronSelector();
+        //     const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
+        //     const colorType = document.querySelector('.dropdown-item[data-value="type"]');
+        //     layoutConcentric.click();
+        //     colorType.click();
 
             setLocalBool("tour-connectome-general", false);
         });
