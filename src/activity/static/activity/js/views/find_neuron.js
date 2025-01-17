@@ -53,18 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         neuronTable.downloadSelected();
     });
 
-    /*
-        Toasts
-    */
-    const toastHelpElement = document.getElementById("toastHelp")
-    const toastHelp = new bootstrap.Toast(toastHelpElement)
-    const toastShown = localStorage.getItem("activity_find_neuron_toastHelp");
-    if (!toastShown) {
-        toastHelp.show()
-        localStorage.setItem("activity_find_neuron_toastHelp", 'true'); // Set the flag
-    }
-
-
     // tooltips
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
