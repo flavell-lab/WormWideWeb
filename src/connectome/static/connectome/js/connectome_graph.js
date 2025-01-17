@@ -251,7 +251,7 @@ export class ConnectomeGraph {
     
     <!-- WormWideWeb Section -->
     <h5 class="info-section-title">WormWideWeb</h5>
-    <div class="mb-4">
+    <div class="mb-4" id="buttonFindActivity">
         <a href="${urlWWW}" class="btn btn-light w-100 external-link d-flex align-items-center justify-content-between mb-2">
             <span>Plot neural activity</span>
             <i class="bi bi-activity"></i>

@@ -13,8 +13,10 @@ export class NeuronSelector {
         this.selector = this.initSelector();
 
         // on the connectome graph, add item when selecting a node
-        connectomeGraph.addNeuronActivity = (idxNeuron) => { this.selector.addItem(idxNeuron) };
-        connectomeGraph.removeNeuronActivity = (idxNeuron) => { this.selector.removeItem(idxNeuron) };
+        if (connectomeGraph) {
+            connectomeGraph.addNeuronActivity = (idxNeuron) => { this.selector.addItem(idxNeuron) };
+            connectomeGraph.removeNeuronActivity = (idxNeuron) => { this.selector.removeItem(idxNeuron) };
+        }
 
         const neuronData = this.plotManager.data.neuron;
         if (!neuronData || typeof neuronData !== 'object') {
