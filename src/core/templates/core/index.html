@@ -28,13 +28,13 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6 mb-4 mb-lg-0">
-                <img src="/static/connectome/img/screenshot2.webp" alt="Network visualization" class="img-fluid feature-image">
+                <img src="/static/activity/img/example_activity_plot.webp" alt="Neural activity plot" class="img-fluid feature-image">
             </div>
             <div class="col-lg-6">
                 <h2 class="section-title">Neural Activity Data</h2>
                 <p class="section-description mb-4">
                     <b>Freely moving whole-brain calcium imaging datasets</b><br>
-                    We've collected dozens of freely behaving <i>C. elegans</i> whole-brain datasets. You can easily find the neural (GCaMP) traces of specific neuron classes, along with the info on how those neurons encode behavioral information—identified by the CePNEM model
+                    We've collected dozens of freely behaving <i>C. elegans</i> whole-brain datasets. You can easily find the neural (GCaMP) traces of specific neuron classes, along with the info on how those neurons encode behavioral information—identified by the CePNEM model.
                 </p>
                 <a href="{% url 'activity-index' %}" class="btn btn-custom">Explore</a>
             </div>
@@ -47,12 +47,12 @@
     <div class="container">
         <div class="row align-items-center flex-lg-row-reverse">
             <div class="col-lg-6 mb-4 mb-lg-0">
-                <img src="/static/connectome/img/screenshot2.webp" alt="Path analysis" class="img-fluid feature-image">
+                <img src="/static/activity/img/example_encoding_connectome.webp" alt="Encoding feature connectome plot" class="img-fluid feature-image">
             </div>
             <div class="col-lg-6">
-                <h2 class="section-title">Connectome</h2>
+                <h2 class="section-title">Encoding</h2>
                 <p class="section-description mb-4">
-                    Discover, analyze, and visualize the complete neural connectivity of C. elegans through our interactive platform
+                    Explore how each neuron class encodes various behaviors according to the CePNEM model.
                 </p>
                 <a href="{% url 'connectome-index' %}" class="btn btn-custom">Explore</a>
             </div>
@@ -65,14 +65,14 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6 mb-4 mb-lg-0">
-                <img src="/static/connectome/img/screenshot1.png" alt="Statistics dashboard" class="img-fluid feature-image">
+                <img src="/static/connectome/img/screenshot2.webp" alt="Path analysis" class="img-fluid feature-image">
             </div>
             <div class="col-lg-6">
-                <h2 class="section-title">Network Statistics</h2>
+                <h2 class="section-title">Connectome</h2>
                 <p class="section-description mb-4">
-                    Access comprehensive statistics about the connectome. View centrality measures, clustering coefficients, and other network metrics in an interactive dashboard.
+                    Discover, analyze, and visualize the complete neural connectivity of C. elegans through our interactive platform.
                 </p>
-                <a href="#" class="btn btn-custom">View Statistics</a>
+                <a href="{% url 'connectome-index' %}" class="btn btn-custom">Explore</a>
             </div>
         </div>
     </div>
