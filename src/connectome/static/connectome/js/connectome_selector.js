@@ -153,7 +153,12 @@ export class SelectorDatasetNeuron {
             setLocalStr(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_selected_dataset_str`, valuesStr);
 
             // Update the graph
-            this.connectomeGraph.updateGraph();
+            const neuronSelectedValues = this.selectorNeuron.getValue();
+            const neuronSelectedCount = Array.isArray(neuronSelectedValues) ? neuronSelectedValues.length : (neuronSelectedValues ? 1 : 0); // Handle single/multiple select
+
+            if (neuronSelectedCount > 0) {
+                this.connectomeGraph.updateGraph();
+            }
 
             // Execute callback if provided
             if (callback) {

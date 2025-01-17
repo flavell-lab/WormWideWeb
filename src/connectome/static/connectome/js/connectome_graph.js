@@ -391,6 +391,9 @@ export class ConnectomeGraph {
     
     debouncedUpdateGraph = debounce(this.updateGraph, 500); // 500ms delay
     updateGraph() {
+        // spinner
+        document.getElementById("spinnerStatus").style.display = "block"
+
         // reset graph
         this.graph.elements().remove();
         this.jsonData = null;
@@ -429,6 +432,7 @@ export class ConnectomeGraph {
             .then(data => {
                 this.jsonData = data;
                 this.drawGraph(data, nodeDict);
+                document.getElementById("spinnerStatus").style.display = "none"
             })
             .catch(error => console.error('Error:', error));
         }
