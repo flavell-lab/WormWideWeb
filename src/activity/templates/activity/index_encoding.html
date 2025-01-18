@@ -16,14 +16,14 @@
             </div> -->
             <div class="col-lg-6 mb-4">
                 <h1 class="display-3 fw-bold mb-4">Encoding</h1>
-                <p class="lead mb-5">Explore how each neuron class encodes various behaviors according to the CePNEM model.</p>
+                <p class="lead mb-5">Explore how each neuron class encodes various behaviors according to the CePNEM. We use the probabilistic models to explain how each neuron encodes quantitative behavioral features.</p>
                 <a href="#explore" class="btn btn-custom-primary btn-lg">Get Started</a>
             </div>
         </div>
     </div>
 </section>
 
-<!-- neuron class -->
+<!-- encoding table -->
 <section class="feature-section" id="explore">
     <div class="container">
         <div class="row align-items-center">
@@ -32,26 +32,26 @@
             </div>
             <div class="col-lg-6">
                 <h2 class="section-title">Encoding Dictionary</h2>
-                <p class="section-description mb-4">Explore how each neuron class encodes various behaviors according to the CePNEM model.</p>
+                <p class="section-description mb-4">Explore how each neuron class encodes various behaviors according to the CePNEM.</p>
                 <a href="{% url 'encoding-table' %}" class="btn btn-custom-primary">Explore Encoding</a>
             </div>
         </div>
     </div>
 </section>
 
-<!-- encoding    -->
-<!-- <section class="feature-section">
+<!-- encoding connectome -->
+<section class="feature-section">
     <div class="container">
         <div class="row align-items-center flex-lg-row-reverse">
             <div class="col-lg-6 mb-4 mb-lg-0">
-                <img src="/static/activity/img/example_index_encoding_table.webp" alt="Encoding table screenshot" class="img-fluid feature-image">
+                <img src="/static/activity/img/example_encoding_connectome.webp" alt="Encoding connectome screenshot" class="img-fluid feature-image">
             </div>
             <div class="col-lg-6">
-                <h2 class="section-title">Encoding Dictionary</h2>
-                <p class="section-description mb-4">Explore how each neuron class encodes various behaviors according to the CePNEM model</p>
-                <a href="{% url 'encoding-table' %}" class="btn btn-custom-primary">Explore Encoding</a>
+                <h2 class="section-title">Encoding Connectome</h2>
+                <p class="section-description mb-4">Explore the encoding data on the connectome. Overlay the encoding features on the connectome with color. Visually inspect how neurons encode behaviors and see how those neurons are wired.</p>
+                <a href="{% url 'encoding-connectome' %}" class="btn btn-custom-primary">Explore Encoding</a>
             </div>
         </div>
     </div>
-</section> -->
+</section>
 {% endblock %}
