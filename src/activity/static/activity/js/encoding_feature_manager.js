@@ -1,6 +1,6 @@
 import { getEncodingTable } from "./encoding_utility.js"
 import { roundNull } from '/static/core/js/utility.js'
-import { PLOTLY_COLOR_SCALES, getInterpolatedColor, createVerticalColorBar } from '/static/core/js/colorscale.js'
+import { PLOTLY_COLOR_SCALES, getInterpolatedColor, createVerticalColorBar, updateColorBar } from '/static/core/js/colorscale.js'
 
 export class EncodingFeatureManager {
     constructor(graphParent, selectorId, matchData) {
@@ -64,16 +64,6 @@ export class EncodingFeatureManager {
         })
     }
 
-    updateColorBar(colorMin, colorMid, colorMax) {
-        const colorScale = [
-            [0.0, colorMin],
-            [0.5, colorMid],
-            [1.0, colorMax]
-        ];
-
-        createVerticalColorBar("colorBar", colorScale);
-    }
-
     applyFeatureColor(featureKey) {
         const vmin = Number.parseFloat(this.vminInputElement.value)
         const vmax = Number.parseFloat(this.vmaxInputElement.value)
@@ -88,7 +78,7 @@ export class EncodingFeatureManager {
         const colorMin = this.getNodeColor(0, 0, 1, colormapName)
         const colorMid = this.getNodeColor(0.5, 0, 1, colormapName)
         const colorMax = this.getNodeColor(1, 0, 1, colormapName)
-        this.updateColorBar(colorMin, colorMid, colorMax)
+        updateColorBar(colorMin, colorMid, colorMax)
 
         nodes.forEach(node => {
             const id = node.data("id")
