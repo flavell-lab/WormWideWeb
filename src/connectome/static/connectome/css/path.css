@@ -17,38 +17,6 @@
   margin: 0 0 0 2px;
 }
 
-#connectome-legend {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: rgba(255, 255, 255, 1.0);
-  /* padding: 10px; */
-  padding: 1rem;
-  /* border: 1px solid #ccc; */
-  border-radius: 0.5rem;
-  /* border-radius: 0.75rem; */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
-  font-size: 12px;
-  z-index: 2;
-}
-
-/* Legend items */
-.legend-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-/* Legend color box */
-.legend-color {
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
-  border: 0.5px solid #999;
-}
-
-
 .path-item {
   display: flex;
   align-items: center;
@@ -56,6 +24,9 @@
   border-bottom: 1px solid #e6e6e6;
 }
 
+/*
+    Path
+*/
 /*   
   .path-item:hover {
     background-color: #f0f0f0; 

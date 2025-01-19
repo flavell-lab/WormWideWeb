@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="{% static 'activity/css/explore.css' %}">
 <link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
 <link rel="stylesheet" href="{% static 'activity/css/encoding_table.css' %}">
+<link rel="stylesheet" href="{% static 'connectome/css/connectome_common.css' %}">
 {% endblock %}
 
 {% load dataset_badge %}
@@ -328,7 +329,23 @@
         <div id="connectome-legend">
           <div id="connectome-legend-items"></div>
         </div>
-        <div id="watermark">Connectome data: Witvliet et al. 2021</div>
+    
+        <div id="connectome-legend-cbar" class="legend-container-vertical d-none">
+            <!--  text label -->
+            <div class="vertical-label"><span id="cbarLegendLabel">Correlation w/ the<br>selected neuron</span></div>
+    
+            <!-- The vertical color bar -->
+            <div id="colorBar" class="colorbar-vertical"></div>
+    
+            <!-- Tick labels along the bar -->
+            <div class="ticks-vertical">
+                <span id="tick-max">Max</span>
+                <span id="tick-mid">Mid</span>
+                <span id="tick-min">Min</span>
+            </div>
+        </div>
+  
+        <div id="watermark">Connectome data: Witvliet et al. 2021</div>  
       </div>
     </div> <!-- connectome column-->
   </div> <!-- row -->

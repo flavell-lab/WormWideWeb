@@ -18,6 +18,9 @@ body {
     font-size: 12px;
 }
 
+/*
+    Legend
+*/
 #connectome-legend {
     position: absolute;
     top: 10px;
@@ -32,6 +35,22 @@ body {
     font-family: Arial, sans-serif;
     font-size: 12px;
     z-index: 2;
+}
+
+#connectome-legend-cbar {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    background-color: rgba(255, 255, 255, 1.0);
+    /* padding: 10px; */
+    padding: 1rem;
+    /* border: 1px solid #ccc; */
+    border-radius: 0.5rem;
+    /* border-radius: 0.75rem; */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* font-family: Arial, sans-serif; */
+    font-size: 12px;
+    z-index: 1;
 }
 
 /* Legend items */
@@ -49,66 +68,68 @@ body {
     border: 0.5px solid #999;
 }
 
-
-/* 
-    tom select
+/*
+    Colorbar legend
 */
-/* Main wrapper */
-.ts-wrapper {
-    border-radius: 0.5rem;
-    /* box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); */
-    border: none;
+/* Container to hold the bar + vertical ticks side by side */
+.legend-container-vertical {
+    display: flex;
+    /* horizontal layout: bar on the left, labels on the right */
+    align-items: center;
+    /* ensures items align to the container's height */
+    margin: 20px;
+    /* font-family: sans-serif; */
 }
 
-/* Input field */
-.ts-wrapper .ts-control {
-    border-radius: 0.5rem;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    padding: 0.5rem;
-    min-height: 40px;
-    background: white;
+/* The vertical color bar */
+.colorbar-vertical {
+    width: 10px;
+    /* narrower, since it's a vertical bar */
+    height: 120px;
+    /* taller dimension for the bar */
+    border: 1px solid #ccc;
+    margin-right: 10px;
+    /* space between the bar and the labels */
+    box-sizing: border-box;
 }
 
-/* Dropdown menu */
-.ts-wrapper .ts-dropdown {
-    border-radius: 0.5rem;
-    margin-top: 4px;
-    border: none;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    padding: 0.5rem;
+/* Ticks stacked vertically */
+.ticks-vertical {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    /* spread items from top to bottom */
+    height: 120px;
+    /* match the bar's height */
 }
 
-/* Selected items */
-.ts-wrapper .ts-control .item {
-    background: #f0f0f0;
-    border-radius: 0.25rem;
-    padding: 2px 8px;
-    margin: 2px 4px 2px 0;
+/* Slight styling for the labels */
+.ticks-vertical span {
+    font-size: 0.85rem;
+    color: #333;
+    text-align: left;
+    /* or right/center as you prefer */
 }
 
-/* Dropdown items */
-.ts-wrapper .ts-dropdown .option {
-    padding: 0.5rem;
-    border-radius: 0.25rem;
+.vertical-label {
+    writing-mode: tb-rl;
+    transform: rotate(-180deg);
+    text-orientation: sideways;
+    /* or upright, depending on how you want the text to flow */
+    margin: 0;
+    padding: 0;
 }
 
-.ts-wrapper .ts-dropdown .active {
-    background: rgba(0, 0, 0, 0.05);
+/*
+    Spinner control
+*/
+/* Remove spinner buttons for number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-/* Remove button */
-.ts-wrapper .ts-control .item .remove {
-    /* border-radius: 50%; */
-    padding: 0 4px;
-}
-
-/* Focus state */
-.ts-wrapper.focus .ts-control {
-    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-    border-color: rgba(0, 0, 0, 0.2);
-}
-
-/* Placeholder */
-.ts-wrapper .ts-control input::placeholder {
-    color: #999;
+input[type="number"] {
+  -moz-appearance: textfield; /* Remove spinners in Firefox */
 }

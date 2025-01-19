@@ -11,48 +11,6 @@
 } 
 
 /* 
-    Legend
-*/
-
-#watermark {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    font-size: 12px;
-}
-
-#connectome-legend {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(255, 255, 255, 1.0);
-    /* padding: 10px; */
-    padding: 1rem;
-    /* border: 1px solid #ccc; */
-    border-radius: 0.5rem;
-    /* border-radius: 0.75rem; */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    z-index: 2;
-}
-
-/* Legend items */
-.legend-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 6px;
-}
-
-/* Legend color box */
-.legend-color {
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
-    border: 0.5px solid #999;
-}
-
-/* 
     Hide connectome column
 */
 .hidden-forced {
@@ -63,19 +21,4 @@
     font-weight: normal;
     opacity: 0.5;
     margin: 0 0 0 2px;
-}
-
-/*
-    Connectome control
-*/
-/* Remove spinner buttons for number inputs */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Spinner style */
-input[type="number"] {
-  -moz-appearance: textfield; /* Remove spinners in Firefox */
 }
