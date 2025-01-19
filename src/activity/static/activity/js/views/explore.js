@@ -218,11 +218,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'top'
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ],
         });
-
 
         tour.addStep({
             id: 'step-2.5-subplot-neuron',
@@ -232,7 +230,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'right'
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ],
         });
@@ -245,7 +242,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'right'
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ],
         });
@@ -258,7 +254,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'right'
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ],
         });
@@ -271,7 +266,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'right'
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ],
         });
@@ -284,7 +278,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'top'
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 tourConnectome ? { text: 'Next', action: tour.next } : { text: 'Complete', action: tour.complete } 
             ],
         });
@@ -300,7 +293,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'right'
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ],
         });
@@ -313,7 +305,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'right'
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ],
             beforeShowPromise: () => {          
@@ -331,7 +322,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'right'
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ],
             beforeShowPromise: () => {          
@@ -340,10 +330,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return Promise.resolve();
             },
         });
-    }
 
-    // const tourActivity = getLocalBool("tour-activity-explore", true)
-    // const tourConnectome = getLocalBool("tour-activity-explore-connectome", true)
+        tour.addStep({
+            id: 'step-node-select',
+            text: "Select a neuron/node to highlght its connections.<br><br>Each available neuron's correlation coefficient with the selected neuron is displayed in color.",
+            attachTo: {
+                element: '#connectome-graph',
+                on: 'top'
+            },
+            buttons: [
+                { text: 'Next', action: tour.next }
+            ],
+            beforeShowPromise: () => {
+                const nodeId = Object.keys(plotGraph.manifest)[0]
+                const node = plotGraph.graph.getElementById(nodeId); // Get the node by ID
+                node.trigger('select');
+                return Promise.resolve();
+            }
+        });
+
+        tour.addStep({
+            id: 'step-node-info',
+            text: 'Node info is displayed here, along with the links to select external resources.',
+            attachTo: {
+                element: '.info-panel',
+                on: 'right'
+            },
+            buttons: [
+                { text: 'Next', action: tour.next }
+            ],
+            beforeShowPromise: () => {
+                const nodeId = Object.keys(plotGraph.manifest)[0]
+                const node = plotGraph.graph.getElementById(nodeId); // Get the node by ID
+                node.trigger('tap');
+                return Promise.resolve();
+            }
+        });
+    }
 
     if (tourActivity || tourConnectome) {
         tour.on('complete', () => {
@@ -357,7 +380,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.scrollTo(0, 0);
 
             if (tourActivity) setLocalBool("tour-activity-explore", false)
-            if (tourConnectome) setLocalBool("tour-activity-explore-connectome", false)
+            if (tourConnectome) {
+                setLocalBool("tour-activity-explore-connectome", false)
+                const nodeId = Object.keys(plotGraph.manifest)[0]
+                const node = plotGraph.graph.getElementById(nodeId);
+                node.trigger('unselect');
+                plotGraph.infoPanel.hidePanel();
+            }
         });
 
         tour.on('cancel', () => {
@@ -371,7 +400,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.scrollTo(0, 0);
             
             if (tourActivity) setLocalBool("tour-activity-explore", false)
-            if (tourConnectome) setLocalBool("tour-activity-explore-connectome", false)
+            if (tourConnectome) {
+                setLocalBool("tour-activity-explore-connectome", false)
+                const nodeId = Object.keys(plotGraph.manifest)[0]
+                const node = plotGraph.graph.getElementById(nodeId);
+                node.trigger('unselect');
+                plotGraph.infoPanel.hidePanel();
+            }
         });
 
         tour.start()
