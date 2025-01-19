@@ -84,14 +84,15 @@ export class EncodingFeatureManager {
         const nodeIdData = []
 
         const nodes = this.graphParent.graph.nodes()
+
+        const colorMin = this.getNodeColor(0, 0, 1, colormapName)
+        const colorMid = this.getNodeColor(0.5, 0, 1, colormapName)
+        const colorMax = this.getNodeColor(1, 0, 1, colormapName)
+        this.updateColorBar(colorMin, colorMid, colorMax)
+
         nodes.forEach(node => {
             const id = node.data("id")
             const cellType = node.data("cell_type")
-
-            const colorMin = this.getNodeColor(0, 0, 1, colormapName)
-            const colorMid = this.getNodeColor(0.5, 0, 1, colormapName)
-            const colorMax = this.getNodeColor(1, 0, 1, colormapName)
-            this.updateColorBar(colorMin, colorMid, colorMax)
 
             document.getElementById('tick-max').textContent = vmax.toFixed(3);
             document.getElementById('tick-mid').textContent = ((vmax+vmin)/2).toFixed(3);
