@@ -311,6 +311,7 @@ export class PlotGraph {
             const urlWormAtlas = `https://www.wormatlas.org/search_results.html?q=${cellClass}`
             const urlWormBase = `https://www.wormbase.org/species/all/anatomy_term/${cellClass}`
             const url3DViewer = `https://zhen-tools.com/#/3d-viewer?neurons=${cellClass}`
+            const urlFunctional = `https://funconn.princeton.edu/?in=${cellClass}`
 
             // set the html to id=panel-content
             document.getElementById("info-panel-content").innerHTML = `<div class="p-2">
@@ -374,6 +375,10 @@ export class PlotGraph {
                     </a>
                     <a href="${url3DViewer}" target="_blank" rel="noopener noreferrer" class="btn btn-light d-flex align-items-center justify-content-between">
                         <span>3D View (Zhen Lab)</span>
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <a href="${urlFunctional}" target="_blank" rel="noopener noreferrer" class="btn btn-light d-flex align-items-center justify-content-between">
+                        <span>Functional Connectivity (Leifer Lab)</span>
                         <i class="bi bi-box-arrow-up-right"></i>
                     </a>
                 </div>
