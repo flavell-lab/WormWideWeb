@@ -1,6 +1,6 @@
 import { getEncodingTable } from "./encoding_utility.js"
 import { roundNull } from '/static/core/js/utility.js'
-import { PLOTLY_COLOR_SCALES, getInterpolatedColor, createVerticalColorBar, updateColorBar } from '/static/core/js/colorscale.js'
+import { PLOTLY_COLOR_SCALES, getNodeColor, updateColorBar } from '/static/core/js/colorscale.js'
 
 export class EncodingFeatureManager {
     constructor(graphParent, selectorId, matchData) {
@@ -75,24 +75,23 @@ export class EncodingFeatureManager {
 
         const nodes = this.graphParent.graph.nodes()
 
-        const colorMin = this.getNodeColor(0, 0, 1, colormapName)
-        const colorMid = this.getNodeColor(0.5, 0, 1, colormapName)
-        const colorMax = this.getNodeColor(1, 0, 1, colormapName)
-        updateColorBar(colorMin, colorMid, colorMax)
+        const colorMin = getNodeColor(0, 0, 1, colormapName)
+        const colorMid = getNodeColor(0.5, 0, 1, colormapName)
+        const colorMax = getNodeColor(1, 0, 1, colormapName)
+        updateColorBar(colorMin, colorMid, colorMax, "colorBar")
+        document.getElementById('tick-max').textContent = vmax.toFixed(3);
+        document.getElementById('tick-mid').textContent = ((vmax+vmin)/2).toFixed(3);
+        document.getElementById('tick-min').textContent = vmin.toFixed(3);
 
         nodes.forEach(node => {
             const id = node.data("id")
             const cellType = node.data("cell_type")
 
-            document.getElementById('tick-max').textContent = vmax.toFixed(3);
-            document.getElementById('tick-mid').textContent = ((vmax+vmin)/2).toFixed(3);
-            document.getElementById('tick-min').textContent = vmin.toFixed(3);
-
             if (id in this.matchData) {
                 const matchKey = this.matchData[id]
                 const value = this.encodingData[matchKey][featureKey]
 
-                const color = value ? this.getNodeColor(value, vmin, vmax, colormapName) : "rgb(255,255,255)"
+                const color = value ? getNodeColor(value, vmin, vmax, colormapName) : "rgb(255,255,255)"
 
                 if (["u", "b"].includes(cellType)) {
                     colorBackground[id] = color;
@@ -116,14 +115,6 @@ export class EncodingFeatureManager {
         this.graphParent.nodeManager.setNodePieChartColors(colorPie);
         this.graphParent.nodeManager.setNodeColors(colorBackground);
         this.graphParent.nodeManager.adjustNodeLabelColor(colorPie, colorBackground)
-    }
-
-    getNodeColor(value, vmin, vmax, colormapName) {
-        const normalized = (value - vmin) / (vmax - vmin)
-        const ratio = Math.max(0, Math.min(1, normalized))
-        const color = getInterpolatedColor(PLOTLY_COLOR_SCALES[colormapName], ratio);
-
-        return color;
     }
 
     initializeSelector() {
