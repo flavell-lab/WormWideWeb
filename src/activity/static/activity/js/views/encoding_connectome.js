@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectorDatasetNeuron = new SelectorDatasetNeuron("select-dataset", "select-neuron", connectomeGraph);
     const featureManager = new EncodingFeatureManager(connectomeGraph, "select-feature", matchData)
 
-    function selectAllOptions(tomSelectInstance) {
+    function selectAllLabeledNeuron(tomSelectInstance) {
         const listNeuronOptions = []
         Object.keys(tomSelectInstance.options).forEach(optionKey => {
           let option = tomSelectInstance.options[optionKey]
@@ -32,6 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const buttonAllNeurons = document.getElementById("buttonAllNeurons")
     buttonAllNeurons.addEventListener('click', () => {
-      selectAllOptions(selectorDatasetNeuron.selectorNeuron)
+      selectAllLabeledNeuron(selectorDatasetNeuron.selectorNeuron)
     });
 });
