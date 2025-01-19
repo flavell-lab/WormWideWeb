@@ -435,6 +435,8 @@ export class ConnectomeGraph {
                 document.getElementById("spinnerStatus").style.display = "none"
             })
             .catch(error => console.error('Error:', error));
+        } else {
+            document.getElementById("spinnerStatus").style.display = "none"
         }
     }
 
