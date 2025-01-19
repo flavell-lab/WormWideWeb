@@ -9,6 +9,9 @@
 <link rel="stylesheet" href="{% static 'activity/css/encoding_connectome.css' %}">
 <link rel="stylesheet" href="{% static 'connectome/css/connectome_common.css' %}">
 <link rel="stylesheet" href="{% static 'connectome/css/connectome_selector.css' %}">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@14.4.0/dist/css/shepherd.css"/>  
+<link rel="stylesheet" href="{% static 'css/shepard_custom.css' %}"> 
 {% endblock %}
 
 {% block main %}
@@ -30,7 +33,7 @@
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
             <!-- First group of buttons -->
             <div class="dropdown btn-group btn-group-sm">
-                <button class="btn btn-secondary btn-sm" type="button" data-bs-toggle="modal"
+                <button id="encodingFeatureButton" class="btn btn-secondary btn-sm" type="button" data-bs-toggle="modal"
                     data-bs-target="#modalFeature" data-bs-toggle="tooltip"
                     title="Change which encoding feature to display">
                     Encoding Feature
@@ -53,7 +56,7 @@
                 </button>
 
                 <!-- Layout dropdown -->
-                <div class="dropdown btn-group btn-group-sm">
+                <div id="dropdownLayoutContainer" class="dropdown btn-group btn-group-sm">
                     <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="dropdownLayout"
                         data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select layout">
                         Layout
@@ -124,8 +127,9 @@
             </div>
   
         </div>
-
-        <input id="select-neuron" autocomplete="off" placeholder="Select neuron(s) or neuron class(es)">
+        <div id="selectNeuronContainer">
+            <input id="select-neuron" autocomplete="off" placeholder="Select neuron(s) or neuron class(es)">
+        </div>
     </div> <!-- menu bar -->
 
     <!-- collapse: dataset -->
