@@ -3,6 +3,7 @@ import { NodeManager } from '/static/connectome/js/connectome_node.js'
 import { GraphLayoutManager, NodePositionManager } from '/static/connectome/js/connectome_layout.js'
 import { sumArray, isNodeRectangle, initSwitch, debounce, getCSRFToken, initSlider, setLocalInt, getLocalInt, getLocalBool } from '/static/core/js/utility.js'
 import { InfoPanel } from '/static/core/js/info_panel.js'
+import { PLOTLY_COLOR_SCALES, getNodeColor, updateColorBar } from '/static/core/js/colorscale.js'
 
 const edgeRequestURL = "/connectome/api/get-edges/"
 
@@ -86,6 +87,13 @@ export class PlotGraph {
 
         // update graph function
         this.element.updateGraph = this.debouncedUpdateGraph;
+
+        // colorbar
+        const colormapName = "PiYG"
+        const colorMin = getNodeColor(-1, -1, 1, colormapName)
+        const colorMid = getNodeColor(0, -1, 1, colormapName)
+        const colorMax = getNodeColor(1, -1, 1, colormapName)
+        updateColorBar(colorMin, colorMid, colorMax, "colorBar")
     }
 
     initGraph() {
@@ -134,6 +142,50 @@ export class PlotGraph {
                     'opacity': 1,
                     'z-index': 5, // Bring connected nodes forward
                 });
+
+                const selectedNodeData = selectedNode.data();
+                const selectedNodeId = selectedNodeData.id;
+
+                const colormapName = "PiYG"
+                const idxSelected = this.neuronToIdxNeuron[selectedNodeId]
+                const vmin = -1;
+                const vmax = 1;
+
+                const colorBackground = {}
+                const colorPie = {}
+
+                connectedNodes.forEach((node)=>{
+                    const nodeData = node.data();
+                    const nodeId = nodeData.id;
+                    const cellType = nodeData["cell_type"]
+    
+                    if (nodeId in this.neuronToIdxNeuron && nodeId !== selectedNodeData.id) {
+                        const idxTarget = this.neuronToIdxNeuron[nodeId]                            
+                        const value = this.corNeuron[`${idxSelected},${idxTarget}`] ??
+                            this.corNeuron[`${idxTarget},${idxSelected}`] ?? null;
+
+                        const color = value ? getNodeColor(value, vmin, vmax, colormapName) : "rgb(221,221,221)"
+                        if (["u", "b"].includes(cellType)) {
+                            colorBackground[nodeId] = color;
+                        } else {
+                            colorPie[nodeId] = [color];
+                        }
+                    } else {
+                        if (["u", "b"].includes(cellType)) {
+                            colorBackground[nodeId] = "rgb(221,221,221)";
+                        } else {
+                            colorPie[nodeId] = ["rgb(221,221,221)"];
+                        }
+                    }
+                })
+
+                this.nodeManager.setNodePieChartColors(colorPie);
+                this.nodeManager.setNodeColors(colorBackground);
+                this.nodeManager.adjustNodeLabelColor(colorPie, colorBackground)
+
+                // legend
+                document.getElementById("connectome-legend").classList.add("d-none")
+                document.getElementById("connectome-legend-cbar").classList.remove("d-none")
             });
             
             // Reset styles on unselect
@@ -143,6 +195,13 @@ export class PlotGraph {
                     'opacity': 1,
                     'z-index': 1, // Reset z-index to default
                 });
+
+                this.nodeManager.updateNodeColorSet()
+                this.nodeManager.adjustNodeLabelWrap()
+
+                // legend
+                document.getElementById("connectome-legend").classList.remove("d-none")
+                document.getElementById("connectome-legend-cbar").classList.add("d-none")                
             });            
     
             //

@@ -69,7 +69,7 @@ export class NodeManager {
 
     getColorDataset(type, cellType) {
         const colorDict = {
-            'plot': [this.colorScheme[2]],
+            'plot': [this.colorScheme[4]],
             'available': [this.colorScheme[5]],
             'notavailable': [this.colorScheme[0]],
         };

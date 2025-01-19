@@ -55,7 +55,7 @@ export class ConnectomeLegend {
                 { label: "Non-neuron", color: "rgb(75,75,75)", shape: "square" }
             ],
             gcamp: [
-                { label: "In plot", color: this.colorScheme[2], shape: "circle" },
+                { label: "In plot", color: this.colorScheme[4], shape: "circle" },
                 { label: "Available", color: this.colorScheme[5], shape: "circle" },
                 { label: "Not labeled", color: this.colorScheme[0], shape: "circle" },
         ]
