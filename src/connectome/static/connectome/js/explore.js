@@ -1,7 +1,7 @@
 import Shepherd from 'https://cdn.jsdelivr.net/npm/shepherd.js@13.0.0/dist/esm/shepherd.mjs';
 import { SelectorDatasetNeuron } from './connectome_selector.js';
 import { ConnectomeGraph } from './connectome_graph.js';
-import { setLocalBool, getLocalBool } from "/static/core/js/utility.js"
+import { setLocalBool, getLocalBool, toggleFullscreen, handleFullscreenElement } from "/static/core/js/utility.js"
 
 document.addEventListener('DOMContentLoaded', () => {
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
@@ -9,6 +9,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const connectomeGraph = new ConnectomeGraph("connectome-graph", null);
     const selectorDatasetNeuron = new SelectorDatasetNeuron("select-dataset", "select-neuron", connectomeGraph, true);
+
+    // button
+    const connectomeContainer = document.getElementById("connectome-container");
+    const buttonConnectomeFullscreen = document.getElementById("buttonConnectomeFullscreen");
+    const connectomeFullscreenIcon = document.getElementById("connectomeFullscreenIcon");
+    const connectomeFullscreenLabel = document.getElementById("connectomeFullscreenLabel");
+    buttonConnectomeFullscreen.addEventListener("click", () => {
+        toggleFullscreen(connectomeContainer);
+    });
+
+    const fullscreenMap = {
+        "connectome-container": {
+            icon: connectomeFullscreenIcon,
+            label: connectomeFullscreenLabel,
+            // connectome doesn't need a special callback, so we can omit it
+        }
+    };
+
+    document.addEventListener("fullscreenchange", () => {
+        handleFullscreenElement(fullscreenMap, "connectome-container");
+    });
 
     if (getLocalBool("tour-connectome-general", true)) {
         const tour = new Shepherd.Tour({
@@ -42,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { text: 'Next', action: tour.next }
             ],
             beforeShowPromise: () => {
-                selectorDatasetNeuron.selectorNeuron.addItems(["AVA","RIM"])
+                selectorDatasetNeuron.selectorNeuron.addItems(["AVA", "RIM"])
                 return Promise.resolve();
             }
         });
@@ -104,11 +125,11 @@ document.addEventListener('DOMContentLoaded', () => {
             buttons: [
                 { text: 'Next', action: tour.next }
             ],
-            beforeShowPromise: () => {     
+            beforeShowPromise: () => {
                 const node = connectomeGraph.graph.getElementById("AVA"); // Get the node by ID
                 node.trigger('unselect');
                 connectomeGraph.infoPanel.hidePanel();
-     
+
                 const layoutGrid = document.querySelector('.dropdown-item[data-value="grid"]');
                 layoutGrid.click();
                 return Promise.resolve();
@@ -125,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             buttons: [
                 { text: 'Complete', action: tour.complete }
             ],
-            beforeShowPromise: () => {          
+            beforeShowPromise: () => {
                 const colorType = document.querySelector('.dropdown-item[data-value="nt"]');
                 colorType.click();
                 return Promise.resolve();
@@ -133,23 +154,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         tour.on('complete', () => {
-        //     selectorDatasetNeuron.clearNeuronSelector();
+            //     selectorDatasetNeuron.clearNeuronSelector();
 
-        //     const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
-        //     const colorType = document.querySelector('.dropdown-item[data-value="type"]');
-        //     layoutConcentric.click();
-        //     colorType.click();
+            //     const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
+            //     const colorType = document.querySelector('.dropdown-item[data-value="type"]');
+            //     layoutConcentric.click();
+            //     colorType.click();
 
             setLocalBool("tour-connectome-general", false);
         });
 
         tour.on('cancel', () => {
-        //     selectorDatasetNeuron.clearNeuronSelector();
+            //     selectorDatasetNeuron.clearNeuronSelector();
 
-        //     const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
-        //     const colorType = document.querySelector('.dropdown-item[data-value="type"]');
-        //     layoutConcentric.click();
-        //     colorType.click();
+            //     const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
+            //     const colorType = document.querySelector('.dropdown-item[data-value="type"]');
+            //     layoutConcentric.click();
+            //     colorType.click();
 
             setLocalBool("tour-connectome-general", false);
         });

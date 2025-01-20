@@ -16,6 +16,7 @@
 {% endblock %}
 
 {% block main %}
+<div id="connectome-container">
 <div class="container-xxl mt-3">
   <!-- Title -->
   <!-- <h4>Connectome - Explore</h4> -->
@@ -89,6 +90,12 @@
         <button id="downloadEdgeJSON" class="btn btn-light btn-sm" type="button" data-bs-toggle="tooltip"
           title="Download the currently plotted data" aria-label="Download JSON">
           <i class="bi bi-download" aria-hidden="true"></i>
+        </button>
+
+        <!-- Fullscreen -->
+        <button id="buttonConnectomeFullscreen" class="btn btn-light" data-bs-toggle="tooltip"
+          data-bs-placement="top" data-bs-title="Fullscreen Connectome" style="display: block;">
+          <i id="connectomeFullscreenIcon" class="bi bi-fullscreen"></i> <span id="connectomeFullscreenLabel">Fullscreen</span>
         </button>
       </div>
 
@@ -206,8 +213,6 @@
   <div id="watermark">Connectome data: Witvliet et al. 2021</div>
 </div>
 
-{% include 'info_panel.html' %}
-
 <!-- Modal -->
 <div class="modal fade" id="modalLayout" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
   aria-labelledby="modalLayoutLabel" aria-hidden="true">
@@ -229,7 +234,7 @@
     </div>
   </div>
 </div>
-
+</div>
 {% endblock %}
 
 {% block extra_js %}

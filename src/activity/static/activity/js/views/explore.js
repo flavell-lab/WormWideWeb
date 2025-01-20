@@ -3,7 +3,7 @@ import { NeuronSelector } from "../plot_neuron_selector.js"
 import { BehaviorSelector } from "../plot_behavior_selector.js"
 import { DatasetSelector } from "../plot_dataset_selector.js"
 import { NeuronBehaviorPlot } from "../plot_manager.js"
-import { initSlider, setLocalBool, getLocalBool } from "/static/core/js/utility.js"
+import { initSlider, setLocalBool, getLocalBool, toggleFullscreen, handleFullscreenElement } from "/static/core/js/utility.js"
 import { EncodingTable } from "../encoding_table.js"
 import { adjustWidth } from "../plot_data.js"
 import { PlotGraph } from "../plot_graph.js"
@@ -40,10 +40,9 @@ function initPlotManager(data) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Initialize PlotManager
+    // init PlotManager
     const plotManager = await initPlotManager(data);
 
-    // 2. Init others
     /*
         Connectome
     */
@@ -82,42 +81,67 @@ document.addEventListener('DOMContentLoaded', async () => {
         plotManager.exportCSV()
     });
 
-    // connectome toggle
-    const buttonToggleConnectome = document.getElementById("button_connectome_visibility");
+    /*
+        Fullscreen logic
+    */
     const colPlot = document.getElementById("col-plot");
     const colConnectome = document.getElementById("col-connectome");
 
+    const buttonPlotFullscreen = document.getElementById("buttonPlotFullscreen");
+    const plotFullscreenIcon = document.getElementById("plotFullscreenIcon");
+    const plotFullscreenLabel = document.getElementById("plotFullscreenLabel");
+    const buttonConnectomeFullscreen = document.getElementById("buttonConnectomeFullscreen");
+    const connectomeFullscreenIcon = document.getElementById("connectomeFullscreenIcon");
+    const connectomeFullscreenLabel = document.getElementById("connectomeFullscreenLabel");
+
+    buttonPlotFullscreen.addEventListener("click", () => {
+        // Toggle fullscreen on the plot column
+        toggleFullscreen(colPlot);
+    });
+
     if (isNeuroPAL) {
-        // enable the button
-        buttonToggleConnectome.classList.remove("disabled");
-        buttonToggleConnectome.style.display = "block";
-
-        // show/hide connectome nutton
-        buttonToggleConnectome.addEventListener('click', () => {
-            if (colConnectome.classList.contains("hidden-forced")) {
-                // Show Column 2 and revert Column 1 to its original width
-                colPlot.classList.remove("col-lg-12");
-                colPlot.classList.add("col-lg-6");
-
-                colConnectome.classList.remove("hidden-forced");
-                colConnectome.classList.remove("d-none");
-            } else {
-                // Hide Column 2 and make Column 1 full width
-                colPlot.classList.remove("col-lg-6");
-                colPlot.classList.add("col-lg-12");
-
-                colConnectome.classList.add("hidden-forced");
-                colConnectome.classList.add("d-none");
-            }
-
-            document.getElementById("col-plot").offsetWidth;
-            // requestAnimationFrame(() => adjustWidth("col-plot", plotManager.plotElementId));
-            setTimeout(() => adjustWidth("col-plot", plotManager.plotElementId), 325);
+        // If NeuroPAL is enabled, set up fullscreen toggle for the connectome
+        buttonConnectomeFullscreen.addEventListener("click", () => {
+            toggleFullscreen(colConnectome);
         });
     } else {
+        // If not NeuroPAL, remove the connectome column entirely, making the plot column full width
         colPlot.classList.remove("col-lg-6");
         colPlot.classList.add("col-lg-12");
     }
+
+    const fullscreenMap = {
+        "col-plot": {
+          icon: plotFullscreenIcon,
+          label: plotFullscreenLabel,
+          // A callback for any special logic (like adjusting width)
+          onToggle() {
+            // Force reflow, then adjust width
+            colPlot.offsetWidth;
+            setTimeout(() => adjustWidth("col-plot", plotManager.plotElementId), 350);
+          }
+        },
+        "col-connectome": {
+          icon: connectomeFullscreenIcon,
+          label: connectomeFullscreenLabel,
+          // connectome doesn't need a special callback, so we can omit it
+        }
+    };
+      
+    let lastFullscreenElement = null;
+    document.addEventListener("fullscreenchange", () => {
+        if (document.fullscreenElement) {
+          // ENTER fullscreen
+          lastFullscreenElement = document.fullscreenElement;
+          handleFullscreenElement(fullscreenMap, lastFullscreenElement.id);
+        } else {
+          // EXIT fullscreen
+          if (lastFullscreenElement) {
+            handleFullscreenElement(fullscreenMap, lastFullscreenElement.id);
+          }
+          lastFullscreenElement = null;
+        }
+    });
 
     /*
         Collapse
@@ -197,7 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
     });
 
-    if (tourActivity) {        
+    if (tourActivity) {
         tour.addStep({
             id: 'step-1-select-neuron',
             text: 'Search and select neurons to plot.',
@@ -278,7 +302,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 on: 'top'
             },
             buttons: [
-                tourConnectome ? { text: 'Next', action: tour.next } : { text: 'Complete', action: tour.complete } 
+                tourConnectome ? { text: 'Next', action: tour.next } : { text: 'Complete', action: tour.complete }
             ],
         });
     }
@@ -307,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             buttons: [
                 { text: 'Next', action: tour.next }
             ],
-            beforeShowPromise: () => {          
+            beforeShowPromise: () => {
                 const layoutGrid = document.querySelector('.dropdown-item[data-value="grid"]');
                 layoutGrid.click();
                 return Promise.resolve();
@@ -324,7 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             buttons: [
                 { text: 'Next', action: tour.next }
             ],
-            beforeShowPromise: () => {          
+            beforeShowPromise: () => {
                 const colorType = document.querySelector('.dropdown-item[data-value="type"]');
                 colorType.click();
                 return Promise.resolve();
@@ -398,7 +422,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             window.scrollTo(0, 0);
-            
+
             if (tourActivity) setLocalBool("tour-activity-explore", false)
             if (tourConnectome) {
                 setLocalBool("tour-activity-explore-connectome", false)

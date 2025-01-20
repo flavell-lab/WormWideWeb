@@ -319,3 +319,41 @@ export function getDatasetTypePill(datasettype) {
     return '<span class="badge rounded-pill text-bg-' + color + ` dtype="${datasettype}">` +
         type_str + '</span>'
 }
+
+export function toggleFullscreen(element) {
+    // if not in full screen
+    if (!document.fullscreenElement) {
+      element.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      // exit full screen
+      document.exitFullscreen();
+    }
+}
+
+export function toggleFullscreenLabelText(label, textFullscreen = "Fullscreen", textExit = "Exit") {
+    // Switches label between "Fullscreen" and "Exit"
+    label.textContent = (label.textContent === textFullscreen) ? textExit : textFullscreen;
+}
+
+export function toggleFullscreenIcons(icon) {
+    // Toggles between two Bootstrap icon classes
+    icon.classList.toggle("bi-fullscreen");
+    icon.classList.toggle("bi-fullscreen-exit");
+}
+
+export function handleFullscreenElement(fullscreenMap, elementId) {
+    const entry = fullscreenMap[elementId];
+    if (!entry) return; // if the element isn't in our map, do nothing
+    
+    // Toggle the icon class (bi-fullscreen <-> bi-fullscreen-exit)
+    toggleFullscreenIcons(entry.icon);
+    // Toggle label text (e.g. "Fullscreen" <-> "Exit")
+    toggleFullscreenLabelText(entry.label);
+  
+    // If there's a custom callback (like adjusting width), call it
+    if (typeof entry.onToggle === "function") {
+      entry.onToggle();
+    }
+}

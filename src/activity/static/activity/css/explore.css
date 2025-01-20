@@ -1,6 +1,20 @@
 #col-connectome, #col-plot {
     transition: all 0.3s ease;
+    background-color: var(--background-light);
 }
+
+#col-plot:fullscreen {
+    overflow: scroll !important;
+  }
+  body:-ms-fullscreen {
+    overflow: scroll !important;
+  }
+  body:-webkit-full-screen {
+    overflow: scroll !important;
+  }
+  body:-moz-full-screen {
+    overflow: scroll !important;
+}  
 
 #connectome-graph {
     min-height: 400px;  /* Important in flex layout so child can shrink properly. */

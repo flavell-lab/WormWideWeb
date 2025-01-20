@@ -88,9 +88,9 @@
                   data-bs-title="Compute Pearson cor among the neural trace(s) and behavior(s)">Correlation</span>
               </button>            
 
-              <button id="button_connectome_visibility" class="disabled btn btn-light" data-bs-toggle="tooltip"
-                data-bs-placement="top" data-bs-title="Show/Hide connectome" style="display: none;">
-                <i class="bi bi-diagram-2-fill"></i>Connectome
+              <button id="buttonPlotFullscreen" class="btn btn-light" data-bs-toggle="tooltip"
+                data-bs-placement="top" data-bs-title="Fullscreen activity" style="display: block;">
+                <i id="plotFullscreenIcon" class="bi bi-fullscreen"></i> <span id="plotFullscreenLabel">Fullscreen</span>
               </button>
             </div>
 
@@ -159,7 +159,7 @@
         <h5>Connectome</h5>
         <div class="d-flex flex-wrap align-items-center gap-2">
           <!-- First group of buttons -->
-          <div class="btn-group btn-group-sm" role="group" aria-label=" and layout options">
+          <div class="btn-group btn-group-sm" role="group" aria-label="layout, color, and other options">
             <!-- Dataset button with tooltip -->
             <button class="btn btn-light btn-sm" id="buttonConnectomeDataset" type="button" data-bs-toggle="collapse" data-bs-target="#collapseData"
               aria-expanded="false" aria-controls="collapseData" data-bs-toggle="tooltip"
@@ -214,15 +214,20 @@
                 </li>
               </ul>
             </div>
+
+            <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse"
+              data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig"
+              aria-label="More settings">
+              <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+            </button>
           </div>
 
           <!-- Second group of buttons -->
           <div class="btn-group btn-group-sm" role="group" aria-label="Download and settings">
             <!-- Settings/gear button -->
-            <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse"
-              data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig"
-              aria-label="More settings">
-              <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+            <button id="buttonConnectomeFullscreen" class="btn btn-light" data-bs-toggle="tooltip"
+              data-bs-placement="top" data-bs-title="Fullscreen Connectome" style="display: block;">
+              <i id="connectomeFullscreenIcon" class="bi bi-fullscreen"></i> <span id="connectomeFullscreenLabel">Fullscreen</span>
             </button>
           </div>
         </div> <!-- connectome menu buttons -->
@@ -435,9 +440,6 @@
     </div>
   </div>
 </div>
-
-{% include 'info_panel.html' %}
-
 {% endblock %}
 
 {% block extra_js %}

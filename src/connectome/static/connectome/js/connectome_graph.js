@@ -41,6 +41,7 @@ export class ConnectomeGraph {
 
         // info panel
         this.infoPanel = new InfoPanel();
+        this.infoPanel.injectInfoPanelHTML("info-panel");
 
         // layout
         this.nodePositiobManager = new NodePositionManager(this.graph, "node-position-list", "updateCustomLayout", "updateCustomColor");
@@ -208,6 +209,14 @@ export class ConnectomeGraph {
     }
 
     renderInfoPanel(node) {
+        if (document.fullscreenElement) {
+            document.getElementById("info-panel").remove()
+            const connectomeContainer = document.getElementById("connectome-container")
+            this.infoPanel.injectInfoPanelHTML("info-panel", connectomeContainer)
+        } else {
+            this.infoPanel.injectInfoPanelHTML("info-panel")
+        }
+
         const nodeData = node.data();
         const cellClass = nodeData.neuron_class;
         const cellType = nodeData.cell_type;

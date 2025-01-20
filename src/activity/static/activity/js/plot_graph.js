@@ -288,6 +288,15 @@ export class PlotGraph {
     
         // this.corNeuron
         renderInfoPanel(node) {
+            if (document.fullscreenElement) {
+                document.getElementById("info-panel").remove()
+                const colConnectome = document.getElementById("col-connectome")
+                this.infoPanel.injectInfoPanelHTML("info-panel", colConnectome)
+            } else {
+                document.getElementById("info-panel").remove()
+                this.infoPanel.injectInfoPanelHTML("info-panel")
+            }
+
             const nodeData = node.data();
             const nodeId = nodeData.id;
             const cellClass = nodeData.neuron_class;
