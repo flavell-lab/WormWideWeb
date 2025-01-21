@@ -290,8 +290,7 @@ export class PlotGraph {
         renderInfoPanel(node) {
             if (document.fullscreenElement) {
                 document.getElementById("info-panel").remove()
-                const colConnectome = document.getElementById("col-connectome")
-                this.infoPanel.injectInfoPanelHTML("info-panel", colConnectome)
+                this.infoPanel.injectInfoPanelHTML("info-panel", document.fullscreenElement)
             } else {
                 document.getElementById("info-panel").remove()
                 this.infoPanel.injectInfoPanelHTML("info-panel")
