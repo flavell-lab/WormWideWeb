@@ -215,6 +215,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const encodingTable = new EncodingTable("dataset", data, "individual")
 
     /*
+        Tooltips
+    */
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))   
+
+    /*
         Tours
     */
     const tourActivity = getLocalBool("tour-activity-explore", true)
