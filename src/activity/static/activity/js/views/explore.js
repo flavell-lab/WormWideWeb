@@ -149,8 +149,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // correlation collapse, fires when the collapse is fully expanded
     const corCollapse = document.getElementById("collapseCor");
     corCollapse.addEventListener("shown.bs.collapse", function () {
-        // Smoothly scroll this element into view
-        corCollapse.scrollIntoView({ behavior: "smooth" });
+        if (document.fullscreenElement) {
+            document.exitFullscreen()
+        }
+        // Wait a bit longer (1000ms) before scrolling to ensure the fullscreen exit is processed
+        setTimeout(function () {
+            // Force a reflow to ensure the layout is updated
+            corCollapse.offsetWidth;
+
+            // Smoothly scroll the collapse element into view
+            corCollapse.scrollIntoView({ behavior: "smooth" });
+        }, 500); // Increase delay to 1000ms or more if necessary
     });
 
     /*
