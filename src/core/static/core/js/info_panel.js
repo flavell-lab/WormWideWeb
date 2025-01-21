@@ -20,6 +20,8 @@ export class InfoPanel {
             document.body.insertAdjacentHTML("beforeend", infoPanelHTML);
         }
 
+        document.getElementById(id).offsetWidth; // reflow
+
         this.infoPanel = document.getElementById("info-panel");
         this.infoPanel.style.zIndex = '1000';
         this.infoPanel.style.overflowY = 'auto';
