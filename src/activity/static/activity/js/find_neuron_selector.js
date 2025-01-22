@@ -166,7 +166,7 @@ export class DatasetNeuronSelector {
         const thisOption = this.selector.options[value];
         const neuronClass = thisOption.class
         if (thisOption.classq) {
-            const neuronsData = data.class[neuronClass]
+            const neuronsData = this.tableManager.data.class[neuronClass]
             const options = this.generateNeuronOptions(neuronClass, neuronsData)
             options.forEach(option => {
                 this.selector.removeOption(option.value)
@@ -182,7 +182,7 @@ export class DatasetNeuronSelector {
         const selectorOptions = this.selector.options;
         const thisOption = selectorOptions[value];
         const neuronClass = thisOption.class
-        const neuronsData = data.class[neuronClass]
+        const neuronsData = this.tableManager.data.class[neuronClass]
         const options = this.generateNeuronOptions(neuronClass, neuronsData)
         const selectionStr = this.selector.getValue()
 

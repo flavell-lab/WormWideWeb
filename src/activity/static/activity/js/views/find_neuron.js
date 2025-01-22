@@ -3,7 +3,24 @@ import { DatasetNeuronSelector } from '../find_neuron_selector.js';
 import { DatasetTable } from '../find_neuron_table.js';
 import { setLocalBool, getLocalBool } from "/static/core/js/utility.js"
 
-document.addEventListener('DOMContentLoaded', () => {
+
+async function initData(data) {
+    const url = "/activity/api/data/find_neuron/";
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Error loading find_neuron data. Response status: ${response.status}`);
+        }
+    
+        return await response.json();
+    } catch (error) {
+        console.error(error.message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async() => {
+    const data = await initData();
+
     /*
         Selectors
     */
@@ -55,7 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
         neuronTable.downloadSelected();
     });
 
-    // tooltips
+    /*
+        Tooltips
+    */
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 

@@ -19,4 +19,5 @@ urlpatterns = [
     path('api/data/<str:dataset_id>/encoding/', views.get_encoding, name="activity-get_encoding"),
     path('api/data/atanas_kim_2023_encoding/', views.get_all_dataset_encoding, name="activity-get_all_dataset_encoding"),
     path('api/data/datasets/', views.get_all_dataset, name="activity-datasets"),
+    path('api/data/find_neuron/', views.get_find_neuron_data, name="activity-get_find_neuron_data"),
 ]

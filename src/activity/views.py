@@ -61,12 +61,13 @@ def get_all_dataset(request):
     return JsonResponse(list(datasets), safe=False)
 
 @cache_page(60*60*24*30)
-def find_neuron(request):
+def get_find_neuron_data(request):
     data = get_object_or_404(JSONCache, name="neuropal_match").json
 
-    context = {
-        "data": data
-    }
+    return JsonResponse(json.loads(data))
+
+def find_neuron(request):
+    context = {}
 
     return render(request, "activity/find_neuron.html", context)
 
