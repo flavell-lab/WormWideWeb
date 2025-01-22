@@ -8,11 +8,11 @@
 {% block main %}
 <div class="container py-5">
     <!-- About Section -->
-    <section class="mb-5">
+    <section>
         <div class="bg-light p-5 rounded-3">
             <h1 class="display-5 fw-bold mb-3">About</h1>
-            
-            <div class="d-flex mt-4 align-items-center"> 
+
+            <div class="d-flex mt-4 align-items-center">
                 <div>
                     <img src="/static/core/img/mit-logo.svg" alt="MIT Logo" style="height: 75px;">
                 </div>
@@ -24,15 +24,17 @@
             <div class="row align-items-center">
                 <div class="col-md-6">
                     <p class="lead">
-                        This website was created by <a href="https://github.com/goldenratio1618">Adam Atanas</a> and <a href="https://jungsoo.kim">Jungsoo Kim</a>
-                        <br>
-                        It is maintained by the <a href="https://flavell.mit.edu/">Flavell Lab</a> at the Massachusetts Institute of Technology (MIT).
+                        This website was created by <a href="https://github.com/goldenratio1618" target="_blank">Adam
+                            Atanas</a> and <a href="https://jungsoo.kim" target="_blank">Jungsoo Kim</a> from the <a
+                            href="https://flavell.mit.edu/" target="_blank">Flavell Lab</a> at the Massachusetts
+                        Institute of Technology (MIT).
                     </p>
                 </div>
                 <div class="col-md-6 d-flex justify-content-center">
                     <div class="d-flex align-items-center gap-4">
                         <div class="text-center">
-                            <img src="/static/core/img/adam_atanas.webp" class="rounded-circle" alt="Adam Atanas" style="width: 100px; height: 100px; object-fit: cover;">
+                            <img src="/static/core/img/adam_atanas.webp" class="rounded-circle" alt="Adam Atanas"
+                                style="width: 100px; height: 100px; object-fit: cover;">
                             <p class="mt-2 mb-0 fw-bold">Adam Atanas</p>
                             <!-- <div class="btn-group mt-2" role="group">
                                 <a href="https://github.com/goldenratio1618" class="btn btn-secondary btn-sm">
@@ -44,7 +46,8 @@
                             </div> -->
                         </div>
                         <div class="text-center">
-                            <img src="/static/core/img/jungsoo_kim.webp" class="rounded-circle" alt="Jungsoo Kim" style="width: 100px; height: 100px; object-fit: cover;">
+                            <img src="/static/core/img/jungsoo_kim.webp" class="rounded-circle" alt="Jungsoo Kim"
+                                style="width: 100px; height: 100px; object-fit: cover;">
                             <p class="mt-2 mb-0 fw-bold">Jungsoo Kim</p>
                             <!-- <div class="btn-group mt-2" role="group">
                                 <a href="https://jungsoo.kim" class="btn btn-secondary btn-sm">
@@ -58,28 +61,279 @@
                     </div>
                 </div>
             </div>
-            <p class="mt-2">Additional information (experiments, methods, modeling, statistics, etc.) can be found in the <a href="#paper_kfc">paper</a>.</p>
-            <p class="mt-2">To cite this work (datasets, methods, modeling, code, etc.), please refer to the article.</p>
+            <p class="mt-2">Additional information (experiments, methods, modeling, statistics, etc.) can be found in
+                the <a href="#paper_kfc">paper</a>.</p>
+        </div>
+    </section>
+
+    <!-- Credit Section -->
+    <section class="mt-5">
+        <div class="p-4 bg-white shadow-sm rounded-3">
+            <div class="col">
+                <h3 class="fw-semibold">Credits</h3>
+                <p class="mb-2">
+                    In addition to the first authors, the following individuals contributed to
+                    the original study and the website:
+                </p>
+            </div>
+
+            <!-- Website Development -->
+            <div class="row row-cols-1 row-cols-lg-2 g-5">
+                <div class="col">
+                    <h5 class="mt-4">Website Development</h5>
+                    <p class="small mb-3">Contributed to developing the website</p>
+                    <div class="row row-cols-1 row-cols-md-3 g-3">
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="/static/core/img/alex_hiser.webp" class="rounded-circle" alt="Alex Hiser"
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">Alex Hiser</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <h5 class="mt-4">Project Leader</h5>
+                    <p class="small mb-3">Corresponding author to the paper. Project leader</p>
+                    <div class="row row-cols-1 row-cols-md-3 g-3">
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="/static/core/img/steve_flavell.webp" class="rounded-circle" alt="Alex Hiser"
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">Steve Flavell</p>
+                        </div>
+                    </div>
+                </div> 
+            </div>
+
+            <div class="row row-cols-1 row-cols-lg-2 g-5">
+                <!-- Left Column: Whole-Brain Data Collection -->
+                <div class="col">
+                    <h5 class="mt-4">Whole-brain Data Collection</h5>
+                    <p class="small mb-3">Contributed to the whole-brain data collection</p>
+                    <div class="row row-cols-1 row-cols-md-3 g-3">
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="/static/core/img/ziyu_wang.webp" class="rounded-circle" alt="Ziyu Wang"
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">Ziyu Wang</p>
+                        </div>
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="/static/core/img/di_kang.webp" class="rounded-circle" alt="Di Kang"
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">Di Kang</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: NeuroPAL Analysis -->
+                <div class="col">
+                    <h5 class="mt-4">NeuroPAL Analysis</h5>
+                    <p class="small mb-3">Contributed to the neuronal identification analysis using NeuroPAL</p>
+                    <div class="row row-cols-1 row-cols-md-3 g-3">
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="/static/core/img/eric_bueno.webp" class="rounded-circle" alt="Eric Bueno"
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">Eric Bueno</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row for Probabilistic Modeling and Behavioral Data Extraction -->
+            <div class="row row-cols-1 row-cols-lg-2 g-5">
+                <!-- Probabilistic Modeling Column -->
+                <div class="col">
+                    <h5 class="mt-4">Probabilistic Modeling</h5>
+                    <p class="small mb-3">Provided technical expertise on probabilistic modeling and inference</p>
+                    <div class="row row-cols-1 row-cols-md-3 g-3">
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="/static/core/img/mccoy_becker.webp" class="rounded-circle" alt="McCoy Becker"
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">McCoy Becker</p>
+                        </div>
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="/static/core/img/vikash_mansinghka.webp" class="rounded-circle"
+                                alt="Vikash Mansinghka" style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">Vikash Mansinghka</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Behavioral Data Extraction Column -->
+                <div class="col">
+                    <h5 class="mt-4">Behavioral Data Extraction Software</h5>
+                    <p class="small mb-3">Contributed to writing the behavioral data extraction software</p>
+                    <div class="row row-cols-1 row-cols-md-3 g-3">
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="/static/core/img/jungyeon_park.webp" class="rounded-circle" alt="Jungyeon Park"
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                            <p class="mt-2 mb-0 fw-bold">Jungyeon Park</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Neuronal Manipulation Studies -->
+            <h5 class="mt-4">Neuronal Manipulation Studies</h5>
+            <p class="small mb-3">Contributed to the neuronal manipulation studies for encoding validation</p>
+            <div class="row row-cols-1 row-cols-sm-4 g-3">
+                <div class="col d-flex flex-column align-items-center">
+                    <img src="/static/core/img/talya_kramer.webp" class="rounded-circle" alt="Talya S. Kramer"
+                        style="width: 100px; height: 100px; object-fit: cover;">
+                    <p class="mt-2 mb-0 fw-bold">Talya S. Kramer</p>
+                </div>
+                <div class="col d-flex flex-column align-items-center">
+                    <img src="/static/core/img/flossie_wan.webp" class="rounded-circle" alt="Flossie K. Wan"
+                        style="width: 100px; height: 100px; object-fit: cover;">
+                    <p class="mt-2 mb-0 fw-bold">Flossie K. Wan</p>
+                </div>
+                <div class="col d-flex flex-column align-items-center">
+                    <img src="/static/core/img/saba_baskoylu.webp" class="rounded-circle" alt="Saba Baskoylu"
+                        style="width: 100px; height: 100px; object-fit: cover;">
+                    <p class="mt-2 mb-0 fw-bold">Saba Baskoylu</p>
+                </div>
+                <div class="col d-flex flex-column align-items-center">
+                    <img src="/static/core/img/ugur_dag.webp" class="rounded-circle" alt="Ugur Dag"
+                        style="width: 100px; height: 100px; object-fit: cover;">
+                    <p class="mt-2 mb-0 fw-bold">Ugur Dag</p>
+                </div>
+                <div class="col d-flex flex-column align-items-center">
+                    <!-- <img src="/static/core/img/elpiniki_kalogeropoulou.webp" class="rounded-circle" alt="Elpiniki Kalogeropoulou" 
+                     style="width: 100px; height: 100px; object-fit: cover;"> -->
+                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-light"
+                        style="width: 100px; height: 100px;">
+                        <i class="bi bi-person-circle" style="font-size: 50px; color: #6c757d;"></i>
+                    </div>
+                    <p class="mt-2 mb-0 fw-bold">Elpiniki Kalogeropoulou</p>
+                </div>
+                <div class="col d-flex flex-column align-items-center">
+                    <img src="/static/core/img/matthew_gomes.webp" class="rounded-circle" alt="Matthew A. Gomes"
+                        style="width: 100px; height: 100px; object-fit: cover;">
+                    <p class="mt-2 mb-0 fw-bold">Matthew A. Gomes</p>
+                </div>
+                <div class="col d-flex flex-column align-items-center">
+                    <img src="/static/core/img/cassi_estrem.webp" class="rounded-circle" alt="Cassi Estrem"
+                        style="width: 100px; height: 100px; object-fit: cover;">
+                    <p class="mt-2 mb-0 fw-bold">Cassi Estrem</p>
+                </div>
+                <div class="col d-flex flex-column align-items-center">
+                    <img src="/static/core/img/netta_cohen.webp" class="rounded-circle" alt="Netta Cohen"
+                        style="width: 100px; height: 100px; object-fit: cover;">
+                    <p class="mt-2 mb-0 fw-bold">Netta Cohen</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code & Data Section -->
+    <section class="row g-4 mt-3">
+        <div class="col-lg-6">
+            <div class="p-4 bg-white shadow-sm rounded-3">
+                <h3 class="fw-semibold">Data Processing & Analysis Code</h3>
+                <p class="mb-4">All software developed for this project is available below, including:</p>
+                <ul class="list-unstyled">
+                    <li>&#8226; The ANTSUN pipeline for extracting neural traces from GCaMP volumes</li>
+                    <li>&#8226; The CePNEM model for neural trace analysis and behavioral encoding</li>
+                    <li>&#8226; Stage control software for tracking worms during imaging</li>
+                    <li>&#8226; Example Jupyter notebooks for data analysis and plotting</li>
+                    <li>&#8226; Additional downloadable data for neural network weights, posterior distributions, and
+                        more
+                    </li>
+                </ul>
+                <a href="https://github.com/flavell-lab/AtanasKim-Cell2023" target="_blank"
+                    class="btn btn-custom-primary">
+                    <i class="bi bi-github"></i> Explore Code
+                </a>
+            </div>
+        </div>
+        <div id="data_repo" class="col-lg-6">
+            <div class="p-4 bg-white shadow-sm rounded-3">
+                <h3 class="fw-semibold">Atanas & Kim et al. 2023 Datasets</h3>
+                <p>
+                    If you'd like to access full datasets from the original study releasing this website, please refer to the following data
+                    repository.
+                    <br>
+                    <br>
+                    You can download all datasets at once, and the HDF5 files contain all information (i.e. behavior variables that were not included in this website) for each animal.
+                    <br>
+                    <br>
+                    <strong>processed_h5.tar.bz2</strong> contains all datasets from Atanas & Kim et al. 2023. in HDF5.
+                </p>
+                <a href="https://zenodo.org/records/8185377" target="_blank" class="btn btn-custom-primary">
+                    <i class="bi bi-file-earmark"></i> Data Repository
+                </a>
+            </div>
         </div>
     </section>
 
     <!-- Citation and Website Section -->
+    <section class="row mt-5">
+        <h3 class="fw-semibold">Citations</h3>
+        <p>
+            To cite this project (datasets, encoding data, methods, modeling, code, etc.), please refer to Atanas & Kim
+            et al. 2023.
+            <br>
+            If you use the connectome features, please cite the Witvliet et al. 2021 and others. Please refer to the
+            "Citation Details" on the section below.
+            <br>
+            If you use any other datasets (such as the serotonin datasets, Dag, Nwabudike and Kang et al. 2023), please
+            refer to the respective papers.
+        </p>
+    </section>
     <section class="row g-4">
         <div class="col-lg-6" id="paper_kfc">
             <div class="h-100 p-4 bg-white shadow-sm rounded-3">
-                <h3 class="fw-semibold">Citation</h3>
+                <h4 class="fw-semibold">The original study for the WormWideWeb</h4>
                 <div class="card border-0">
                     <div class="row g-0 align-items-center">
-                        <h5 class="card-title mb-3">Brain-wide representations of behavior spanning multiple timescales and states in <i>C. elegans</i></h5>
+                        <h5 class="card-title mb-3">Brain-wide representations of behavior spanning multiple timescales
+                            and
+                            states in <i>C. elegans</i></h5>
                         <div class="col-md-3">
-                            <img src="/static/core/img/cell_cover.webp" class="img-fluid rounded" alt="Paper Thumbnail" style="height: 100%; max-height: 250px; object-fit: cover; margin-right: -1rem;">
+                            <img src="/static/core/img/cell_cover.webp" class="img-fluid rounded" alt="Paper Thumbnail"
+                                style="height: 100%; max-height: 250px; object-fit: cover; margin-right: -1rem;">
                         </div>
                         <div class="col-md-9">
                             <div class="card-body">
                                 <p class="card-text">
-                                    <strong>Adam A. Atanas*</strong>, <strong>Jungsoo Kim*</strong>, Ziyu Wang, Eric Bueno, McCoy Becker, Di Kang,
-                                    Jungyeon Park, Talya S. Kramer, Flossie K. Wan, Saba Baskoylu, Ugur Dag, Elpiniki Kalogeropoulou,
+                                    <strong>Adam A. Atanas*</strong>, <strong>Jungsoo Kim*</strong>, Ziyu Wang, Eric
+                                    Bueno,
+                                    McCoy Becker, Di Kang,
+                                    Jungyeon Park, Talya S. Kramer, Flossie K. Wan, Saba Baskoylu, Ugur Dag, Elpiniki
+                                    Kalogeropoulou,
                                     Matthew A. Gomes, Cassi Estrem, Netta Cohen, Vikash K. Mansinghka, Steven W. Flavell
+                                </p>
+                                <p class="card-text text-muted">* equal contribution</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group mt-2" role="group">
+                    <a href="https://doi.org/10.1016/j.cell.2023.07.035" target="_blank"
+                        class="btn btn-custom-primary">Cell</a>
+                    <a href="https://pubmed.ncbi.nlm.nih.gov/37607537/" target="_blank"
+                        class="btn btn-custom-primary">PubMed</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6" id="paper_witvliet">
+            <div class="h-100 p-4 bg-white shadow-sm rounded-3">
+                <h3 class="fw-semibold">Connectome Citation</h3>
+                <div class="card border-0">
+                    <div class="row g-0 align-items-center">
+                        <h5 class="card-title mb-3">Connectomes across development reveal principles of brain maturation
+                        </h5>
+                        <div class="col-md-3">
+                            <img src="/static/core/img/witvliet_cover.webp" class="img-fluid rounded"
+                                alt="Witvliet et al. paper thumbnail"
+                                style="height: 100%; max-height: 250px; object-fit: cover; margin-right: -1rem;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <strong>Daniel Witvliet</strong>, Ben Mulcahy*, James K. Mitchell*, Yaron
+                                    Meirovitch,
+                                    Daniel R. Berger, Yuelong Wu, Yufang Liu, Wan Xian Koh, Rajeev Parvathala, Douglas
+                                    Holmyard, Richard L. Schalek, Nir Shavit, Andrew D. Chisholm, Jeff W. Lichtman,
+                                    Aravinthan D. T. Samuel, Mei Zhen
                                 </p>
                                 <p class="card-text text-muted">* equal contribution</p>
                                 <!-- <a href="https://pubmed.ncbi.nlm.nih.gov/37607537/" class="btn btn-primary">PubMed</a> -->
@@ -87,78 +341,151 @@
                         </div>
                     </div>
                 </div>
-                <div class="btn-group mt-2" role="group">
-                    <a href="https://doi.org/10.1016/j.cell.2023.07.035" class="btn btn-custom-primary">Cell</a>
-                    <a href="https://pubmed.ncbi.nlm.nih.gov/37607537/" class="btn btn-custom-primary">PubMed</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="h-100 p-4 bg-white shadow-sm rounded-3">
-                <h3 class="fw-semibold">Website</h3>
-                <p class="mb-4">To view the source or file a technical issue for this website, visit the GitHub repository.<p>
-                <a href="https://github.com/flavell-lab/CePNEM-web" class="btn btn-custom-primary">
-                    <i class="bi bi-github"></i> Website
-                </a>
+                <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
+                    <div class="btn-group" role="group">
+                        <a href="https://www.nature.com/articles/s41586-021-03778-8" target="_blank"
+                            class="btn btn-custom-primary">Nature</a>
+                        <a href="https://pubmed.ncbi.nlm.nih.gov/34349261/" target="_blank"
+                            class="btn btn-custom-primary">PubMed</a>
+                    </div>
 
-                <br><br>
-                <h3 class="fw-semibold" id="connectome_data">Connectome</h3>
-                <p class="mb-4">The connectome datasets used in this website are from NemaNode. To cite the connectome data, see <a href="https://pubmed.ncbi.nlm.nih.gov/34349261/">Witvliet et al., 2020</a>. Please also cite the original datasets (see Dataset Details).</p>
-                <div class="btn-group" role="group">
-                    <a href="https://github.com/zhenlab-ltri/NemaNode" class="btn btn-custom-primary">
-                        <i class="bi bi-github"></i> NemaNode
-                    </a>
-                    <button type="button" class="btn btn-custom-primary" data-bs-toggle="modal" data-bs-target="#datasetsModal">
-                        Dataset Details
-                    </button>                      
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-custom-primary" data-bs-toggle="modal"
+                            data-bs-target="#datasetsModal">
+                            Citation Details
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Code Section -->
-    <section class="my-5">
-        <div class="p-4 bg-white shadow-sm rounded-3">
-            <h3 class="fw-semibold">Code</h3>
-            <p class="mb-4">All software developed for this project is available below, including:</p>
-            <ul class="list-unstyled">
-                <li>&#8226; The ANTSUN pipeline for extracting neural traces from GCaMP volumes</li>
-                <li>&#8226; The CePNEM model for neural trace analysis and behavioral encoding</li>
-                <li>&#8226; Stage control software for tracking worms during imaging</li>
-                <li>&#8226; Example Jupyter notebooks for data analysis and plotting</li>
-                <li>&#8226; Additional downloadable data for neural network weights, posterior distributions, and more</li>
-            </ul>
-            <a href="https://github.com/flavell-lab/AtanasKim-Cell2023" class="btn btn-custom-primary">
-                <i class="bi bi-github"></i> Explore Code
-            </a>
+    <!-- <h3 class="fw-semibold my-3">Citations - Other Datasets</h3> -->
+    <section class="row g-4 mt-1">
+        <div class="col-lg-6" id="paper_kfc">
+            <div class="h-100 p-4 bg-white shadow-sm rounded-3">
+                <h4 class="fw-semibold">Serotonin Datasets</h4>
+                <div class="card border-0">
+                    <div class="row g-0 align-items-center">
+                        <h5 class="card-title mb-3">Dissecting the functional organization of the <i>C. elegans</i>
+                            serotonergic system at whole-brain scale</h5>
+                        <div class="col-md-3">
+                            <img src="/static/core/img/serotonin_cover.webp" class="img-fluid rounded"
+                                alt="Paper Thumbnail"
+                                style="height: 100%; max-height: 250px; object-fit: cover; margin-right: -1rem;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <strong>Ugur Dag*</strong>, <strong>Ijeoma Nwabudike*</strong>, <strong>Di
+                                        Kang*</strong>, Matthew A Gomes, Jungsoo Kim, Adam A Atanas, Eric Bueno, Cassi
+                                    Estrem, Sarah Pugliese, Ziyu Wang, Emma Towlson, Steven W Flavell
+                                </p>
+                                <p class="card-text text-muted">* equal contribution</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group mt-2" role="group">
+                    <a href="https://www.cell.com/cell/fulltext/S0092-8674(23)00419-1" target="_blank"
+                        class="btn btn-custom-primary">Cell</a>
+                    <a href="https://pubmed.ncbi.nlm.nih.gov/37192620/" target="_blank"
+                        class="btn btn-custom-primary">PubMed</a>
+                </div>
+            </div>
         </div>
-    </section>    
-</div>
+        <!-- <div class="col-lg-6" id="paper_kfc">
+            <div class="h-100 p-4 bg-white shadow-sm rounded-3">
+                <h3 class="fw-semibold">Connectome Citation</h3>
+                <div class="card border-0">
+                    <div class="row g-0 align-items-center">
+                        <h5 class="card-title mb-3">Connectomes across development reveal principles of brain maturation
+                        </h5>
+                        <div class="col-md-3">
+                            <img src="/static/core/img/witvliet_cover.webp" class="img-fluid rounded"
+                                alt="Witvliet et al. paper thumbnail"
+                                style="height: 100%; max-height: 250px; object-fit: cover; margin-right: -1rem;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <strong>Daniel Witvliet</strong>, Ben Mulcahy*, James K. Mitchell*, Yaron
+                                    Meirovitch,
+                                    Daniel R. Berger, Yuelong Wu, Yufang Liu, Wan Xian Koh, Rajeev Parvathala, Douglas
+                                    Holmyard, Richard L. Schalek, Nir Shavit, Andrew D. Chisholm, Jeff W. Lichtman,
+                                    Aravinthan D. T. Samuel, Mei Zhen
+                                </p>
+                                <p class="card-text text-muted">* equal contribution</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
+                    <div class="btn-group" role="group">
+                        <a href="https://www.nature.com/articles/s41586-021-03778-8"
+                            class="btn btn-custom-primary">Nature</a>
+                        <a href="https://pubmed.ncbi.nlm.nih.gov/34349261/" class="btn btn-custom-primary">PubMed</a>
+                    </div>
 
+                    <div class="btn-group" role="group">
+                        <a href="https://github.com/zhenlab-ltri/NemaNode" class="btn btn-custom-primary">
+                            <i class="bi bi-github"></i> NemaNode
+                        </a>
+                        <button type="button" class="btn btn-custom-primary" data-bs-toggle="modal"
+                            data-bs-target="#datasetsModal">
+                            Citation Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+    </section>
+</div>
 <!-- Modal -->
 <div class="modal fade" id="datasetsModal" tabindex="-1" aria-labelledby="datasetsModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="datasetsModalLabel">Connectome Datasets</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="datasetsModalLabel">Connectome Datasets</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    The connectome datasets used in this website are from NemaNode. To cite the connectome data, see <a
+                        href="https://pubmed.ncbi.nlm.nih.gov/34349261/" target="_blank">Witvliet et al., 2020</a>.
+                    Please also cite the
+                    original datasets you use.
+                </p>
+                <p>The following dataset description is from NemaNode:</p>
+                <h5>White et al., 1986, compilation</h5>
+                <p>This dataset is a compilation of multiple partially overlapping animals. The cells making up the
+                    somatic nervous system were reconstructed by <b>White et al., 1986</b> and compiled by <b>Varshney
+                        et al., 2011</b>. The cells making up the pharyngeal nervous systems were reconstructed by
+                    <b>Albertson and Thomson, 1976</b> and cleaned up by Nikhil Bhatla, developer of WormWeb.org.
+                    Non-neuronal cells were not annotated individually but are grouped by cell type (e.g. Body wall
+                    muscles).
+                </p>
+
+                <h5>Witvliet et al., 2020, datasets 1-8</h5>
+                <p>Chemical synapses for all eight datasets were acquired from <b>Witvliet et al., 2020.</b> Chemical
+                    synapes were annotated independently by three annotators and only chemical synapses that at least
+                    two annotators agreed to were included in the final dataset. Gap junctions were not thoroughly
+                    annotated but have been provided by the authors for anyone interested. The gap junction annotation
+                    is by no means exhaustive, and should not be treated as such.</p>
+                <h5>White et al., 1986, JSH and N2U</h5>
+                <p>The two datasets were reconstructed by <b>White et al., 1986</b> and compiled by <b>Durbin, 1987</b>.
+                    Individual muscle cells were not annotated by <b>White et al., 1986</b>. To allow comparison to
+                    other datasets, individual muscle cells (and synapses onto them) were annotated in scans of the
+                    original EM micrographs by the Zhen Lab. These synapses have been added to the datasets instead of
+                    the originally listed anonymous neuromuscular junctions.</p>
+                <h5>White et al., 1986, JSE</h5>
+                <p>The dataset was reconstructed by <b>White et al., 1986</b> and compiled by <b>Hall and Russell,
+                        1991</b>.</p>
+            </div>
         </div>
-        <div class="modal-body">
-            <p>The following dataset description is from NemaNode:</p>
-            <h5>White et al., 1986, compilation</h5>
-            <p>This dataset is a compilation of multiple partially overlapping animals. The cells making up the somatic nervous system were reconstructed by <b>White et al., 1986</b> and compiled by <b>Varshney et al., 2011</b>. The cells making up the pharyngeal nervous systems were reconstructed by <b>Albertson and Thomson, 1976</b> and cleaned up by Nikhil Bhatla, developer of WormWeb.org. Non-neuronal cells were not annotated individually but are grouped by cell type (e.g. Body wall muscles).</p>
-                
-            <h5>Witvliet et al., 2020, datasets 1-8</h5>
-            <p>Chemical synapses for all eight datasets were acquired from <b>Witvliet et al., 2020.</b> Chemical synapes were annotated independently by three annotators and only chemical synapses that at least two annotators agreed to were included in the final dataset. Gap junctions were not thoroughly annotated but have been provided by the authors for anyone interested. The gap junction annotation is by no means exhaustive, and should not be treated as such.</p>
-            <h5>White et al., 1986, JSH and N2U</h5>
-            <p>The two datasets were reconstructed by <b>White et al., 1986</b> and compiled by <b>Durbin, 1987</b>. Individual muscle cells were not annotated by <b>White et al., 1986</b>. To allow comparison to other datasets, individual muscle cells (and synapses onto them) were annotated in scans of the original EM micrographs by the Zhen Lab. These synapses have been added to the datasets instead of the originally listed anonymous neuromuscular junctions.</p>
-            <h5>White et al., 1986, JSE</h5>
-            <p>The dataset was reconstructed by <b>White et al., 1986</b> and compiled by <b>Hall and Russell, 1991</b>.</p>
-        </div>
-      </div>
     </div>
-  </div>
-  
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
