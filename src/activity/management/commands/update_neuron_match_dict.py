@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from activity.models import GCaMPDataset, GCaMPNeuron
+from activity.models import GCaMPDataset, GCaMPNeuron, GCaMPPaper
 from core.models import JSONCache
 from collections import defaultdict
 import json
@@ -68,14 +68,23 @@ def generate_match_dict():
         for dataset in neuropal_datasets
     ]
 
-    return class_combinations_dict, dict_match, neuropal_datasets_data
+    # papers
+    papers = []
+    for paper_id in GCaMPDataset.objects.filter(dataset_type__icontains='neuropal').values_list("paper", flat=True).distinct():
+        paper_obj = GCaMPPaper.objects.get(pk=paper_id)
+        papers.append({
+            "paper_id": paper_obj.paper_id,
+            "title": paper_obj.title_short
+        })
+
+    return class_combinations_dict, dict_match, neuropal_datasets_data, papers
 
 class Command(BaseCommand):
     help = 'Update the neuron class match JSON data'
 
     def handle(self, *args, **options):
-        dict_class, dict_match, neuropal_datasets_data = generate_match_dict()
-        data = {"class": dict_class, "match": dict_match, "neuropal_datasets_data": neuropal_datasets_data}
+        dict_class, dict_match, neuropal_datasets_data, papers = generate_match_dict()
+        data = {"class": dict_class, "match": dict_match, "neuropal_datasets_data": neuropal_datasets_data, "papers": papers }
         json_str = json.dumps(data)
 
         obj, created = JSONCache.objects.get_or_create(name="neuropal_match")

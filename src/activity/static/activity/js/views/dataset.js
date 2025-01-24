@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const paperTargetValue = Object.keys(allPapers).map(function(key) {
         return allPapers[key].value;
     });
-    console.log(paperTargetValue)
     selectors.selectorPaper.setValue(paperTargetValue); // select all papers
 
     /*

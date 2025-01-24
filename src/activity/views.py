@@ -1,12 +1,12 @@
 import time
 import json
 from django.core.serializers.json import DjangoJSONEncoder
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
-from .models import GCaMPDataset, GCaMPNeuron
+from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper
 from connectome.models import Neuron, NeuronClass, Dataset, Synapse
 from core.models import JSONCache
 
@@ -38,17 +38,35 @@ def encoding_connectome(request):
 
 @cache_page(60*60*24*30)
 def dataset(request):
-    datasets = GCaMPDataset.objects.all().values("dataset_id", "dataset_type", "n_neuron",
-                                                 "n_labeled", "max_t", "avg_timestep")
-    
+    datasets = []
+    for dataset in GCaMPDataset.objects.all():
+        datasets.append({
+            "paper": {"paper_id": dataset.paper.paper_id, "title": dataset.paper.title_short},
+            "dataset_id": dataset.dataset_id,
+            "dataset_type": dataset.dataset_type,
+            "n_neuron": dataset.n_neuron,
+            "n_labeled": dataset.n_labeled,
+            "max_t": dataset.max_t,
+            "avg_timestep": dataset.avg_timestep
+        })
+
     set_dataset_type_array = set()
     for dtypes in GCaMPDataset.objects.values_list("dataset_type", flat=True).distinct():
         for dtype in dtypes:
             set_dataset_type_array.add(dtype)
 
+    set_dataset_paper_array = []
+    for paper_id in GCaMPDataset.objects.values_list("paper", flat=True).distinct():
+        paper_obj = GCaMPPaper.objects.get(pk=paper_id)
+        set_dataset_paper_array.append({
+            "paper_id": paper_obj.paper_id,
+            "title": paper_obj.title_short
+        })
+
     context = {
-        "datasets": json.dumps(list(datasets), cls=DjangoJSONEncoder),
-        "dataset_types": json.dumps(list(set_dataset_type_array), cls=DjangoJSONEncoder)
+        "datasets": json.dumps(list(datasets)),
+        "dataset_types": json.dumps(list(set_dataset_type_array), cls=DjangoJSONEncoder),
+        "papers": json.dumps(list(set_dataset_paper_array), cls=DjangoJSONEncoder)
     }
 
     return render(request, "activity/dataset.html", context)
@@ -158,18 +176,9 @@ def plot_dataset(request, dataset_id):
                 neuron = get_object_or_404(GCaMPNeuron, dataset=dataset, idx_neuron=idx_neuron)
                 trace_init[idx_neuron] = {"trace": neuron.trace, "idx_neuron": neuron.idx_neuron, "dataset_id": dataset_id}
         except ValueError:
-            None
-            # return HttpResponseBadRequest("Invalid ID format. Must be comma separated integers.")
+            return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
 
     data = {
-        # "behavior": {
-        #     "velocity": dataset.velocity,
-        #     "head_curvature": dataset.head_curvature,
-        #     "pumping": dataset.pumping,
-        #     "angular_velocity": dataset.angular_velocity,
-        #     "body_curvature": dataset.body_curvature,
-        #     "reversal_events": dataset.reversal_events
-        # },
         "neuron": neuron_data,
         "dataset_id": dataset_id,
         "dataset_type": dataset.dataset_type,
@@ -187,6 +196,7 @@ def plot_dataset(request, dataset_id):
         'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time')), cls=DjangoJSONEncoder)
 
     context = {
+        "paper": dataset.paper,
         "dataset_id": dataset_id,
         "dataset_type": dataset.dataset_type,
         "data": json.dumps(data, cls=DjangoJSONEncoder),

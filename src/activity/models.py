@@ -11,6 +11,10 @@ class GCaMPPaper(models.Model):
     paper_id = models.CharField(max_length=100, unique=True)
     title_full = models.CharField(max_length=300)
     title_short = models.CharField(max_length=100)
+    
+    class Meta:
+        verbose_name = 'GCaMP Paper'
+        verbose_name_plural = 'GCaMP Papers'
 
 class GCaMPDataset(models.Model):
     def __str__(self) -> str:

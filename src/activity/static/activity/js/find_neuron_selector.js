@@ -1,16 +1,23 @@
 export class DatasetNeuronSelector {
-    constructor(selectorNeuronId, table) {
-        // Retrieve the selector element by ID and ensure it exists
+    constructor(selectorNeuronId, selectorPaperId, table) {
         this.selectorNeuronElement = document.getElementById(selectorNeuronId);
         if (!this.selectorNeuronElement) {
             throw new Error(`Element with ID "${selectorNeuronId}" not found.`);
         }
 
+        this.selectorPaperElement = document.getElementById(selectorPaperId);
+        if (!this.selectorPaperElement) {
+            throw new Error(`Element with ID "${selectorPaperId}" not found.`);
+        }
+
         this.tableManager = table
         this.dataMatch = table.data.match
         this.dataClass = table.data.class
-        // console.log(this.tableManager.data)
+        this.papers = table.data.papers
 
+        /*
+            Neuron selector
+        */
         // generate options
         const options = [];
         const optionGroups = [];
@@ -29,8 +36,42 @@ export class DatasetNeuronSelector {
         // Initialize the TomSelect selector
         this.selector = this.initSelector(optionGroups);
         this.selector.addOptions(options)
+
+        /*
+            Paper selector
+        */
+        const optionsPaper = [];
+        this.papers.forEach((paper) => {
+            optionsPaper.push({
+                value: paper.paper_id,
+                name: paper.title
+            })
+        });
+
+        this.selectorPaper = this.initSelectorPaper();
+        this.selectorPaper.addOptions(optionsPaper)    
     }
 
+    /*
+        Paper selector
+    */
+    initSelectorPaper() {
+        return new TomSelect(this.selectorPaperElement, {
+            plugins: ['n_items', 'checkbox_options', 'dropdown_input'],
+            persist: false,
+            create: false,
+            maxOptions: null,
+            sortField: [{ field: "name" }],
+            valueField: "value",
+            labelField: "name",
+            searchField: ["name"],
+            onChange: this.selectorChange.bind(this),
+        });
+    }    
+
+    /*
+        Neuron selector
+    */
     generateNeuronClassOption(neuronClass) {
         return {value: `${neuronClass}*`, name: neuronClass, class: neuronClass, dv: '', lr: '', classq: true}
     }
@@ -72,7 +113,7 @@ export class DatasetNeuronSelector {
             render: this.getRenderConfig(),
             onItemAdd: this.selectorNeuronAdd.bind(this),    
             onItemRemove: this.selectorNeuronRemove.bind(this),
-            onChange: this.selectorNeuronChange.bind(this),
+            onChange: this.selectorChange.bind(this),
             // onClear: () => this.selectorDataset.close(),
         });    
     }
@@ -140,27 +181,6 @@ export class DatasetNeuronSelector {
         }
     }
 
-    selectorNeuronChange(value) {
-        this.matchAll = {}
-        if (value) {
-            const listNeuronSelected = value.split(',')
-            listNeuronSelected.forEach(value => {
-                const thisOption = this.selector.options[value];
-                const neuronClass = thisOption.class
-                
-                if (thisOption.classq)
-                {
-                    // class selected
-                    this.addMatchDictClass(thisOption)
-                } else {
-                    // single neuron selected
-                    this.addMatchDictNeuron(thisOption)
-                }
-            })
-        }
-        this.tableManager.updateMatch(this.matchAll)
-    }
-
     selectorNeuronAdd(value, item) {
         // if class is selected remove, neuron instances. if a neuron, remove the class
         const thisOption = this.selector.options[value];
@@ -203,7 +223,54 @@ export class DatasetNeuronSelector {
         }
     }
 
+    /*
+        Selectors common
+    */
     clearSelector() {
         this.selector.clear();
+        this.selectorPaper.clear();
     }
+
+    selectorChange(value) {
+        const valueNeuron = this.selector.getValue();
+        const valuePaper = this.selectorPaper.getValue();
+
+        this.matchAll = {}
+        if (valueNeuron) {
+            const listNeuronSelected = valueNeuron.split(',')
+            listNeuronSelected.forEach(value => {
+                const thisOption = this.selector.options[value];
+                
+                if (thisOption.classq)
+                {
+                    // class selected
+                    this.addMatchDictClass(thisOption)
+                } else {
+                    // single neuron selected
+                    this.addMatchDictNeuron(thisOption)
+                }
+            })
+        }
+        this.tableManager.updateMatch(this.matchAll, valuePaper)
+    }
+    // selectorNeuronChange(value) {
+    //     this.matchAll = {}
+    //     if (value) {
+    //         const listNeuronSelected = value.split(',')
+    //         listNeuronSelected.forEach(value => {
+    //             const thisOption = this.selector.options[value];
+    //             const neuronClass = thisOption.class
+                
+    //             if (thisOption.classq)
+    //             {
+    //                 // class selected
+    //                 this.addMatchDictClass(thisOption)
+    //             } else {
+    //                 // single neuron selected
+    //                 this.addMatchDictNeuron(thisOption)
+    //             }
+    //         })
+    //     }
+    //     this.tableManager.updateMatch(this.matchAll)
+    // }
 }

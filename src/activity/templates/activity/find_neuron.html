@@ -29,6 +29,11 @@
         <!-- control -->
         <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="tom-select-container">
+                <input style="width:300px" id="select-paper" autocomplete="off" type="text"
+                    class="form-control form-control-sm" placeholder="Select papers to include">
+            </div>
+
+            <div class="tom-select-container">
                 <input style="width:300px" id="select-neuron" autocomplete="off" type="text"
                     class="form-control form-control-sm" placeholder="Neurons">
             </div>
@@ -58,6 +63,7 @@
             <thead>
                 <tr>
                     <th data-checkbox="true"></th>
+                    <th data-field="paper" data-sortable="true">Paper</th>
                     <th data-field="id" data-sortable="true">Dataset</th>
                     <th data-field="dataset_type" data-sortable="true">Type</th>
                     <th data-field="n_neuron" data-sortable="true">N(recorded)</th>

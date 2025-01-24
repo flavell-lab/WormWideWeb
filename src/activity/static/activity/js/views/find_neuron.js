@@ -20,12 +20,18 @@ async function initData(data) {
 
 document.addEventListener('DOMContentLoaded', async() => {
     const data = await initData();
-
     /*
         Selectors
     */
     const neuronTable = new DatasetTable("datasetTable", data)
-    const neuronSelector = new DatasetNeuronSelector("select-neuron", neuronTable)
+    const neuronSelector = new DatasetNeuronSelector("select-neuron", "select-paper", neuronTable)
+
+    // select all papers
+    const allPapers = neuronSelector.selectorPaper.options
+    const paperTargetValue = Object.keys(allPapers).map(function(key) {
+        return allPapers[key].value;
+    });
+    neuronSelector.selectorPaper.setValue(paperTargetValue); // select all papers
 
     /*
         Init from URL

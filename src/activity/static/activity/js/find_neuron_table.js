@@ -19,6 +19,8 @@ export class DatasetTable {
             this.tableData.push({
                 id: dataset.dataset_id,
                 label: dataset.dataset_id,
+                paper_id: dataset.paper.paper_id,
+                paper: dataset.paper.title,
                 dataset_type: dataset.dataset_type.map(dtype=>getDatasetTypePill(dtype)).join(" "),
                 n_neuron: dataset.n_neuron,
                 n_labeled: dataset.n_labeled,
@@ -38,13 +40,13 @@ export class DatasetTable {
         })
     }
 
-    updateMatch(matchDict) {
+    updateMatch(matchDict, valuePaper) {
         $(this.tableElementSelector).bootstrapTable("filterBy", {}, {
             "filterAlgorithm": (row, filters) => {
-                return row.id in matchDict
+                return valuePaper.includes(row.paper_id) && row.id in matchDict
             }
         })
-        
+
         Object.keys(matchDict).forEach((datasetId) => {
             this.matched[datasetId] = matchDict[datasetId]
 
@@ -67,13 +69,13 @@ export class DatasetTable {
                 value: htmlBtn,
                 reinit: true
             })
-            
         })
 
         // double click links to plot
-        $(this.tableElementSelector).on("dbl-click-row.bs.table", function (row, $element, field) {
+        $(this.tableElementSelector).off("dbl-click-row.bs.table")
+        $(this.tableElementSelector).on("dbl-click-row.bs.table", (row, $element, field) => {
             const id = $element.id
-            const neuronList = matchDict[id];
+            const neuronList = this.matched[id];
             const neuronParam = neuronList.length === 1 ? neuronList[0] : neuronList.join("-");
             window.location.href = `/activity/explore/${id}/?n=${neuronParam}&b=v`;
         });
@@ -105,8 +107,6 @@ export class DatasetTable {
         selected.forEach((option) => {
             postData[option.id] = this.matched[option.id]
         })
-
-        // console.log(postData)
 
         // request data
         fetch(plotMultipleURL, {
