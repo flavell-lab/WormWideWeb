@@ -324,7 +324,7 @@ def import_all_paper(self):
     n_fail = 0
     for paper in papers:
         try:
-            GCaMPPaper.objects.create(paper_id=paper["paper_id"], title_short=["title_short"], title_full=["title_full"])
+            GCaMPPaper.objects.create(paper_id=paper["paper_id"], title_short=paper["title_short"], title_full=paper["title_full"])
             n += 1
         except Exception as e:
             self.stdout.write(self.style.WARNING(f"Error importing paper: {e}"))

@@ -28,10 +28,10 @@ def generate_match_dict():
         dataset_id = neuron['dataset__dataset_id']
         idx_neuron = neuron['idx_neuron']
         
-        # Populate Dictionary 1
+        # Dictionary 1
         class_to_combinations[class_name].add(tuple([dv, lr]))  # Use tuple for set uniqueness
         
-        # Populate Dictionary 2
+        # Dictionary 2
         outer_key = f"{class_name}_{lr}_{dv}"
         class_lr_dv_to_dataset_neurons[outer_key][dataset_id].append(idx_neuron)
     
@@ -48,14 +48,17 @@ def generate_match_dict():
     }
     
     neuropal_datasets = GCaMPDataset.objects.filter(dataset_type__icontains='neuropal').values(
+        'paper__paper_id',
+        'paper__title_short',
         'dataset_id',
         'dataset_type',
         'n_neuron',
         'n_labeled',
         'max_t'
     )
+    
     neuropal_datasets_data = [
-        {
+        {   'paper': {'paper_id': dataset['paper__paper_id'], 'title': dataset['paper__title_short']},
             'dataset_id': dataset['dataset_id'],
             'dataset_type': dataset['dataset_type'],
             'n_neuron': dataset['n_neuron'],

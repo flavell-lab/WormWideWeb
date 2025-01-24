@@ -13,6 +13,8 @@ export class DatasetTable {
     initTable() {
         this.data.forEach(dataset => {
             this.tableData.push({
+                paper: dataset.paper.title,
+                paper_id: dataset.paper.paper_id,
                 id: dataset.dataset_id,
                 label: dataset.dataset_id,
                 dataset_type: dataset.dataset_type.map(dtype=>getDatasetTypePill(dtype)).join(" "),
@@ -61,10 +63,11 @@ export class DatasetTable {
         this.allRows = $(this.tableElementSelector).bootstrapTable('getData'); // Get all rows
     }
 
-    updateMatch(selectedDatasetTypes) {
-        $(this.tableElementSelector).bootstrapTable("filterBy", { dataset_type_raw: selectedDatasetTypes }, {
+    updateMatch(valueDatasetType, valuePaper) {
+        $(this.tableElementSelector).bootstrapTable("filterBy", { dataset_type_raw: valueDatasetType, paper_id: valuePaper }, {
             "filterAlgorithm": (row, filters) => {
-                return selectedDatasetTypes.every(dtype => row.dataset_type_raw.includes(dtype))
+                return filters.paper_id.includes(row.paper_id) &&
+                    filters.dataset_type_raw.split(",").every(dtype => row.dataset_type_raw.includes(dtype))
             }
         })
     }

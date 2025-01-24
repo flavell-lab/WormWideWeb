@@ -1,12 +1,20 @@
-export class DatasetSelector {
-    constructor(selectorId, table, datasetTypes) {
-        // Retrieve the selector element by ID and ensure it exists
-        this.selectorElement = document.getElementById(selectorId);
-        if (!this.selectorElement) {
-            throw new Error(`Element with ID "${selectorId}" not found.`);
+export class PaperDatasetSelector {
+    constructor(selectorDatasetId, selectorPaperId, table, datasetTypes, papers) {
+        // get elements
+        this.selectorDatasetElement = document.getElementById(selectorDatasetId);
+        if (!this.selectorDatasetElement) {
+            throw new Error(`Element with ID "${selectorDatasetId}" not found.`);
+        }
+        this.selectorPaperElement = document.getElementById(selectorPaperId);
+        if (!this.selectorPaperElement) {
+            throw new Error(`Element with ID "${selectorPaperId}" not found.`);
         }
 
         this.tableManager = table
+
+        /*
+            Dataset types
+        */
         this.datasetShortNameMap = {
             "gfp": "GFP",
             "baseline": "Baseline",
@@ -23,13 +31,26 @@ export class DatasetSelector {
             })
         });
 
-        // Initialize the TomSelect selector
-        this.selector = this.initSelector();
-        this.selector.addOptions(options)
+        this.selectorDataset = this.initSelectorDataset();
+        this.selectorDataset.addOptions(options)
+
+        /*
+            Papers selector
+        */
+        const optionsPaper = [];
+        papers.forEach((paper) => {
+            optionsPaper.push({
+                value: paper.paper_id,
+                name: paper.title
+            })
+        });
+
+        this.selectorPaper = this.initSelectorPaper();
+        this.selectorPaper.addOptions(optionsPaper)
     }
 
-    initSelector() {
-        return new TomSelect(this.selectorElement, {
+    initSelectorPaper() {
+        return new TomSelect(this.selectorPaperElement, {
             plugins: ['n_items', 'checkbox_options', 'dropdown_input'],
             persist: false,
             create: false,
@@ -39,15 +60,31 @@ export class DatasetSelector {
             labelField: "name",
             searchField: ["name"],
             onChange: this.selectorChange.bind(this),
-            // onClear: () => this.selectorDataset.close(),
+        });
+    }
+
+    initSelectorDataset() {
+        return new TomSelect(this.selectorDatasetElement, {
+            plugins: ['n_items', 'checkbox_options', 'dropdown_input'],
+            persist: false,
+            create: false,
+            maxOptions: null,
+            sortField: [{ field: "name" }],
+            valueField: "value",
+            labelField: "name",
+            searchField: ["name"],
+            onChange: this.selectorChange.bind(this),
         });    
     }
 
     selectorChange(value) {
-        this.tableManager.updateMatch(value.split(","))
+        const valueDataset = this.selectorDataset.getValue()
+        const valuePaper = this.selectorPaper.getValue()
+        this.tableManager.updateMatch(valueDataset, valuePaper)
     }
 
     clearSelector() {
-        this.selector.clear();
+        this.selectorDataset.clear();
+        this.selectorPaper.clear();
     }
 }

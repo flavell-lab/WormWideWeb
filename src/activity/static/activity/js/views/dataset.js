@@ -1,19 +1,27 @@
 import { DatasetTable } from '../find_dataset_table.js';
-import { DatasetSelector } from '../find_dataset_selector.js';
+import { PaperDatasetSelector } from '../find_dataset_selector.js';
 
 document.addEventListener('DOMContentLoaded', () => {    
     /*
         Selectors
     */
     const datasetTable = new DatasetTable("datasetTable", data)
-    const datasetSelector = new DatasetSelector("datasetSelector", datasetTable, datasetTypes)
+    const selectors = new PaperDatasetSelector("datasetSelector", "paperSelector", datasetTable, datasetTypes, papers)
+    
+    // select all papers
+    const allPapers = selectors.selectorPaper.options
+    const paperTargetValue = Object.keys(allPapers).map(function(key) {
+        return allPapers[key].value;
+    });
+    console.log(paperTargetValue)
+    selectors.selectorPaper.setValue(paperTargetValue); // select all papers
 
     /*
         Buttons
     */
     const buttonClear = document.getElementById("clearSelector")
     buttonClear.addEventListener('click', () => {
-        datasetSelector.clearSelector();
+        selectors.clearSelector();
     });
     const buttonDownloadSelected = document.getElementById("downloadSelected")
     buttonDownloadSelected.addEventListener('click', () => {

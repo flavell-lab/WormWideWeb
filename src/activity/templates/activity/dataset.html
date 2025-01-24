@@ -17,65 +17,38 @@
     <h4>Datasets</h4>
     <p>Explore, plot, and download datasets.</p>
 
-    <div class="card card-body">
-        <h5>Dataset Type</h5>
-        <div class="row justify-content-start">
-            <div class="col-md-1">
-                <span class="badge rounded-pill text-bg-secondary">Baseline</span>
-            </div>
-            <div class="col-md-6">
-                Baseline data
-            </div>
-        </div>
-        <div class="row justify-content-start">
-            <div class="col-md-1">
-                <span class="badge rounded-pill text-bg-danger">Heat</span>
-            </div>
-            <div class="col-md-6">
-                Heat stimulation experiment data
-            </div>
-        </div>
-        <div class="row justify-content-start">
-            <div class="col-md-1">
-                <span class="badge rounded-pill text-bg-primary">NeuroPAL</span>
-            </div>
-            <div class="col-md-6">
-                Datasets with NeuroPAL (i.e. identities of the recorded neurons are available)
-            </div>
-        </div>
-        <div class="row justify-content-start">
-            <div class="col-md-1">
-                <span class="badge rounded-pill text-bg-success">GFP</span>
-            </div>
-            <div class="col-md-6">
-                Control data with the GFP expression strain
-            </div>
+    <div class="collapse" id="collpaseDataType">
+        <div class="card card-body">
+            <h5>Dataset Type</h5>
+            {% include 'activity/dataset_type.html' %}
         </div>
     </div>
-
-    <div class="card card-body mt-3">
-        <h5>Data Info</h5>
-        <div class="row">
-            <div class="col-6">
-                <h6>JSON Info</h6>
-                <p>
-                    The datasets are offered in JSON format.
-                    JSON is a standard data format, which can be imported in virtually any language.<br>
-                    For information about the data structure, please check out the information file below.
-                </p>
-                <div class="btn-group-sm">
-                    <a href="readme_data.md" type="button" class="btn btn-sm btn-primary" download=/static/activity/readme_data.md>JSON Info</a>
+    
+    <div class="collapse" id="collpaseDataInfo">
+        <div class="card card-body mt-3">
+            <h5>Data Info</h5>
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    <h6>JSON Info</h6>
+                    <p>
+                        The datasets are offered in JSON format.
+                        JSON is a standard data format, which can be imported in virtually any language.<br>
+                        For information about the data structure, please check out the information file below.
+                    </p>
+                    <div class="btn-group-sm">
+                        <a href="readme_data.md" type="button" class="btn btn-sm btn-primary" download=/static/activity/data/readme_data.md>JSON Info</a>
+                    </div>
                 </div>
-            </div>
-            <div class="col-6">
-                <h6>Data Repository</h6>
-                <p>
-                    To download multiple or all datasets at once, please refer to the data repository info.
-                    The repository contains the HDF5 files, which contain all available variables.
-                    <br><br>
-                </p>
-                <div class="btn-group-sm">
-                    <a href="/about/#data_repo" type="button" class="btn btn-sm btn-primary">Data Repository</a>
+                <div class="col-12 col-md-6 mt-md-0 mt-3">
+                    <h6>Data Repository</h6>
+                    <p>
+                        To download multiple or all datasets at once, please refer to the data repository info.
+                        The repository contains the HDF5 files, which contain all available variables.
+                        <br><br>
+                    </p>
+                    <div class="btn-group-sm">
+                        <a href="/about/#data_repo" type="button" class="btn btn-sm btn-primary">Data Repository</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -87,8 +60,12 @@
         <!-- control -->
         <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="tom-select-container">
+                <input style="width:300px" id="paperSelector" autocomplete="off" type="text"
+                    class="form-control form-control-sm" placeholder="Select papers to include">
+            </div>
+            <div class="tom-select-container">
                 <input style="width:300px" id="datasetSelector" autocomplete="off" type="text"
-                    class="form-control form-control-sm" placeholder="Filter with dataset type">
+                    class="form-control form-control-sm" placeholder="Filter by dataset types">
             </div>
             <div class="btn-group btn-group-sm">
                 <button id="clearSelector" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -100,12 +77,23 @@
                     <i class="bi bi-download"></i>
                 </button>
             </div>
+
+            <div class="btn-group btn-group-sm">
+                <button id="clearSelector" class="btn btn-light" data-bs-toggle="collapse" data-bs-target="#collpaseDataType" aria-expanded="false" aria-controls="collpaseDataType">
+                    Dataset Type
+                </button>
+                <button id="downloadSelected" class="btn btn-light" data-bs-toggle="collapse" data-bs-target="#collpaseDataInfo" aria-expanded="false" aria-controls="collpaseDataInfo">
+                    Dataset Info
+                </button>
+            </div>
         </div>
+
         <!-- table -->
         <table id="datasetTable" data-pagination="true" data-height="600" data-page-size="25" data-unique-id="id">
             <thead>
                 <tr>
                     <th data-checkbox="true"></th>
+                    <th data-field="paper" data-sortable="true">Paper</th>
                     <th data-field="id" data-sortable="true">Dataset</th>
                     <th data-field="n_neuron" data-sortable="true">N(recorded)</th>
                     <th data-field="n_labeled" data-sortable="true">N(labeled)</th>
@@ -142,6 +130,7 @@
 
 <script>const data = JSON.parse('{{ datasets|safe }}');</script>
 <script>const datasetTypes = JSON.parse('{{ dataset_types|safe }}');</script>
+<script>const papers = JSON.parse('{{ papers|safe }}');</script>
 
 <!-- <script>const data = JSON.parse(document.getElementById('data-data').textContent);</script> -->
 <script type="module" src="{% static 'activity/js/activity_common.js' %}" defer></script>
