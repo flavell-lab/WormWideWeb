@@ -1,3 +1,12 @@
+.paper_title {
+  text-decoration: none;
+}
+
+.paper_title:hover {
+  color: #000 !important;
+  text-decoration: none;
+}
+
 #col-connectome, #col-plot {
     transition: all 0.3s ease;
     background-color: var(--background-light);

@@ -20,15 +20,27 @@
 
 {% block main %}
 <div class="container-xxxl py-3">
-  <!-- Title -->
-  <h4>Explore Dataset</h4>
-  <div class="d-flex align-items-center">
-    <h5 class="text-muted mb-0">{{ dataset_id }}</h5>
-    {% for type in dataset_type %}
-    <span class="badge rounded-pill text-bg-{{ type|get_type_class }} ms-1">
-      {{ type|get_type_name }}
-    </span>
-    {% endfor %}
+  <div>
+    <!-- Title -->
+    <h4>Neural Activity Dataset</h4>
+    <div class="d-flex flex-wrap flex-lg-nowrap align-items-center gap-3">
+      <!-- Paper short title -->
+      <h5 class="mb-0">
+        <a href="/about/#{{ paper.paper_id }}" class="text-muted paper_title">{{ paper.title_short }}</a>
+      </h5>
+      
+      <!-- Dataset ID -->
+      <h5 class="text-muted mb-0">{{ dataset_id }}</h5>
+  
+      <!-- Badges -->
+      <div class="mb-0">
+        {% for type in dataset_type %}
+          <span class="badge rounded-pill text-bg-{{ type|get_type_class }}">
+            {{ type|get_type_name }}
+          </span>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 </div>
 
