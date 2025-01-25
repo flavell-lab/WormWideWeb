@@ -51,6 +51,7 @@ def generate_match_dict():
         'paper__paper_id',
         'paper__title_short',
         'dataset_id',
+        'dataset_name',
         'dataset_type',
         'n_neuron',
         'n_labeled',
@@ -60,6 +61,7 @@ def generate_match_dict():
     neuropal_datasets_data = [
         {   'paper': {'paper_id': dataset['paper__paper_id'], 'title': dataset['paper__title_short']},
             'dataset_id': dataset['dataset_id'],
+            'dataset_name': dataset['dataset_name'],
             'dataset_type': dataset['dataset_type'],
             'n_neuron': dataset['n_neuron'],
             'n_labeled': dataset['n_labeled'],

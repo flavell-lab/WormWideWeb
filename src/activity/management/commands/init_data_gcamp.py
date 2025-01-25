@@ -101,13 +101,13 @@ def calculate_cor_behavior(list_trace_array, data):
     """
     # If no keys specified, use all keys from data
 
-    keys = ["velocity", "head_curvature", "pumping", "body_curvature", "angular_velocity"]
-    key_conversion = {"velocity": "v", "head_curvature": "hc", "pumping": "f", "body_curvature": "bc", "angular_velocity": "av"}
+    keys = ["velocity", "head_curvature", "pumping", "angular_velocity"]
+    key_conversion = {"velocity": "v", "head_curvature": "hc", "pumping": "f", "angular_velocity": "av"}
 
     # Validate that all requested keys exist in data
-    invalid_keys = [k for k in keys if k not in data]
-    if invalid_keys:
-        raise KeyError(f"Keys not found in data: {invalid_keys}")
+    # invalid_keys = [k for k in keys if k not in data]
+    # if invalid_keys:
+    #     raise KeyError(f"Keys not found in data: {invalid_keys}")
 
     result = {}
     
@@ -117,16 +117,16 @@ def calculate_cor_behavior(list_trace_array, data):
         
         # Calculate correlation with each selected variable in data
         for variable_name in keys:
-            variable_data = data[variable_name]
-
-            if np.sum(variable_data) == 0.:
-                result[i][key_save] = 0.
-            else:
-                # Ensure lengths match by taking the minimum length
-                min_length = min(len(trace), len(variable_data))
-                correlation, _ = pearsonr(trace[:min_length], variable_data[:min_length])
-                key_save = key_conversion[variable_name]
-                result[i][key_save] = np.around(correlation, 6)
+            if variable_name in data:
+                variable_data = data[variable_name]
+                if np.sum(variable_data) == 0.:
+                    result[i][key_save] = 0.
+                else:
+                    # Ensure lengths match by taking the minimum length
+                    min_length = min(len(trace), len(variable_data))
+                    correlation, _ = pearsonr(trace[:min_length], variable_data[:min_length])
+                    key_save = key_conversion[variable_name]
+                    result[i][key_save] = np.around(correlation, 6)
 
     return result
 
@@ -202,11 +202,12 @@ def check_list_lengths(self, list_trace_array, list_trace_original, pumping, hea
 
     # Check each additional list
     for name, lst in other_lists.items():
-        current_length = len(lst)
-        if current_length != expected_length:
-            raise ValueError(
-                f"List '{name}' has length {current_length}, expected {expected_length}."
-            )
+        if lst is not None:
+            current_length = len(lst)
+            if current_length != expected_length:
+                raise ValueError(
+                    f"List '{name}' has length {current_length}, expected {expected_length}."
+                )
 
     # If all checks pass
     self.stdout.write(self.style.SUCCESS(f"All lists have the consistent length of {expected_length}."))
@@ -219,7 +220,7 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
     list_trace_array = data["trace_array"]
     list_trace_original = data["trace_original"]
     
-    pumping = data["pumping"]
+    pumping = data.get("pumping", None)
     head_curvature = data["head_curvature"]
     body_curvature = data["body_curvature"]
     angular_velocity = data["angular_velocity"]
@@ -238,46 +239,47 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
     }
     cor_trace_original = {
         "neuron": correlation_matrix_to_dict(np.around(np.corrcoef(list_trace_original), 3)),
-        "behavior": calculate_cor_behavior(list_trace_array, data)
+        "behavior": calculate_cor_behavior(list_trace_original, data)
     }
     
     paper, q_created = GCaMPPaper.objects.get_or_create(paper_id=paper_id)
 
     dataset = GCaMPDataset.objects.create(
         paper=paper,
-        dataset_id=data["uid"],
+        dataset_id=paper.paper_id + "-" + data["uid"],
+        dataset_name=data["uid"],
         dataset_type=data["dataset_type"],
         
         avg_timestep=data["avg_timestep"],
         max_t=data["max_t"],
         timestamp_confocal=truncate_floats_in_list(data["timestamp_confocal"]),
-        ranges=data["ranges"],
+        ranges=data.get("ranges", {}),
 
         n_neuron=data["num_neurons"],
-        n_labeled=len(data["labeled"]),
+        n_labeled=len(data.get("labeled", [])),
 
-        pumping=pumping,
+        pumping=pumping if pumping is not None else [],
         head_curvature=head_curvature,
         body_curvature=body_curvature,
         angular_velocity=angular_velocity,
         velocity=velocity,
         reversal_events=data["reversal_events"],
         
-        truncated_pumping=truncate_floats_in_list(pumping, 5),
+        truncated_pumping=truncate_floats_in_list(pumping, 5) if pumping is not None else [],
         truncated_head_curvature=truncate_floats_in_list(head_curvature, 5),
         truncated_body_curvature=truncate_floats_in_list(body_curvature, 5),
         truncated_angular_velocity=truncate_floats_in_list(angular_velocity, 5),
         truncated_velocity=truncate_floats_in_list(velocity, 5),
 
-        neuron_categorization = data["neuron_categorization"],
-        encoding_change = data["encoding_changing_neurons"],
-        rel_enc_str_v = truncate_floats_in_list(data["rel_enc_str_v"]),
-        rel_enc_str_θh = truncate_floats_in_list(data["rel_enc_str_θh"]),
-        rel_enc_str_P = truncate_floats_in_list(data["rel_enc_str_P"]),
-        forwardness = truncate_floats_in_list(data["forwardness"]),
-        dorsalness = truncate_floats_in_list(data["dorsalness"]),
-        feedingness = truncate_floats_in_list(data["feedingness"]),
-        tau_vals = truncate_floats_in_list(data["tau_vals"]),
+        neuron_categorization = data.get("neuron_categorization", {}),
+        encoding_change = data.get("encoding_changing_neurons", []),
+        rel_enc_str_v = truncate_floats_in_list(data["rel_enc_str_v"]) if "rel_enc_str_v" in data else [],
+        rel_enc_str_θh = truncate_floats_in_list(data["rel_enc_str_θh"]) if "rel_enc_str_θh" in data else [],
+        rel_enc_str_P = truncate_floats_in_list(data["rel_enc_str_P"]) if "rel_enc_str_P" in data else [],
+        forwardness = truncate_floats_in_list(data["forwardness"]) if "forwardness" in data else [],
+        dorsalness = truncate_floats_in_list(data["dorsalness"]) if "dorsalness" in data else [],
+        feedingness = truncate_floats_in_list(data["feedingness"]) if "feedingness" in data else [],
+        tau_vals = truncate_floats_in_list(data["tau_vals"]) if "tau_vals" in data else [],
 
         events=data["events"] if "events" in data else {},
 
@@ -289,10 +291,13 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
     for i in range(0,len(list_trace_array)):
         idx_neuron = i + 1
         idx_neuron_str = str(idx_neuron)
-        if idx_neuron_str in data["labeled"]:
+        if "labeled" in data and idx_neuron_str in data["labeled"]:
             label_ = data["labeled"][idx_neuron_str]
             neuron_name = map_neuron_name(label_["label"], neuron_name_map)
             neuron_class_name = map_neuron_name(label_["neuron_class"], neuron_class_name_map)
+            if not NeuronClass.objects.filter(name=neuron_class_name).exists():
+                self.stdout.write(self.style.WARNING(f"Neuron class {neuron_class_name} does not exist."))
+
             neuron_class = NeuronClass.objects.get(name=neuron_class_name)
             lr = process_lr(label_["LR"])
             dv = process_dv(label_["DV"])
@@ -335,14 +340,13 @@ def import_all_paper(self):
 
 def import_all_gcamp(self):
     papers = GCaMPPaper.objects.values_list("paper_id")
-    import_manifest = []
 
     path_json = get_dataset_path(PATH_CONFIG_GCAMP_NEURON_MAP)
     neuron_name_map = load_json(self, path_json)
     path_json = get_dataset_path(PATH_CONFIG_GCAMP_CLASS_MAP)
     neuron_class_name_map = load_json(self, path_json)
 
-    n = 1
+    n = 0
     for paper_ in papers:
         paper_id = paper_[0]
         dir_datasets = get_dataset_path(["activity", "data", paper_id])
@@ -350,12 +354,12 @@ def import_all_gcamp(self):
         json_files = [f for f in os.listdir(dir_datasets) if f.endswith('.json')]
         
         for filename in json_files:
-            try:
-                filepath = get_dataset_path(["activity", "data", paper_id, filename])
-                import_gcamp_data(self, filepath, paper_id, neuron_class_name_map, neuron_name_map)
-                n = n + 1
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f"Error importing GCaMP dataset: {filename} error: {e}"))
+            # try:
+            filepath = get_dataset_path(["activity", "data", paper_id, filename])
+            import_gcamp_data(self, filepath, paper_id, neuron_class_name_map, neuron_name_map)
+            n = n + 1
+            # except Exception as e:
+            #     self.stdout.write(self.style.WARNING(f"Error importing GCaMP dataset: {filename} error: {e}"))
             self.stdout.write(self.style.NOTICE(f"Processed {filename}"))
 
     self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} GCaMP datasets"))

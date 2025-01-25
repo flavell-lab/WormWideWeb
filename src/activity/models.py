@@ -23,7 +23,8 @@ class GCaMPDataset(models.Model):
     paper = models.ForeignKey(GCaMPPaper, on_delete=models.CASCADE, related_name="datasets")
 
     # dataset
-    dataset_id = models.CharField(max_length=25, unique=True)
+    dataset_id = models.CharField(max_length=200, unique=True)
+    dataset_name = models.CharField(max_length=100)
     dataset_type = models.JSONField(default=empty_json)
 
     # time

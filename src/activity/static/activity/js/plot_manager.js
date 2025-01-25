@@ -14,8 +14,8 @@ const behaviorDescriptions = {
     v: "Velocity",
     hc: "Head Curvature",
     f: "Pumping",
-    bc: "Body Curvature",
     av: "Angular Velocity"
+    // bc: "Body Curvature",
 };
 
 /**
@@ -158,7 +158,7 @@ export class NeuronBehaviorPlot {
             const headCurvature = behavior["head_curvature"] || [];
             const pumping = behavior["pumping"] || [];
             const angularVelocity = behavior["angular_velocity"] || [];
-            const bodyCurvature = behavior["body_curvature"] || [];
+            // const bodyCurvature = behavior["body_curvature"] || [];
 
             // store it internally
             this.behavior = {
@@ -166,7 +166,7 @@ export class NeuronBehaviorPlot {
                 "hc": { i: 1, data: headCurvature },
                 "f": { i: 2, data: pumping },
                 "av": { i: 3, data: angularVelocity },
-                "bc": { i: 4, data: bodyCurvature }
+                // "bc": { i: 4, data: bodyCurvature }
             };
 
             // Reversals

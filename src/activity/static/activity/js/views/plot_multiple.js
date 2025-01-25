@@ -83,7 +83,7 @@ async function fetchBehavior(url) {
             { shortName: 'hc', index: 1, data: head_curvature, label: 'Head Curve<br>(rad)' },
             { shortName: 'f', index: 2, data: pumping, label: 'Pumping<br>(pumps/sec)' },
             { shortName: 'av', index: 3, data: angular_velocity, label: 'Angular Velocity<br>(rad/s)' },
-            { shortName: 'bc', index: 4, data: body_curvature, label: 'Body Curvature<br>(rad)' }
+            // { shortName: 'bc', index: 4, data: body_curvature, label: 'Body Curvature<br>(rad)' }
         ];
 
         return [behaviors, events];

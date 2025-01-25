@@ -312,6 +312,18 @@ export function getDatasetTypePill(datasettype) {
             type_str = "Heat"
             color = "danger";
             break;
+        case "patchEncounter":
+            type_str = "Patch"
+            color = "info";
+            break;
+        case "reFed":
+            type_str = "Re-fed"
+            color = "light";
+            break;
+        case "sickness":
+            type_str = "Sickness"
+            color = "dark";
+            break;
         default:
             color = "text-bg-danger";
     }
