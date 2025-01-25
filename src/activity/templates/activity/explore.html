@@ -30,7 +30,7 @@
       </h5>
       
       <!-- Dataset ID -->
-      <h5 class="text-muted mb-0">{{ dataset_id }}</h5>
+      <h5 class="text-muted mb-0">{{ dataset_name }}</h5>
   
       <!-- Badges -->
       <div class="mb-0">
@@ -392,6 +392,7 @@
   </div>
 </div>
 
+{% if show_encoding %}
 <div class="container-xxxl mb-3">
   <div class="card card-body" id="encodingTableCard">
     <div>
@@ -403,6 +404,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 <!-- modal label info -->
 <div class="modal fade" id="modalInfo" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"

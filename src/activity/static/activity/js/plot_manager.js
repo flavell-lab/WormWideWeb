@@ -30,7 +30,7 @@ export class NeuronBehaviorPlot {
         }
 
         this.data = data;
-        
+        console.log(data)
         // collapse for cor
         this.collapseCorElement = document.getElementById('collapseCor');
         this.collapseCorElement.addEventListener('shown.bs.collapse', () => {

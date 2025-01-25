@@ -212,7 +212,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     /*
         Encoding table
     */
-    const encodingTable = new EncodingTable("dataset", data, "individual")
+    if (data.encoding_data_exists) {
+        const encodingTable = new EncodingTable("dataset", data, "individual")
+    }
 
     /*
         Tooltips

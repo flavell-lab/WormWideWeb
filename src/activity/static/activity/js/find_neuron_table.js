@@ -18,7 +18,7 @@ export class DatasetTable {
         this.datasets.forEach(dataset => {
             this.tableData.push({
                 id: dataset.dataset_id,
-                label: dataset.dataset_id,
+                label: dataset.dataset_name,
                 paper_id: dataset.paper.paper_id,
                 paper: dataset.paper.title,
                 dataset_type: dataset.dataset_type.map(dtype=>getDatasetTypePill(dtype)).join(" "),

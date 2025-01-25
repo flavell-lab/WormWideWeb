@@ -16,7 +16,7 @@ export class DatasetTable {
                 paper: dataset.paper.title,
                 paper_id: dataset.paper.paper_id,
                 id: dataset.dataset_id,
-                label: dataset.dataset_id,
+                label: dataset.dataset_name,
                 dataset_type: dataset.dataset_type.map(dtype=>getDatasetTypePill(dtype)).join(" "),
                 dataset_type_raw: dataset.dataset_type.join(","),
                 n_neuron: dataset.n_neuron,

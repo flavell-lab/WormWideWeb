@@ -43,6 +43,7 @@ def dataset(request):
         datasets.append({
             "paper": {"paper_id": dataset.paper.paper_id, "title": dataset.paper.title_short},
             "dataset_id": dataset.dataset_id,
+            "dataset_name": dataset.dataset_name,
             "dataset_type": dataset.dataset_type,
             "n_neuron": dataset.n_neuron,
             "n_labeled": dataset.n_labeled,
@@ -181,11 +182,12 @@ def plot_dataset(request, dataset_id):
     data = {
         "neuron": neuron_data,
         "dataset_id": dataset_id,
+        "dataset_name": dataset.dataset_name,
         "dataset_type": dataset.dataset_type,
         "avg_timestep": dataset.avg_timestep,
         "max_t": dataset.max_t,
         "cor": dataset.neuron_cor,
-        # "cor_original": dataset.neuron_cor_original
+        "encoding_data_exists": bool(dataset.neuron_categorization),
     }
     if len(trace_init) > 0:
         data["trace_init"] = trace_init
@@ -198,10 +200,12 @@ def plot_dataset(request, dataset_id):
     context = {
         "paper": dataset.paper,
         "dataset_id": dataset_id,
+        "dataset_name": dataset.dataset_name,
         "dataset_type": dataset.dataset_type,
         "data": json.dumps(data, cls=DjangoJSONEncoder),
         'datasets_json': datasets_json,
-        "show_connectome": "neuropal" in dataset.dataset_type
+        "show_connectome": "neuropal" in dataset.dataset_type,
+        "show_encoding": bool(dataset.neuron_categorization)
     }
     
     return render(request, "activity/explore.html", context)
@@ -238,12 +242,14 @@ def plot_multiple(request):
         plots.append({
             "dataset_type": dataset.dataset_type,
             "dataset_id": dataset.dataset_id,
+            "dataset_name": dataset.dataset_name,
             "trace_data": trace_data,
             "avg_timestep": dataset.avg_timestep,
             "max_t": dataset.max_t
         })
         list_dataset_meta.append({
             "dataset_id": dataset.dataset_id,
+            "dataset_name": dataset.dataset_name,
             "dataset_type": dataset.dataset_type,
         })
     
