@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from activity.models import GCaMPDataset, GCaMPNeuron, GCaMPPaper
+from activity.models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from core.models import JSONCache
 from collections import defaultdict
 import json
@@ -46,40 +46,25 @@ def generate_match_dict():
         outer_key: dict(inner_dict) 
         for outer_key, inner_dict in class_lr_dv_to_dataset_neurons.items()
     }
-    
-    neuropal_datasets = GCaMPDataset.objects.filter(dataset_type__icontains='neuropal').values(
-        'paper__paper_id',
-        'paper__title_short',
-        'dataset_id',
-        'dataset_name',
-        'dataset_type',
-        'n_neuron',
-        'n_labeled',
-        'max_t'
-    )
-    
-    neuropal_datasets_data = [
-        {   'paper': {'paper_id': dataset['paper__paper_id'], 'title': dataset['paper__title_short']},
-            'dataset_id': dataset['dataset_id'],
-            'dataset_name': dataset['dataset_name'],
-            'dataset_type': dataset['dataset_type'],
-            'n_neuron': dataset['n_neuron'],
-            'n_labeled': dataset['n_labeled'],
-            'max_t': dataset['max_t']
-        }
-        for dataset in neuropal_datasets
-    ]
 
-    # papers
-    papers = []
-    for paper_id in GCaMPDataset.objects.filter(dataset_type__icontains='neuropal').values_list("paper", flat=True).distinct():
-        paper_obj = GCaMPPaper.objects.get(pk=paper_id)
-        papers.append({
-            "paper_id": paper_obj.paper_id,
-            "title": paper_obj.title_short
+    neuropal_papers = []
+    neuropal_datasets_data = []
+    neuropal_datasets = GCaMPDataset.objects.filter(dataset_type__type_id='common-neuropal')
+    for dataset in neuropal_datasets:
+        neuropal_datasets_data.append({
+            'paper': {'paper_id': dataset.paper.paper_id, 'title': dataset.paper.title_short},
+            'dataset_id': dataset.dataset_id,
+            'dataset_name': dataset.dataset_name,
+            'dataset_type': [type.type_id for type in dataset.dataset_type.all()],
+            'n_neuron': dataset.n_neuron,
+            'n_labeled': dataset.n_labeled,
+            'max_t': dataset.max_t
         })
 
-    return class_combinations_dict, dict_match, neuropal_datasets_data, papers
+        if not any([dataset.paper.paper_id == paper for paper in neuropal_papers]):
+            neuropal_papers.append({'paper_id': dataset.paper.paper_id, 'title': dataset.paper.title_short})
+
+    return class_combinations_dict, dict_match, neuropal_datasets_data, neuropal_papers
 
 class Command(BaseCommand):
     help = 'Update the neuron class match JSON data'
