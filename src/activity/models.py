@@ -11,10 +11,24 @@ class GCaMPPaper(models.Model):
     paper_id = models.CharField(max_length=100, unique=True)
     title_full = models.CharField(max_length=300)
     title_short = models.CharField(max_length=100)
-    
+
     class Meta:
         verbose_name = 'GCaMP Paper'
         verbose_name_plural = 'GCaMP Papers'
+
+class GCaMPDatasetType(models.Model):
+    def __str__(self) -> str:
+        return self.name
+
+    id = models.CharField(max_length=20, unique=True, primary_key=True)
+    name = models.CharField(max_length=20)
+    description = models.CharField(max_length=300)
+    color_background = models.CharField(max_length=7, default="#000000")
+
+    class Meta:
+        verbose_name = 'GCaMP Dataset Type'
+        verbose_name_plural = 'GCaMP Dataset Types'
+
 
 class GCaMPDataset(models.Model):
     def __str__(self) -> str:
@@ -25,7 +39,8 @@ class GCaMPDataset(models.Model):
     # dataset
     dataset_id = models.CharField(max_length=200, unique=True)
     dataset_name = models.CharField(max_length=100)
-    dataset_type = models.JSONField(default=empty_json)
+    # dataset_type = models.JSONField(default=empty_json)
+    dataset_Type = models.ForeignKey(GCaMPDatasetType, on_delete=models.CASCADE, related_name="datasets")
 
     # time
     avg_timestep = models.FloatField(default=0.)
