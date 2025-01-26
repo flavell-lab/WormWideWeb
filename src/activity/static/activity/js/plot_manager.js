@@ -45,6 +45,10 @@ export class NeuronBehaviorPlot {
             "heat": {
                 "color": 'rgba(255,0,0,1)',
                 "width": 2
+            },
+            "patchEncounter": {
+                "color": 'rgba(255,0,0,1)',
+                "width": 2
             }
         };
 
@@ -147,7 +151,7 @@ export class NeuronBehaviorPlot {
 
             // Reversals
             this.reversals = behavior["reversal_events"] || [];
-            this.events = behavior["events"] || {};
+            this.events = data["events"] || {};
 
             // Return so that .then() can know we completed successfully
             return true;
