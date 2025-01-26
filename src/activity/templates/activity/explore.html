@@ -16,8 +16,6 @@
 <link rel="stylesheet" href="{% static 'connectome/css/connectome_common.css' %}">
 {% endblock %}
 
-{% load dataset_badge %}
-
 {% block main %}
 <div class="container-xxxl py-3">
   <div>
@@ -33,13 +31,7 @@
       <h5 class="text-muted mb-0">{{ dataset_name }}</h5>
   
       <!-- Badges -->
-      <div class="mb-0">
-        {% for type in dataset_type %}
-          <span class="badge rounded-pill text-bg-{{ type|get_type_class }}">
-            {{ type|get_type_name }}
-          </span>
-        {% endfor %}
-      </div>
+      <div id="datasetTypeBadges"class="mb-0"></div>
     </div>
   </div>
 </div>

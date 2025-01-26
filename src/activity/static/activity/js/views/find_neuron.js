@@ -3,7 +3,6 @@ import { DatasetNeuronSelector } from '../find_neuron_selector.js';
 import { DatasetTable } from '../find_neuron_table.js';
 import { setLocalBool, getLocalBool } from "/static/core/js/utility.js"
 
-
 async function initData(data) {
     const url = "/activity/api/data/find_neuron/";
     try {

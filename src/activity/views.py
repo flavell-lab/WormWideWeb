@@ -36,7 +36,7 @@ def encoding_connectome(request):
 
     return render(request, "activity/encoding_connectome.html", context)    
 
-# @cache_page(60*60*24*30)
+@cache_page(60*60*24*30)
 def dataset(request):
     datasets = []
     for dataset in GCaMPDataset.objects.all():
@@ -186,12 +186,15 @@ def plot_dataset(request, dataset_id):
         "neuron": neuron_data,
         "dataset_id": dataset_id,
         "dataset_name": dataset.dataset_name,
-        "dataset_type": dataset.dataset_type,
         "avg_timestep": dataset.avg_timestep,
         "max_t": dataset.max_t,
         "cor": dataset.neuron_cor,
         "encoding_data_exists": bool(encoding),
+        "dataset_type": {}
     }
+
+    for dtype in dataset.dataset_type.all():
+        data["dataset_type"][dtype.type_id] = {"type_id": dtype.type_id, "description": dtype.description, "name": dtype.name, "background-color": dtype.color_background}
 
     if dataset.events:
         data["events"] = dataset.events
@@ -207,13 +210,12 @@ def plot_dataset(request, dataset_id):
         "paper": dataset.paper,
         "dataset_id": dataset_id,
         "dataset_name": dataset.dataset_name,
-        "dataset_type": dataset.dataset_type,
         "data": json.dumps(data, cls=DjangoJSONEncoder),
         'datasets_json': datasets_json,
-        "show_connectome": "neuropal" in dataset.dataset_type,
+        "show_connectome": "common-neuropal" in data["dataset_type"],
         "show_encoding": bool(encoding)
     }
-    
+
     return render(request, "activity/explore.html", context)
 
 
@@ -230,8 +232,13 @@ def plot_multiple(request):
     plots = []
     colors = {}
     list_dataset_meta = []
+    dataset_types = {}
     for dataset_id in data:
         dataset = dataset_map[dataset_id]
+
+        for dtype in dataset.dataset_type.all():
+            if dtype.type_id not in dataset_types:
+                dataset_types[dtype.type_id] = {"type_id": dtype.type_id, "description": dtype.description, "name": dtype.name, "background-color": dtype.color_background}
 
         list_idx_neuron = data[dataset_id]
         neurons = GCaMPNeuron.objects.filter(dataset__dataset_id=dataset_id, idx_neuron__in=list_idx_neuron)
@@ -246,7 +253,7 @@ def plot_multiple(request):
                 colors[neuron_name] = len(colors)
 
         plots.append({
-            "dataset_type": dataset.dataset_type,
+            "dataset_type": [type.type_id for type in dataset.dataset_type.all()],
             "dataset_id": dataset.dataset_id,
             "dataset_name": dataset.dataset_name,
             "trace_data": trace_data,
@@ -254,14 +261,15 @@ def plot_multiple(request):
             "max_t": dataset.max_t
         })
         list_dataset_meta.append({
+            "paper_id": dataset.paper.paper_id,
+            "paper_title_short": dataset.paper.title_short,
             "dataset_id": dataset.dataset_id,
             "dataset_name": dataset.dataset_name,
-            "dataset_type": dataset.dataset_type,
         })
     
     context = {
         "list_dataset_meta": list_dataset_meta,
-        "plots": json.dumps({"data": plots, "colors": colors}, cls=DjangoJSONEncoder)
+        "plots": json.dumps({"dataset_types": dataset_types, "data": plots, "colors": colors}, cls=DjangoJSONEncoder)
     }
     # end_time = time.time()  # Record end time
     # processing_time = end_time - start_time

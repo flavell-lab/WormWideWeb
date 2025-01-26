@@ -3,7 +3,7 @@ import { NeuronSelector } from "../plot_neuron_selector.js"
 import { BehaviorSelector } from "../plot_behavior_selector.js"
 import { DatasetSelector } from "../plot_dataset_selector.js"
 import { NeuronBehaviorPlot } from "../plot_manager.js"
-import { initSlider, setLocalBool, getLocalBool, toggleFullscreen, handleFullscreenElement } from "/static/core/js/utility.js"
+import { getDatasetTypePill, initSlider, setLocalBool, getLocalBool, toggleFullscreen, handleFullscreenElement } from "/static/core/js/utility.js"
 import { EncodingTable } from "../encoding_table.js"
 import { adjustWidth } from "../plot_data.js"
 import { PlotGraph } from "../plot_graph.js"
@@ -40,13 +40,20 @@ function initPlotManager(data) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    /*
+        Badges
+    */
+    document.getElementById("datasetTypeBadges").innerHTML = Object.keys(data.dataset_type).map(typeId => 
+        getDatasetTypePill(typeId, data.dataset_type)
+    ).join(" ")
+
     // init PlotManager
     const plotManager = await initPlotManager(data);
 
     /*
         Connectome
     */
-    const isNeuroPAL = data.dataset_type.includes("neuropal");
+    const isNeuroPAL = "common-neuropal" in data.dataset_type;
     const plotGraph = isNeuroPAL ? new PlotGraph("connectome-graph", data) : null;
     const datasetSelector = isNeuroPAL ? new DatasetSelector("select-dataset", plotGraph) : null;
 

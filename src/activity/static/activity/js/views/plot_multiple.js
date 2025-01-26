@@ -5,6 +5,7 @@ import {
     plotBehavior as plotBehaviorFunction,
     initEvent
 } from '../plot_data.js';
+import { getDatasetTypePill } from '/static/core/js/utility.js';
 
 const styleEvent = {
     "heat": {
@@ -109,6 +110,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.warn(`Missing plotElement or dataset for index ${i}`);
                 continue;
             }
+
+            // badges
+            document.getElementById(`badges-${dataset.dataset_id}`).innerHTML = dataset.dataset_type.map(typeId=>getDatasetTypePill(typeId, data.dataset_types)).join(" ")
 
             // 2A. Build time axis
             const avgTimestep = dataset.avg_timestep ?? 0;

@@ -6,9 +6,16 @@
   integrity="sha512-JSzoYh+JmOgeqypu22l1ePSza/E8xx3GHYWoY84eTdYKv7ojcA3XLundlKhNItzxgRJuvwW02ylrjslDUb3zrw=="
   crossorigin="anonymous" referrerpolicy="no-referrer" />
 <link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
+<style>
+.paper_title {
+  text-decoration: none;
+}
+.paper_title:hover {
+  color: #000 !important;
+  text-decoration: none;
+}
+</style>
 {% endblock %}
-
-{% load dataset_badge %}
 
 {% block main %}
 <div class="container-xxl py-3">
@@ -44,13 +51,17 @@
   <!-- Column for each plot -->
   <div class="col-xl-6 col-sm-12 mb-4">
       <div class="card card-body">
-          <div class="d-flex align-items-center">
+          <div class="d-flex flex-wrap flex-lg-nowrap align-items-center gap-3">
+            <!-- Paper short title -->
+            <h5 class="mb-0">
+              <a href="/about/#{{ dataset.paper_id }}" class="text-muted paper_title">{{ dataset.paper_title_short }}</a>
+            </h5>
+            
+            <!-- Dataset ID -->
             <h5 class="text-muted mb-0">{{ dataset.dataset_name }}</h5>
-            {% for type in dataset.dataset_type %}
-            <span class="badge rounded-pill text-bg-{{ type|get_type_class }} ms-1">
-              {{ type|get_type_name }}
-            </span>
-            {% endfor %}        
+        
+            <!-- Badges -->
+            <div class="mb-0" id="badges-{{ dataset.dataset_id }}"></div>
           </div>
       
           <div class="mb-2" id="plot_{{ forloop.counter0 }}"></div>

@@ -564,7 +564,6 @@ export class NeuronBehaviorPlot {
         const corBehaviorElement = document.getElementById("cor_behavior");
         const behaviors = this.data.behavior.traces
         const nBehaviors = behaviors.length;
-        console.log(data.cor.behavior)
         Object.keys(behaviors).forEach((behaviorCode, indexBehavior) => {
             const behaviorName = behaviors[behaviorCode].name;
             const behaviorPairs = [];

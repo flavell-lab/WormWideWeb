@@ -50,6 +50,7 @@ def generate_match_dict():
     neuropal_papers = []
     neuropal_datasets_data = []
     neuropal_datasets = GCaMPDataset.objects.filter(dataset_type__type_id='common-neuropal')
+    neuropal_dataset_type = {}
     for dataset in neuropal_datasets:
         neuropal_datasets_data.append({
             'paper': {'paper_id': dataset.paper.paper_id, 'title': dataset.paper.title_short},
@@ -64,14 +65,18 @@ def generate_match_dict():
         if not any([dataset.paper.paper_id == paper for paper in neuropal_papers]):
             neuropal_papers.append({'paper_id': dataset.paper.paper_id, 'title': dataset.paper.title_short})
 
-    return class_combinations_dict, dict_match, neuropal_datasets_data, neuropal_papers
+        for dtype in dataset.dataset_type.all():
+            if dtype.type_id not in neuropal_dataset_type:
+                neuropal_dataset_type[dtype.type_id] = {"type_id": dtype.type_id, "description": dtype.description, "name": dtype.name, "background-color": dtype.color_background}
+
+    return class_combinations_dict, dict_match, neuropal_datasets_data, neuropal_papers, neuropal_dataset_type
 
 class Command(BaseCommand):
     help = 'Update the neuron class match JSON data'
 
     def handle(self, *args, **options):
-        dict_class, dict_match, neuropal_datasets_data, papers = generate_match_dict()
-        data = {"class": dict_class, "match": dict_match, "neuropal_datasets_data": neuropal_datasets_data, "papers": papers }
+        dict_class, dict_match, neuropal_datasets_data, papers, neuropal_dataset_type = generate_match_dict()
+        data = {"class": dict_class, "match": dict_match, "neuropal_datasets_data": neuropal_datasets_data, "papers": papers, "neuropal_dataset_type": neuropal_dataset_type }
         json_str = json.dumps(data)
 
         obj, created = JSONCache.objects.get_or_create(name="neuropal_match")
