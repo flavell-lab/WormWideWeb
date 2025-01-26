@@ -64,29 +64,9 @@ async function fetchBehavior(url) {
         }
         
         // Parse the response body as JSON
-        const data = await response.json();
-        const {
-            velocity = [],
-            head_curvature = [],
-            pumping = [],
-            angular_velocity = [],
-            body_curvature = [],
-        } = data.behavior || {};
-        const events = data.behavior.events || {};
+        const fetchedData = await response.json();
 
-        // Scale velocity by 10 if needed
-        const scaledVelocity = velocity.map(v => v * 10);
-
-        // Define behavior traces
-        const behaviors = [
-            { shortName: 'v', index: 0, data: scaledVelocity, label: 'Velocity<br>(0.1 mm/s)' },
-            { shortName: 'hc', index: 1, data: head_curvature, label: 'Head Curve<br>(rad)' },
-            { shortName: 'f', index: 2, data: pumping, label: 'Pumping<br>(pumps/sec)' },
-            { shortName: 'av', index: 3, data: angular_velocity, label: 'Angular Velocity<br>(rad/s)' },
-            // { shortName: 'bc', index: 4, data: body_curvature, label: 'Body Curvature<br>(rad)' }
-        ];
-
-        return [behaviors, events];
+        return [fetchedData.data.behavior, fetchedData.data.events];
     } catch (error) {
       // Re-throw the error to be handled by the caller
       throw new Error(`Failed to fetch JSON data: ${error.message}`);
@@ -155,28 +135,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 2C. Plot behaviors
             const behaviorURL = `/activity/api/data/${dataset.dataset_id}/behavior/`
-            const [behaviors, events] = await fetchBehavior(behaviorURL);
+            const [behaviorData, events] = await fetchBehavior(behaviorURL);
             
             const nonVelocityTraceIndices = [];
-            for (const b of behaviors) {
-                const color = getCycleColor(b.index);
+            Object.keys(behaviorData.traces).forEach((key, idx) => {
+                const b = behaviorData.traces[key];
+                const color = getCycleColor(b.i);
                 plotBehaviorFunction(
                     plotElement,
                     listTMinute,
                     b.data,
-                    b.label,
-                    `b_${b.shortName}`,
+                    `${b.name} (${b.unit})`,
+                    `b_${b.name_short}`,
                     color
                 );
 
                 // Hide all behavior traces except velocity
-                if (b.shortName !== 'v') {
-                    const foundIdx = getTraceIndex(plotElement, `b_${b.shortName}`);
+                if (b.name_short !== 'v') {
+                    const foundIdx = getTraceIndex(plotElement, `b_${b.name_short}`);
                     if (typeof foundIdx === 'number') {
                         nonVelocityTraceIndices.push(foundIdx);
                     }
                 }
-            }
+            })
             hideTraces(plotElement, nonVelocityTraceIndices);
 
             // events
