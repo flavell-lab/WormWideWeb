@@ -13,7 +13,7 @@ def generate_encoding_dict():
         if dataset.n_labeled > 0 and all([dtype in ["baseline", "neuropal"] for dtype in list_dataset]):
             encoding_data = get_dataset_encoding(dataset)
             neuron_data = get_dataset_neuron_data(dataset)
-            data[dataset.dataset_id] = {"neuron": neuron_data, "encoding": encoding_data}
+            data[dataset.dataset_id] = {"neuron": neuron_data, "encoding": encoding_data, "dataset_name": dataset.dataset_name}
 
     return data
 

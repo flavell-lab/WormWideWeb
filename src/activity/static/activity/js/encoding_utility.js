@@ -30,7 +30,6 @@ export function getEncodingTable(data, neuron, skipUnlabeled=false, idxFirst=fal
     const neuropal_label = data["labeled"];
 
     const table_encoding_data = [];
-
     for (let i = 0; i < n_neuron; i++) {
         let idx_neuron = i + 1;
         let label_ = ""
@@ -72,7 +71,9 @@ export function getEncodingTable(data, neuron, skipUnlabeled=false, idxFirst=fal
         table_encoding_data.push({
             "neuron": getTableNeuronLabel(label_, idx_neuron, idxFirst),
             // "label": label_,
+            "dataset_name": data["dataset_name"],
             "dataset": data["uid"],
+
             "id": `${data["uid"]}_${idx_neuron}`,
 
             "strength_v": data["rel_enc_str_v"][i].toFixed(3),

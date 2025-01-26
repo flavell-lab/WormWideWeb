@@ -173,16 +173,15 @@ export class EncodingTable {
             }
             const remoteData = await response.json();
 
-            // data = []
-
             Object.keys(remoteData).forEach((datasetId) => {
                 remoteData[datasetId].encoding["uid"] = datasetId
+                remoteData[datasetId].encoding["dataset_name"] = remoteData[datasetId].dataset_name
 
                 const data = getEncodingTable(remoteData[datasetId].encoding,
                     remoteData[datasetId].neuron, true, true)
 
                 data.forEach((neuron) => {
-                    const urlPlot = `/activity/explore/${neuron.dataset}/?n=${neuron.id.split("_")[1]}&b=v`
+                    const urlPlot = `/activity/explore/${neuron.dataset}/?n=${neuron.id.split("_").pop()}&b=v`
                     const htmlBtn = `<div class="actions-column">
                             <a href="${urlPlot}" class="action-btn" title="Plot">
                                 <i class="bi bi-graph-up"></i>
