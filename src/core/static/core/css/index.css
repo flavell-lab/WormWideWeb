@@ -1,9 +1,90 @@
+.hero-blurred-backdrop {
+    position: relative;
+    min-height: 70vh;
+    /* Helps ensure the blurred background doesn’t extend outside if it is scaled */
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+/* The blurred backdrop container */
+.hero-blur {
+    /* Fill the hero section entirely */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    /* 
+      1) Include your gradient
+      2) Include the same image you want blurred
+    */
+    background: url('/static/core/img/main-hero.webp') no-repeat center / cover;
+
+    /* The blur effect */
+    filter: blur(25px);
+
+    /* 
+      Sometimes you might also slightly scale up the blurred backdrop 
+      so edges don’t show unblurred areas
+    */
+    transform: scale(1.1);
+
+    /* 
+      Place this background behind the content. 
+      Ensure any child content has higher z-index.
+    */
+    z-index: 1;
+}
+
+.hero-blur::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.3);
+    /* or rgba(0,0,0,0.3) to darken */
+}
+
+
+/* Foreground container and content */
+.container {
+    position: relative;
+    z-index: 2;
+    /* Above the blurred background */
+}
+
+/* Optional: Style the foreground hero image, ensuring it’s above the blur */
+.hero-image {
+    max-width: 1000px;
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/*   
+original hero section styling
 .hero {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     min-height: 80vh;
     display: flex;
     align-items: center;
 }
+
+.hero-image {
+    max-width: 1000px;
+    width: 100%;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+} */
 
 .feature-section {
     padding: 120px 0;
@@ -15,16 +96,8 @@
 
 .feature-image {
     border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
-}
-
-.hero-image {
-    max-width: 1000px;
-    width: 100%;
-    height: auto;
-    margin: 0 auto;
-    display: block;
 }
 
 .feature-image:hover {
@@ -43,7 +116,7 @@
 
 .btn-custom:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .section-title {
@@ -55,4 +128,43 @@
     color: var(--secondary-color);
     font-size: 1.1rem;
     line-height: 1.6;
+}
+
+
+
+
+
+
+/* Overall section styling */
+.stats-section {
+  background-color: #f8f9fa; /* Light, corporate-style background */
+  padding: 60px 0;
+  text-align: center;
+}
+
+/* Each counter container */
+.counter-box {
+  margin-bottom: 30px;
+}
+
+/* The number itself */
+.counter {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #343a40;
+  margin-bottom: 5px;
+  transition: all 0.3s ease-in-out;
+}
+
+/* The label under each counter */
+.counter-box p {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+/* Optional minor hover or focus effect (for a modern "interactive" feel) */
+.counter-box:hover .counter {
+  color: #007bff; /* brand or accent color */
 }

@@ -7,21 +7,88 @@
 
 {% block main %}
 <!-- Hero Section -->
-<section class="hero">
+<!-- <section class="hero-blurred-backdrop">
+    <div class="hero-blur"></div>
+    
+    <div class="hero-foreground">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h1 class="display-3 fw-bold mb-4">Explore <i>C. elegans</i> Neural Activity</h1>
+          <p class="lead mb-5">Discover, analyze, and visualize the neural activity...</p>
+          <a href="#explore" class="btn btn-custom btn-lg">Get Started</a>
+        </div>
+        <div class="col-lg-6">
+          <img src="/static/core/img/main-hero.webp" 
+               alt="C. elegans visualization" 
+               class="hero-image">
+        </div>
+      </div>
+    </div>
+  </section> -->
+  
+<section class="hero-blurred-backdrop">
+    <div class="hero-blur"></div>
+
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-lg-6">
+            <div class="col-lg-6 mt-3 mt-lg-0">
                 <h1 class="display-3 fw-bold mb-4">Explore <i>C. elegans</i> Neural Activity and Wiring</h1>
                 <p class="lead mb-5">Discover, analyze, and visualize the neural activity and connectivity of <i>C. elegans</i> through our interactive app</p>
                 <a href="#explore" class="btn btn-custom btn-lg">Get Started</a>
             </div>
-            <div class="col-lg-6">
+            <div class="col-lg-6 mb-3 mb-lg-0">
                 <br>
-                <img src="/static/core/img/main-hero.webp" alt="C. elegans visualization" class="img-fluid feature-image hero-image">
+                <img src="/static/core/img/main-hero.webp" alt="C. elegans visualization" class="img-fluid hero-image">
             </div>
         </div>
     </div>
 </section>
+
+<section class="stats-section" id="stats">
+    <div class="container">
+      <div class="row">
+        <!-- Counter 1 -->
+        <div class="col-md-2">
+          <div class="counter-box">
+            <span class="counter" data-target={{n_paper}}>0</span>
+            <p>Publications</p>
+          </div>
+        </div>
+        <!-- Counter 2 -->
+        <div class="col-md-2">
+          <div class="counter-box">
+            <span class="counter" data-target={{n_dataset}}>0</span>
+            <p>Datasets</p>
+          </div>
+        </div>
+        <!-- Counter 3 -->
+        <div class="col-md-2">
+          <div class="counter-box">
+            <span class="counter" data-target="{{n_neuron}}">0</span>
+            <p>Neurons</p>
+          </div>
+        </div>
+        <!-- Counter 4 -->
+        <div class="col-md-3">
+          <div class="counter-box">
+            <span class="counter" data-target={{n_connectome_dataset}}>0</span>
+            <p>Connectome Datasets</p>
+          </div>
+        </div>
+        <!-- Counter 5 -->
+        <div class="col-md-3">
+          <div class="counter-box">
+            <span class="counter" data-target={{n_synapse}}>0</span>
+            <p>Synapses</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        At your fingertips to explore
+      </div>
+    </div>
+  </section>
+  
 
 <!-- GCaMP -->
 <section class="feature-section" id="explore">
@@ -94,4 +161,61 @@
         </div>
     </div>
 </section> -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to animate a single counter
+    function animateCounter(counter) {
+      const target = +counter.getAttribute('data-target'); // final number
+      const duration = 1000; // total animation duration in ms
+      const startTime = performance.now();
+  
+      function updateCount(currentTime) {
+        const elapsed = currentTime - startTime;
+        // Calculate progress from 0 to 1
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out or linear (optional)
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+  
+        // Current value
+        const currentValue = Math.floor(easedProgress * target);
+  
+        // Update the counter display
+        counter.innerText = currentValue;
+  
+        // Continue animating if not reached target
+        if (progress < 1) {
+          requestAnimationFrame(updateCount);
+        } else {
+          // Ensure final value is set
+          counter.innerText = target;
+        }
+      }
+  
+      requestAnimationFrame(updateCount);
+    }
+  
+    // Intersection Observer to trigger animation on scroll
+    const counters = document.querySelectorAll('.counter');
+    const observerOptions = {
+      root: null,       // viewport
+      threshold: 0.1    // trigger when 10% of the element is visible
+    };
+  
+    const counterObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          animateCounter(entry.target);
+          // Stop observing once animated
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+  
+    counters.forEach(counter => {
+      counterObserver.observe(counter);
+    });
+  </script>
+  
 {% endblock %}
