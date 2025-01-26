@@ -261,7 +261,7 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         i_b += 1
     
     if pumping is not None:
-        data_behavior["traces"]["p"] = {"i": i_b, "name_short": "p", "name": "Pumping", "unit": "pumps/s", "data": pumping}
+        data_behavior["traces"]["f"] = {"i": i_b, "name_short": "f", "name": "Pumping", "unit": "pumps/s", "data": pumping}
         i_b += 1
 
     if "reversal_events" in data:
@@ -285,7 +285,7 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         data_behavior_truncated["traces"][key] = {"i": i_b, "name_short": key, "name": "Angular Velocity", "unit":"rad/s", "data": truncate_floats_in_list(angular_velocity, 5)}
 
     if pumping is not None:
-        key = "p"
+        key = "f"
         data_behavior_truncated["traces"][key] = {"i": i_b,"name_short": key, "name": "Pumping", "unit": "pumps/s", "data": truncate_floats_in_list(pumping, 5)}
 
     if "reversal_events" in data:
