@@ -53,20 +53,26 @@ def dataset(request):
 
     dataset_types = {}
     for type in GCaMPDatasetType.objects.all():
-        dataset_types[type.type_id] = {"type_id": type.type_id, "name": type.name, "background-color": type.color_background}
+        dataset_types[type.type_id] = {"type_id": type.type_id, "description": type.description, "name": type.name, "background-color": type.color_background}
 
-    set_dataset_paper_array = []
+    dataset_papers = {}
     for paper_id in GCaMPDataset.objects.values_list("paper", flat=True).distinct():
         paper_obj = GCaMPPaper.objects.get(pk=paper_id)
-        set_dataset_paper_array.append({
+        dataset_papers[paper_obj.paper_id] = {
             "paper_id": paper_obj.paper_id,
-            "title": paper_obj.title_short
-        })
+            "title_short": paper_obj.title_short
+        }
+
+    dataset_type_per_paper = {"common":{}, "papers":{}}
+    for paper in GCaMPPaper.objects.all():
+        dataset_type_per_paper["papers"][paper.paper_id] = [type.type_id for type in paper.dataset_types.all()]    
+    dataset_type_per_paper["common"] = [type.type_id for type in GCaMPDatasetType.objects.filter(paper=None).all()]
 
     context = {
         "datasets": json.dumps(list(datasets)),
         "dataset_types": json.dumps(dataset_types),
-        "papers": json.dumps(list(set_dataset_paper_array), cls=DjangoJSONEncoder)
+        "dataset_type_per_paper": json.dumps(dataset_type_per_paper),
+        "papers": json.dumps(dataset_papers)
     }
 
     return render(request, "activity/dataset.html", context)

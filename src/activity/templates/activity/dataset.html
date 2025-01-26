@@ -20,7 +20,7 @@
     <div class="collapse" id="collpaseDataType">
         <div class="card card-body">
             <h5>Dataset Type</h5>
-            {% include 'activity/dataset_type.html' %}
+            <div id="datasetTypeLegend"></div>
         </div>
     </div>
     
@@ -130,6 +130,7 @@
 
 <script>const data = JSON.parse('{{ datasets|safe }}');</script>
 <script>const datasetTypes = JSON.parse('{{ dataset_types|safe }}');</script>
+<script>const paperDatasetTypes = JSON.parse('{{ dataset_type_per_paper|safe }}');</script>
 <script>const papers = JSON.parse('{{ papers|safe }}');</script>
 
 <!-- <script>const data = JSON.parse(document.getElementById('data-data').textContent);</script> -->

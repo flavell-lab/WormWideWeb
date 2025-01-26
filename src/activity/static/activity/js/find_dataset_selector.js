@@ -28,10 +28,10 @@ export class PaperDatasetSelector {
             Papers selector
         */
         const optionsPaper = [];
-        papers.forEach((paper) => {
+        Object.keys(papers).forEach((paperId) => {
             optionsPaper.push({
-                value: paper.paper_id,
-                name: paper.title
+                value: paperId,
+                name: papers[paperId].title_short
             })
         });
 
