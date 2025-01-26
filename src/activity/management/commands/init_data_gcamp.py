@@ -241,9 +241,76 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         "neuron": correlation_matrix_to_dict(np.around(np.corrcoef(list_trace_original), 3)),
         "behavior": calculate_cor_behavior(list_trace_original, data)
     }
-    
-    paper, q_created = GCaMPPaper.objects.get_or_create(paper_id=paper_id)
 
+    # behavior data
+    i_b = 0
+    data_behavior = {
+        "traces": {},
+    }
+
+    if velocity is not None:
+        data_behavior["traces"]["v"] = {"i": i_b, "name_short": "v", "name": "Velocity", "unit": "0.1 mm/s", "data": [10 * v for v in velocity]}
+        i_b += 1
+    
+    if head_curvature is not None:
+        data_behavior["traces"]["hc"] = {"i": i_b, "name_short": "hc", "name": "Head Curve", "unit": "rad", "data": head_curvature}
+        i_b += 1
+
+    if angular_velocity is not None:
+        data_behavior["traces"]["av"] = {"i": i_b, "name_short": "av", "name": "Angular Velocity", "unit":"rad/s", "data": angular_velocity}
+        i_b += 1
+    
+    if pumping is not None:
+        data_behavior["traces"]["p"] = {"i": i_b, "name_short": "p", "name": "Pumping", "unit": "pumps/s", "data": pumping}
+        i_b += 1
+
+    if "reversal_events" in data:
+        data_behavior["reversal_events"] = data["reversal_events"]
+
+    # behavior data - truncated
+        data_behavior_truncated = {
+        "traces": {},
+    }
+
+    if velocity is not None:
+        key = "v"
+        data_behavior_truncated["traces"][key] = {"i": i_b, "name_short": key, "name": "Velocity", "unit": "0.1 mm/s", "data": truncate_floats_in_list([10 * v for v in velocity], 5)}
+    
+    if head_curvature is not None:
+        key = "hc"
+        data_behavior_truncated["traces"][key] = {"i": i_b, "name_short": key, "name": "Head Curve", "unit": "rad", "data": truncate_floats_in_list(head_curvature, 5)}
+    
+    if angular_velocity is not None:
+        key = "av"
+        data_behavior_truncated["traces"][key] = {"i": i_b, "name_short": key, "name": "Angular Velocity", "unit":"rad/s", "data": truncate_floats_in_list(angular_velocity, 5)}
+
+    if pumping is not None:
+        key = "p"
+        data_behavior_truncated["traces"][key] = {"i": i_b,"name_short": key, "name": "Pumping", "unit": "pumps/s", "data": truncate_floats_in_list(pumping, 5)}
+
+    if "reversal_events" in data:
+        data_behavior_truncated["reversal_events"] = data["reversal_events"]
+
+    # encoding
+    data_encoding = {}
+    if "neuron_categorization" in data:
+        data_encoding["ranges"] = data.get("ranges", {}),
+        list_key = ["neuron_categorization", "encoding_changing_neurons", "rel_enc_str_v", "rel_enc_str_θh", "rel_enc_str_P",
+                    "forwardness", "dorsalness", "feedingness", "tau_vals"]
+        for key in list_key:
+            if key in data:
+                data_encoding[key] = data[key]
+    # neuron_categorization = data.get("neuron_categorization", {}),
+    # encoding_change = data.get("encoding_changing_neurons", []),
+    # rel_enc_str_v = truncate_floats_in_list(data["rel_enc_str_v"]) if "rel_enc_str_v" in data else [],
+    # rel_enc_str_θh = truncate_floats_in_list(data["rel_enc_str_θh"]) if "rel_enc_str_θh" in data else [],
+    # rel_enc_str_P = truncate_floats_in_list(data["rel_enc_str_P"]) if "rel_enc_str_P" in data else [],
+    # forwardness = truncate_floats_in_list(data["forwardness"]) if "forwardness" in data else [],
+    # dorsalness = truncate_floats_in_list(data["dorsalness"]) if "dorsalness" in data else [],
+    # feedingness = truncate_floats_in_list(data["feedingness"]) if "feedingness" in data else [],
+    # tau_vals = truncate_floats_in_list(data["tau_vals"]) if "tau_vals" in data else [],
+
+    paper, q_created = GCaMPPaper.objects.get_or_create(paper_id=paper_id)
     dataset = GCaMPDataset.objects.create(
         paper=paper,
         dataset_id=paper.paper_id + "-" + data["uid"],
@@ -253,33 +320,13 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         avg_timestep=data["avg_timestep"],
         max_t=data["max_t"],
         timestamp_confocal=truncate_floats_in_list(data["timestamp_confocal"]),
-        ranges=data.get("ranges", {}),
 
         n_neuron=data["num_neurons"],
         n_labeled=len(data.get("labeled", [])),
 
-        pumping=pumping if pumping is not None else [],
-        head_curvature=head_curvature,
-        body_curvature=body_curvature,
-        angular_velocity=angular_velocity,
-        velocity=velocity,
-        reversal_events=data["reversal_events"],
-        
-        truncated_pumping=truncate_floats_in_list(pumping, 5) if pumping is not None else [],
-        truncated_head_curvature=truncate_floats_in_list(head_curvature, 5),
-        truncated_body_curvature=truncate_floats_in_list(body_curvature, 5),
-        truncated_angular_velocity=truncate_floats_in_list(angular_velocity, 5),
-        truncated_velocity=truncate_floats_in_list(velocity, 5),
-
-        neuron_categorization = data.get("neuron_categorization", {}),
-        encoding_change = data.get("encoding_changing_neurons", []),
-        rel_enc_str_v = truncate_floats_in_list(data["rel_enc_str_v"]) if "rel_enc_str_v" in data else [],
-        rel_enc_str_θh = truncate_floats_in_list(data["rel_enc_str_θh"]) if "rel_enc_str_θh" in data else [],
-        rel_enc_str_P = truncate_floats_in_list(data["rel_enc_str_P"]) if "rel_enc_str_P" in data else [],
-        forwardness = truncate_floats_in_list(data["forwardness"]) if "forwardness" in data else [],
-        dorsalness = truncate_floats_in_list(data["dorsalness"]) if "dorsalness" in data else [],
-        feedingness = truncate_floats_in_list(data["feedingness"]) if "feedingness" in data else [],
-        tau_vals = truncate_floats_in_list(data["tau_vals"]) if "tau_vals" in data else [],
+        behavior=data_behavior,
+        truncated_behavior=data_behavior_truncated,
+        encoding=data_encoding,
 
         events=data["events"] if "events" in data else {},
 
@@ -354,12 +401,12 @@ def import_all_gcamp(self):
         json_files = [f for f in os.listdir(dir_datasets) if f.endswith('.json')]
         
         for filename in json_files:
-            # try:
-            filepath = get_dataset_path(["activity", "data", paper_id, filename])
-            import_gcamp_data(self, filepath, paper_id, neuron_class_name_map, neuron_name_map)
-            n = n + 1
-            # except Exception as e:
-            #     self.stdout.write(self.style.WARNING(f"Error importing GCaMP dataset: {filename} error: {e}"))
+            try:
+                filepath = get_dataset_path(["activity", "data", paper_id, filename])
+                import_gcamp_data(self, filepath, paper_id, neuron_class_name_map, neuron_name_map)
+                n = n + 1
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"Error importing GCaMP dataset: {filename} error: {e}"))
             self.stdout.write(self.style.NOTICE(f"Processed {filename}"))
 
     self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} GCaMP datasets"))

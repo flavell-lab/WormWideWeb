@@ -3,13 +3,11 @@ export class BehaviorSelector {
         this.selectorBehaviorElement = document.getElementById(selectorBehaviorId);
         this.plotManager = plotManager;
 
-        const listBehaviorStr = ["Velocity", "Head Curve", "Pumping", "Angular Velocity"]//, "Body Curvature"];
-        const listBehaviorStrShort = ["v", "hc", "f", "av"]//, "bc"];
-        const listBehaviorUnit = ["0.1 mm/s", "rad", "pumps/sec", "rad/s"]//, "rad"];
-        
+        const behavior = plotManager.data.behavior.traces;
         this.behaviorMeta = {}
-        listBehaviorStrShort.forEach((b,i)=>{
-            this.behaviorMeta[b] = {"name": listBehaviorStr[i], "unit": listBehaviorUnit[i], "nameShort": b}
+
+        Object.keys(behavior).forEach((b)=>{
+            this.behaviorMeta[b] = {"name": behavior[b].name, "unit": behavior[b].unit, "nameShort": b}
         })
 
         this.initSelector();

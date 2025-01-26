@@ -19,7 +19,7 @@ function initPlotManager(data) {
         // 1. Create the PlotManager
         const plotManager = new NeuronBehaviorPlot("plot_main", data);
 
-        // 2. Optional: populate with initial traces
+        // 2. Populate with initial traces
         const initNeuronData = data.trace_init;
         if (initNeuronData) {
             Object.keys(initNeuronData).forEach((idxNeuron) => {

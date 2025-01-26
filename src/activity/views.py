@@ -106,17 +106,18 @@ def get_all_dataset_encoding(request):
     return JsonResponse(json.loads(data))
 
 def get_dataset_encoding(dataset):
+    encoding = dataset.encoding
     data = {
         "n_neuron": dataset.n_neuron,
-        "neuron_categorization": dataset.neuron_categorization,
-        "rel_enc_str_θh": dataset.rel_enc_str_θh,
-        "rel_enc_str_P": dataset.rel_enc_str_P,
-        "rel_enc_str_v": dataset.rel_enc_str_v,
-        "dorsalness": dataset.dorsalness,
-        "forwardness": dataset.forwardness,
-        "feedingness": dataset.feedingness,
-        "encoding_changing_neurons": dataset.encoding_change,
-        "tau_vals": dataset.tau_vals
+        "neuron_categorization": encoding["neuron_categorization"],
+        "rel_enc_str_θh": encoding["rel_enc_str_θh"],
+        "rel_enc_str_P": encoding["rel_enc_str_P"],
+        "rel_enc_str_v": encoding["rel_enc_str_v"],
+        "dorsalness": encoding["dorsalness"],
+        "forwardness": encoding["forwardness"],
+        "feedingness": encoding["feedingness"],
+        "encoding_changing_neurons": encoding["encoding_changing_neurons"],
+        "tau_vals": encoding["tau_vals"]
     }
 
     return data
@@ -129,17 +130,13 @@ def get_encoding(request, dataset_id):
 
     return JsonResponse(get_dataset_encoding(dataset))
 
-@cache_page(60*60*24*14)
+# @cache_page(60*60*24*14)
 def get_behavior(request, dataset_id):
     dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
+    behavior = dataset.behavior
     data = {
-        "behavior": {
-            "velocity": dataset.velocity,
-            "head_curvature": dataset.head_curvature,
-            "pumping": dataset.pumping,
-            "angular_velocity": dataset.angular_velocity,
-            "body_curvature": dataset.body_curvature,
-            "reversal_events": dataset.reversal_events,
+        "data": {
+            "behavior": behavior,
             "events": dataset.events
         },
         "dataset_id": dataset_id,
@@ -165,6 +162,7 @@ def get_dataset_neuron_data(dataset):
 def plot_dataset(request, dataset_id):
     dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
     neuron_data = get_dataset_neuron_data(dataset)
+    encoding = dataset.encoding
 
     # neural trace for initial plot
     trace_init = {}
@@ -187,8 +185,11 @@ def plot_dataset(request, dataset_id):
         "avg_timestep": dataset.avg_timestep,
         "max_t": dataset.max_t,
         "cor": dataset.neuron_cor,
-        "encoding_data_exists": bool(dataset.neuron_categorization),
+        "encoding_data_exists": bool(encoding),
     }
+
+    if dataset.events:
+        data["events"] = dataset.events
     if len(trace_init) > 0:
         data["trace_init"] = trace_init
     
@@ -205,7 +206,7 @@ def plot_dataset(request, dataset_id):
         "data": json.dumps(data, cls=DjangoJSONEncoder),
         'datasets_json': datasets_json,
         "show_connectome": "neuropal" in dataset.dataset_type,
-        "show_encoding": bool(dataset.neuron_categorization)
+        "show_encoding": bool(encoding)
     }
     
     return render(request, "activity/explore.html", context)

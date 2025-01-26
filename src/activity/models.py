@@ -31,37 +31,40 @@ class GCaMPDataset(models.Model):
     avg_timestep = models.FloatField(default=0.)
     max_t = models.PositiveSmallIntegerField(default=0)
     timestamp_confocal = models.JSONField(default=empty_json)
-    ranges = models.JSONField(default=empty_json)
+    # ranges = models.JSONField(default=empty_json)
 
     # counts
     n_neuron = models.PositiveSmallIntegerField(default=0)
     n_labeled = models.PositiveSmallIntegerField(default=0)
 
     # behavior
-    pumping = models.JSONField(default=empty_json)
-    head_curvature = models.JSONField(default=empty_json)
-    body_curvature = models.JSONField(default=empty_json)
-    angular_velocity = models.JSONField(default=empty_json)
-    velocity = models.JSONField(default=empty_json)
-    reversal_events = models.JSONField(default=empty_json)
+    behavior = models.JSONField(default=empty_json)
+    # pumping = models.JSONField(default=empty_json)
+    # head_curvature = models.JSONField(default=empty_json)
+    # body_curvature = models.JSONField(default=empty_json)
+    # angular_velocity = models.JSONField(default=empty_json)
+    # velocity = models.JSONField(default=empty_json)
+    # reversal_events = models.JSONField(default=empty_json)
 
     # behavior truncated
-    truncated_pumping = models.JSONField(default=empty_json)
-    truncated_head_curvature = models.JSONField(default=empty_json)
-    truncated_body_curvature = models.JSONField(default=empty_json)
-    truncated_angular_velocity = models.JSONField(default=empty_json)
-    truncated_velocity = models.JSONField(default=empty_json)
+    truncated_behavior = models.JSONField(default=empty_json)
+    # truncated_pumping = models.JSONField(default=empty_json)
+    # truncated_head_curvature = models.JSONField(default=empty_json)
+    # truncated_body_curvature = models.JSONField(default=empty_json)
+    # truncated_angular_velocity = models.JSONField(default=empty_json)
+    # truncated_velocity = models.JSONField(default=empty_json)
 
     # encoding
-    neuron_categorization = models.JSONField(default=empty_json)
-    encoding_change = models.JSONField(default=empty_json)
-    rel_enc_str_v = models.JSONField(default=empty_json)
-    rel_enc_str_θh = models.JSONField(default=empty_json)
-    rel_enc_str_P = models.JSONField(default=empty_json)
-    forwardness = models.JSONField(default=empty_json)
-    dorsalness = models.JSONField(default=empty_json)
-    feedingness = models.JSONField(default=empty_json)
-    tau_vals = models.JSONField(default=empty_json)
+    encoding = models.JSONField(default=empty_json)
+    # neuron_categorization = models.JSONField(default=empty_json)
+    # encoding_change = models.JSONField(default=empty_json)
+    # rel_enc_str_v = models.JSONField(default=empty_json)
+    # rel_enc_str_θh = models.JSONField(default=empty_json)
+    # rel_enc_str_P = models.JSONField(default=empty_json)
+    # forwardness = models.JSONField(default=empty_json)
+    # dorsalness = models.JSONField(default=empty_json)
+    # feedingness = models.JSONField(default=empty_json)
+    # tau_vals = models.JSONField(default=empty_json)
     
     # event
     events = models.JSONField(default=empty_json)
@@ -80,7 +83,6 @@ class GCaMPNeuron(models.Model):
     
     dataset = models.ForeignKey(GCaMPDataset, on_delete=models.CASCADE, related_name="neurons")
     neuron_name = models.CharField(max_length=10, blank=True)
-    # neuron_class = models.CharField(max_length=10)
     neuron_class = models.ForeignKey(NeuronClass, on_delete=models.CASCADE, related_name="gcamp_neurons", null=True)
     idx_neuron = models.PositiveIntegerField(default=0)
     
@@ -104,15 +106,6 @@ class GCaMPNeuron(models.Model):
     trace = models.JSONField(default=empty_json) # z normalized 
     trace_original = models.JSONField(default=empty_json) # original
 
-    # encoding
-    # neuron_categorization = models.JSONField(default=empty_json)
-    # encoding_change = models.JSONField(default=empty_json)
-    # rel_enc_str_v = models.FloatField(null=True)
-    # rel_enc_str_θh = models.FloatField(null=True)
-    # rel_enc_str_P = models.FloatField(null=True)
-    # forwardness = models.FloatField(null=True)
-    # dorsalness = models.FloatField(null=True)
-    # feedingness = models.FloatField(null=True)
     class Meta:
         verbose_name = 'GCaMP Neuron'
         verbose_name_plural = 'GCaMP Neurons'

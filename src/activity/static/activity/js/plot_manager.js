@@ -10,16 +10,8 @@ import {
 
 import { removeFromList, minArray, maxArray, initSwitch, getLocalBool } from '/static/core/js/utility.js';
 
-const behaviorDescriptions = {
-    v: "Velocity",
-    hc: "Head Curvature",
-    f: "Pumping",
-    av: "Angular Velocity"
-    // bc: "Body Curvature",
-};
-
-/**
- * Class representing a Neuron and Behavior Plot Manager.
+/*
+    Neuron and Behavior Plot Manager.
  */
 export class NeuronBehaviorPlot {
     constructor(plotElementId, data) {
@@ -30,7 +22,7 @@ export class NeuronBehaviorPlot {
         }
 
         this.data = data;
-        console.log(data)
+        
         // collapse for cor
         this.collapseCorElement = document.getElementById('collapseCor');
         this.collapseCorElement.addEventListener('shown.bs.collapse', () => {
@@ -144,30 +136,14 @@ export class NeuronBehaviorPlot {
             }
             const remoteBehavior = await response.json();
 
-            this.data["behavior"] = remoteBehavior["behavior"];
-
-            // Then proceed just as before
-            const behavior = this.data["behavior"];
+            this.data.behavior = remoteBehavior.data.behavior;
+            const behavior = this.data.behavior;
             if (!behavior) {
                 console.warn('Behavior data is missing.');
                 return;
             }
 
-            const velocityRaw = behavior["velocity"] || [];
-            const velocity = velocityRaw.map(x => x * 10);
-            const headCurvature = behavior["head_curvature"] || [];
-            const pumping = behavior["pumping"] || [];
-            const angularVelocity = behavior["angular_velocity"] || [];
-            // const bodyCurvature = behavior["body_curvature"] || [];
-
-            // store it internally
-            this.behavior = {
-                "v": { i: 0, data: velocity },
-                "hc": { i: 1, data: headCurvature },
-                "f": { i: 2, data: pumping },
-                "av": { i: 3, data: angularVelocity },
-                // "bc": { i: 4, data: bodyCurvature }
-            };
+            this.behavior = this.data.behavior.traces
 
             // Reversals
             this.reversals = behavior["reversal_events"] || [];
@@ -582,11 +558,11 @@ export class NeuronBehaviorPlot {
     renderCorBehavior() {
         let txtBehaviorSections = "";
         const corBehaviorElement = document.getElementById("cor_behavior");
-        const behaviors = Object.keys(behaviorDescriptions);
+        const behaviors = this.data.behavior.traces
         const nBehaviors = behaviors.length;
 
-        behaviors.forEach((behaviorCode, indexBehavior) => {
-            const behaviorName = behaviorDescriptions[behaviorCode];
+        Object.keys(behaviors).forEach((behaviorCode, indexBehavior) => {
+            const behaviorName = behaviors[behaviorCode].name;
             const behaviorPairs = [];
 
             // Extract correlation values for each plotted neuron
