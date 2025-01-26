@@ -243,52 +243,49 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
     }
 
     # behavior data
+    def create_trace_data(data_list, multiplier=1, truncate=False):
+        return truncate_floats_in_list([multiplier * v for v in data_list], 5) if truncate else [multiplier * v for v in data_list]
+
     i_b = 0
-    data_behavior = {
-        "traces": {},
+    data_behavior = {"traces": {}}
+    data_behavior_truncated = {"traces": {}}
+
+    # Define attributes for each data type
+    trace_attributes = {
+        "v": {"name": "Velocity", "unit": "0.1 mm/s", "data": velocity, "multiplier": 10},
+        "hc": {"name": "Head Curve", "unit": "rad", "data": head_curvature},
+        "av": {"name": "Angular Velocity", "unit": "rad/s", "data": angular_velocity},
+        "f": {"name": "Feeding", "unit": "pumps/s", "data": pumping},
     }
 
-    if velocity is not None:
-        data_behavior["traces"]["v"] = {"i": i_b, "name_short": "v", "name": "Velocity", "unit": "0.1 mm/s", "data": [10 * v for v in velocity]}
-        i_b += 1
-    
-    if head_curvature is not None:
-        data_behavior["traces"]["hc"] = {"i": i_b, "name_short": "hc", "name": "Head Curve", "unit": "rad", "data": head_curvature}
-        i_b += 1
+    for key, attr in trace_attributes.items():
+        if attr["data"] is not None:
+            trace_data = create_trace_data(attr["data"], attr.get("multiplier", 1))
+            truncated_data = create_trace_data(attr["data"], attr.get("multiplier", 1), truncate=True)
 
-    if angular_velocity is not None:
-        data_behavior["traces"]["av"] = {"i": i_b, "name_short": "av", "name": "Angular Velocity", "unit":"rad/s", "data": angular_velocity}
-        i_b += 1
-    
-    if pumping is not None:
-        data_behavior["traces"]["f"] = {"i": i_b, "name_short": "f", "name": "Pumping", "unit": "pumps/s", "data": pumping}
-        i_b += 1
+            # Add to full behavior data
+            data_behavior["traces"][key] = {
+                "i": i_b,
+                "name_short": key,
+                "name": attr["name"],
+                "unit": attr["unit"],
+                "data": trace_data,
+            }
 
+            # Add to truncated behavior data
+            data_behavior_truncated["traces"][key] = {
+                "i": i_b,
+                "name_short": key,
+                "name": attr["name"],
+                "unit": attr["unit"],
+                "data": truncated_data,
+            }
+            
+            i_b += 1
+
+    # Add reversal events if present
     if "reversal_events" in data:
         data_behavior["reversal_events"] = data["reversal_events"]
-
-    # behavior data - truncated
-        data_behavior_truncated = {
-        "traces": {},
-    }
-
-    if velocity is not None:
-        key = "v"
-        data_behavior_truncated["traces"][key] = {"i": i_b, "name_short": key, "name": "Velocity", "unit": "0.1 mm/s", "data": truncate_floats_in_list([10 * v for v in velocity], 5)}
-    
-    if head_curvature is not None:
-        key = "hc"
-        data_behavior_truncated["traces"][key] = {"i": i_b, "name_short": key, "name": "Head Curve", "unit": "rad", "data": truncate_floats_in_list(head_curvature, 5)}
-    
-    if angular_velocity is not None:
-        key = "av"
-        data_behavior_truncated["traces"][key] = {"i": i_b, "name_short": key, "name": "Angular Velocity", "unit":"rad/s", "data": truncate_floats_in_list(angular_velocity, 5)}
-
-    if pumping is not None:
-        key = "f"
-        data_behavior_truncated["traces"][key] = {"i": i_b,"name_short": key, "name": "Pumping", "unit": "pumps/s", "data": truncate_floats_in_list(pumping, 5)}
-
-    if "reversal_events" in data:
         data_behavior_truncated["reversal_events"] = data["reversal_events"]
 
     # encoding
