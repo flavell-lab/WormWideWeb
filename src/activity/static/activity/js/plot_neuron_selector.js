@@ -59,7 +59,7 @@ export class NeuronSelector {
                 if (aSelected && !bSelected) return -1;  // a before b
                 if (!aSelected && bSelected) return 1;   // b before a
 
-                return item_a.idx_neuron < item_b.idx_neuron;
+                return item_a.idx_neuron - item_b.idx_neuron;
             }
             
             // onClear: () => this.selectorDataset.close(),
