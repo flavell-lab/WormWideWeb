@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper
+from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 # Register your models here.
 class GCaMPDatasetAdmin(admin.ModelAdmin):
     search_fields = ["dataset_id"]
@@ -11,3 +11,4 @@ class GCaMPNeuronAdmin(admin.ModelAdmin):
 admin.site.register(GCaMPDataset, GCaMPDatasetAdmin)
 admin.site.register(GCaMPNeuron, GCaMPNeuronAdmin)
 admin.site.register(GCaMPPaper)
+admin.site.register(GCaMPDatasetType)

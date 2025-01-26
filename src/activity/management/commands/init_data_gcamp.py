@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from connectome.models import NeuronClass
-from activity.models import GCaMPDataset, GCaMPNeuron, GCaMPPaper
+from activity.models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 import numpy as np
 from scipy.stats import pearsonr
 import json
@@ -10,6 +10,7 @@ import os
 PATH_CONFIG_GCAMP_NEURON_MAP = ["config", "gcamp_neuron_name_map_manual.json"]
 PATH_CONFIG_GCAMP_CLASS_MAP = ["config", "gcamp_neuron_class_name_map_manual.json"]
 PATH_PAPER = ["activity", "papers.json"]
+PATH_TYPE = ["activity", "dataset_types.json"]
 
 '''
 
@@ -312,7 +313,6 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         paper=paper,
         dataset_id=paper.paper_id + "-" + data["uid"],
         dataset_name=data["uid"],
-        dataset_type=data["dataset_type"],
         
         avg_timestep=data["avg_timestep"],
         max_t=data["max_t"],
@@ -330,6 +330,21 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         neuron_cor=cor_trace,
         neuron_cor_original=cor_trace_original
     )
+
+    # add dataset type
+    for type in data["dataset_type"]:
+        # Construct the type_id
+        type_id = f"{paper.paper_id}-{type}"
+
+        # Try to get the dataset_type by the constructed type_id
+        dataset_type = GCaMPDatasetType.objects.filter(type_id=type_id).first()
+
+        if dataset_type is None:
+            # Fallback to retrieve, common type
+            dataset_type = GCaMPDatasetType.objects.get(type_id=f"common-{type}")
+
+        # Add the dataset_type to the dataset
+        dataset.dataset_type.add(dataset_type)
 
     # create neuron objects
     for i in range(0,len(list_trace_array)):
@@ -382,6 +397,21 @@ def import_all_paper(self):
         self.stdout.write(self.style.WARNING(f"Error importing {n_fail} papers"))
     self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} papers"))
 
+def import_all_type(self):
+    path_type = get_dataset_path(PATH_TYPE)
+    types = load_json(self, path_type)
+
+    n = 0
+    for paper_id in types.keys():
+        paper = GCaMPPaper.objects.get(paper_id=paper_id) if paper_id != "common" else None
+        for type_ in types[paper_id]:
+            if paper:
+                GCaMPDatasetType.objects.create(type_id=paper_id+"-"+type_["id"], name=type_["name"], description=type_["description"], color_background=type_["color_background"], paper=paper)
+            else:
+                GCaMPDatasetType.objects.create(type_id=paper_id+"-"+type_["id"], name=type_["name"], description=type_["description"], color_background=type_["color_background"])
+            n += 1
+    self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} dataset types"))
+
 def import_all_gcamp(self):
     papers = GCaMPPaper.objects.values_list("paper_id")
 
@@ -398,12 +428,12 @@ def import_all_gcamp(self):
         json_files = [f for f in os.listdir(dir_datasets) if f.endswith('.json')]
         
         for filename in json_files:
-            try:
-                filepath = get_dataset_path(["activity", "data", paper_id, filename])
-                import_gcamp_data(self, filepath, paper_id, neuron_class_name_map, neuron_name_map)
-                n = n + 1
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f"Error importing GCaMP dataset: {filename} error: {e}"))
+            # try:
+            filepath = get_dataset_path(["activity", "data", paper_id, filename])
+            import_gcamp_data(self, filepath, paper_id, neuron_class_name_map, neuron_name_map)
+            n = n + 1
+            # except Exception as e:
+            #     self.stdout.write(self.style.WARNING(f"Error importing GCaMP dataset: {filename} error: {e}"))
             self.stdout.write(self.style.NOTICE(f"Processed {filename}"))
 
     self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} GCaMP datasets"))
@@ -413,4 +443,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         import_all_paper(self)
+        import_all_type(self)
         import_all_gcamp(self)
