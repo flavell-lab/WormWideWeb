@@ -6,7 +6,7 @@ from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
-from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper
+from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from connectome.models import Neuron, NeuronClass, Dataset, Synapse
 from core.models import JSONCache
 
@@ -36,7 +36,7 @@ def encoding_connectome(request):
 
     return render(request, "activity/encoding_connectome.html", context)    
 
-@cache_page(60*60*24*30)
+# @cache_page(60*60*24*30)
 def dataset(request):
     datasets = []
     for dataset in GCaMPDataset.objects.all():
@@ -44,17 +44,16 @@ def dataset(request):
             "paper": {"paper_id": dataset.paper.paper_id, "title": dataset.paper.title_short},
             "dataset_id": dataset.dataset_id,
             "dataset_name": dataset.dataset_name,
-            "dataset_type": dataset.dataset_type,
+            "dataset_type": [type.type_id for type in dataset.dataset_type.all()],
             "n_neuron": dataset.n_neuron,
             "n_labeled": dataset.n_labeled,
             "max_t": dataset.max_t,
             "avg_timestep": dataset.avg_timestep
         })
 
-    set_dataset_type_array = set()
-    for dtypes in GCaMPDataset.objects.values_list("dataset_type", flat=True).distinct():
-        for dtype in dtypes:
-            set_dataset_type_array.add(dtype)
+    dataset_types = {}
+    for type in GCaMPDatasetType.objects.all():
+        dataset_types[type.type_id] = {"type_id": type.type_id, "name": type.name, "background-color": type.color_background}
 
     set_dataset_paper_array = []
     for paper_id in GCaMPDataset.objects.values_list("paper", flat=True).distinct():
@@ -66,7 +65,7 @@ def dataset(request):
 
     context = {
         "datasets": json.dumps(list(datasets)),
-        "dataset_types": json.dumps(list(set_dataset_type_array), cls=DjangoJSONEncoder),
+        "dataset_types": json.dumps(dataset_types),
         "papers": json.dumps(list(set_dataset_paper_array), cls=DjangoJSONEncoder)
     }
 

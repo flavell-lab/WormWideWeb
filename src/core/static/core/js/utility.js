@@ -291,45 +291,15 @@ export function removeFromList(list, element) {
     }
 }
 
+export function generateDatasetTypePill(typeId, typeName, backgroundColor) {  
+    return `<span class="badge rounded-pill dtype="${typeId}" style="background-color:${backgroundColor};">${typeName}</span>`
+}
 
-export function getDatasetTypePill(datasettype) {
-    let color;
-    let type_str;
-    switch (datasettype) {
-        case "baseline":
-            type_str = "Baseline";
-            color = "secondary";
-            break;
-        case "neuropal":
-            type_str = "NeuroPAL";
-            color = "primary";
-            break;
-        case "gfp":
-            type_str = "GFP"
-            color = "success";
-            break;
-        case "heat":
-            type_str = "Heat"
-            color = "danger";
-            break;
-        case "patchEncounter":
-            type_str = "Patch"
-            color = "info";
-            break;
-        case "reFed":
-            type_str = "Re-fed"
-            color = "light";
-            break;
-        case "sickness":
-            type_str = "Sickness"
-            color = "dark";
-            break;
-        default:
-            color = "text-bg-danger";
-    }
+export function getDatasetTypePill(typeId, datasetTypes) {
+    const typeName = datasetTypes[typeId].name
+    const backgroundColor = datasetTypes[typeId]["background-color"]
     
-    return '<span class="badge rounded-pill text-bg-' + color + ` dtype="${datasettype}">` +
-        type_str + '</span>'
+    return generateDatasetTypePill(typeId, typeName, backgroundColor)
 }
 
 export function toggleFullscreen(element) {

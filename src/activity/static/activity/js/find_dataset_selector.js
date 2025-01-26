@@ -12,22 +12,12 @@ export class PaperDatasetSelector {
 
         this.tableManager = table
 
-        /*
-            Dataset types
-        */
-        this.datasetShortNameMap = {
-            "gfp": "GFP",
-            "baseline": "Baseline",
-            "neuropal": "NeuroPAL",
-            "heat": "Heat",
-        }
-
         // generate options
         const options = [];
-        datasetTypes.forEach((dtype) => {
+        Object.keys(datasetTypes).forEach((typeId) => {
             options.push({
-                value: dtype,
-                name: this.datasetShortNameMap[dtype]
+                value: datasetTypes[typeId].type_id,
+                name: datasetTypes[typeId].name
             })
         });
 

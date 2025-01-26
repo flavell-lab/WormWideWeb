@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /*
         Selectors
     */
-    const datasetTable = new DatasetTable("datasetTable", data)
+    const datasetTable = new DatasetTable("datasetTable", data, datasetTypes)
     const selectors = new PaperDatasetSelector("datasetSelector", "paperSelector", datasetTable, datasetTypes, papers)
     
     // select all papers

@@ -1,10 +1,11 @@
 import { getDatasetTypePill } from '/static/core/js/utility.js';
 
 export class DatasetTable {
-    constructor(tableElementId, data) {
+    constructor(tableElementId, data, datasetTypes) {
         this.tableElementId = tableElementId
         this.tableElementSelector = `#${this.tableElementId}`
         this.data = data
+        this.datasetTypes = datasetTypes
         this.tableData = []
 
         this.initTable()
@@ -17,7 +18,7 @@ export class DatasetTable {
                 paper_id: dataset.paper.paper_id,
                 id: dataset.dataset_id,
                 label: dataset.dataset_name,
-                dataset_type: dataset.dataset_type.map(dtype=>getDatasetTypePill(dtype)).join(" "),
+                dataset_type: dataset.dataset_type.map(typeId=>getDatasetTypePill(typeId, this.datasetTypes)).join(" "),
                 dataset_type_raw: dataset.dataset_type.join(","),
                 n_neuron: dataset.n_neuron,
                 n_labeled: dataset.n_labeled,
