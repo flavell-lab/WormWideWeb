@@ -1,7 +1,7 @@
 import Shepherd from 'https://cdn.jsdelivr.net/npm/shepherd.js@13.0.0/dist/esm/shepherd.mjs';
 import { DatasetNeuronSelector } from '../find_neuron_selector.js';
 import { DatasetTable } from '../find_neuron_table.js';
-import { setLocalBool, getLocalBool } from "/static/core/js/utility.js"
+import { setLocalBool, getLocalBool, getDatasetTypePill } from "/static/core/js/utility.js"
 
 async function initData(data) {
     const url = "/activity/api/data/find_neuron/";
@@ -19,6 +19,7 @@ async function initData(data) {
 
 document.addEventListener('DOMContentLoaded', async() => {
     const data = await initData();
+
     /*
         Selectors
     */
@@ -82,6 +83,21 @@ document.addEventListener('DOMContentLoaded', async() => {
     */
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+
+    /*
+        Dataset type info
+    */
+   console.log(data.neuropal_dataset_type)
+    const typeLegend = document.getElementById("datasetTypeLegend")
+    const badgesHTML = Object.keys(data.neuropal_dataset_type).map(typeId=>
+        `<div class="col-12">
+            <div class="row justify-content-start">
+                <div class="col-sm-3">${getDatasetTypePill(typeId, data.neuropal_dataset_type)}</div>
+                <div class="col-sm-8">${data.neuropal_dataset_type[typeId].description}</div>
+            </div>
+        </div>`
+    ).join("")
+    typeLegend.innerHTML = `<div class="row gy-1 mb-3">${badgesHTML}</div>`
 
     /*
         Tour
