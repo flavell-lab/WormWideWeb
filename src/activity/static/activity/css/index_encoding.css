@@ -20,10 +20,10 @@
       1) Include your gradient
       2) Include the same image you want blurred
     */
-    background: url('/static/activity/img/hero-activity-flow.webp') no-repeat center / cover;
+    background: url('/static/activity/img/hero-encoding.webp') no-repeat center / cover;
 
     /* The blur effect */
-    filter: blur(15px);
+    filter: blur(40px);
 
     /* 
       Sometimes you might also slightly scale up the blurred backdrop 
