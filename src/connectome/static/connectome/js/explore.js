@@ -136,23 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         });
 
-        tour.addStep({
-            id: 'step-6-connectome-color',
-            text: 'Change the connectome node coloring to display different info such as neuron types.',
-            attachTo: {
-                element: '#dropdownColorContainer',
-                on: 'right'
-            },
-            buttons: [
-                { text: 'Complete', action: tour.complete }
-            ],
-            beforeShowPromise: () => {
-                const colorType = document.querySelector('.dropdown-item[data-value="nt"]');
-                colorType.click();
-                return Promise.resolve();
-            },
-        });
-
         tour.on('complete', () => {
             //     selectorDatasetNeuron.clearNeuronSelector();
 
