@@ -31,7 +31,7 @@ export class DatasetTable {
         // init table
         $(this.tableElementSelector).bootstrapTable({
             data: this.tableData,
-            classes: "table-sm table-material",
+            classes: "table table-sm table-material",
         });
 
         // hide rows
