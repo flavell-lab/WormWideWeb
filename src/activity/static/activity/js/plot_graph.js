@@ -744,6 +744,8 @@ export class PlotGraph {
             });
         });
 
+        document.getElementById("connectome-legend").classList.remove("d-none")
+        document.getElementById("connectome-legend-cbar").classList.add("d-none")
         this.nodeManager.updateNodeColorSet()
         this.nodeManager.adjustNodeLabelWrap()
         this.nodeManager.highlightNode(manifest.classes.concat(manifest.neurons), 5, "black")
