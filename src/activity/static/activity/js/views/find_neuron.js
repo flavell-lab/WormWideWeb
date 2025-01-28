@@ -87,7 +87,6 @@ document.addEventListener('DOMContentLoaded', async() => {
     /*
         Dataset type info
     */
-   console.log(data.neuropal_dataset_type)
     const typeLegend = document.getElementById("datasetTypeLegend")
     const badgesHTML = Object.keys(data.neuropal_dataset_type).map(typeId=>
         `<div class="col-12">
