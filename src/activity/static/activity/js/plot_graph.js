@@ -355,7 +355,11 @@ export class PlotGraph {
                 <!-- correlation -->
                 <div id="selectedCorrelation">
                     <h5 class="info-section-title">Correlation</h5>
-                    <p>with connected neurons</p>
+                    <p>
+                        with connected neurons<br>
+                        → or ←: chemical synpase<br>
+                        —: gap junction (electrical synapse)
+                    </p>
                     <div class="mb-4" id="selectedCorrelationList">
                     </div>
                 </div>
@@ -461,12 +465,13 @@ export class PlotGraph {
             let textCor = "<table>";
             corList.forEach((syn) => {
               // Use arrow for chemical (“c”), or dash for electrical
-              const arrow = syn.type === "c" ? "→" : "—";
+              const isNodePre = syn.pre == nodeId
+              const arrow = syn.type === "c" ? (isNodePre ? "→" : "←") : "—";
               textCor += `
                 <tr>
-                  <td>${syn.pre}</td>
+                  <td>${isNodePre ? syn.pre : syn.post}</td>
                   <td>${arrow}</td>
-                  <td>${syn.post}</td>
+                  <td>${isNodePre ? syn.post : syn.pre}</td>
                   <td style="padding-left: 20px;">${syn.cor}</td>
                 </tr>`;
             });
