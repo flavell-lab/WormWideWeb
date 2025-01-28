@@ -217,7 +217,7 @@ export class EncodingTable {
     initTable() {
         $(this.tableElement).bootstrapTable({
             data: this.encodingData,
-            classes: "table-sm table-material",
+            classes: "table table-sm table-material",
             rowStyle: this.rowStyle,
             headerStyle: this.headerStyle,
             // checkboxHeader: false,
