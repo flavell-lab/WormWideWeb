@@ -95,6 +95,12 @@
                 data-bs-placement="top" data-bs-title="Fullscreen Activity Plot" style="display: block;">
                 <i id="plotFullscreenIcon" class="bi bi-fullscreen"></i> <span id="plotFullscreenLabel">Fullscreen</span>
               </button>
+              {% if show_connectome %}
+              <button id="buttonToggleConnectome" class="btn btn-light" data-bs-toggle="tooltip"
+                data-bs-placement="top" data-bs-title="Show or Hide the connectome diagram" style="display: block;">
+                <i id="toggleConnectomeId" class="bi bi-diagram-2"></i> <span>Connectome</span>
+              </button>
+              {% endif %}
             </div>
 
             <div id="spinnerStatus" class="spinner-border spinner-border-sm" role="status" style="display:block">
@@ -157,7 +163,7 @@
     </div>
 
     <!-- connectome column -->
-    <div id="col-connectome" class="{% if show_connectome is not True %}d-none hidden-forced{% endif %} col-lg-6 d-flex flex-column">
+    <div id="col-connectome" style="display: block;" class="{% if show_connectome is not True %}d-none hidden-forced{% endif %} col-lg-6 d-flex flex-column">
       <div class="card card-body d-flex flex-column flex-fill">
         <h5>Connectome</h5>
         <div class="d-flex flex-wrap align-items-center gap-2">

@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     /*
         Badges
     */
-    document.getElementById("datasetTypeBadges").innerHTML = Object.keys(data.dataset_type).map(typeId => 
+    document.getElementById("datasetTypeBadges").innerHTML = Object.keys(data.dataset_type).map(typeId =>
         getDatasetTypePill(typeId, data.dataset_type)
     ).join(" ")
 
@@ -119,36 +119,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const fullscreenMap = {
         "col-plot": {
-          icon: plotFullscreenIcon,
-          label: plotFullscreenLabel,
-          // A callback for any special logic (like adjusting width)
-          onToggle() {
-            // Force reflow, then adjust width
-            colPlot.offsetWidth;
-            setTimeout(() => adjustWidth("col-plot", plotManager.plotElementId), 350);
-          }
+            icon: plotFullscreenIcon,
+            label: plotFullscreenLabel,
+            // A callback for any special logic (like adjusting width)
+            onToggle() {
+                // Force reflow, then adjust width
+                colPlot.offsetWidth;
+                setTimeout(() => adjustWidth("col-plot", plotManager.plotElementId), 350);
+            }
         },
         "col-connectome": {
-          icon: connectomeFullscreenIcon,
-          label: connectomeFullscreenLabel,
-          // connectome doesn't need a special callback, so we can omit it
+            icon: connectomeFullscreenIcon,
+            label: connectomeFullscreenLabel,
+            // connectome doesn't need a special callback, so we can omit it
         }
     };
-      
+
     let lastFullscreenElement = null;
     document.addEventListener("fullscreenchange", () => {
         if (document.fullscreenElement) {
-          // ENTER fullscreen
-          lastFullscreenElement = document.fullscreenElement;
-          handleFullscreenElement(fullscreenMap, lastFullscreenElement.id);
-        } else {
-          // EXIT fullscreen
-          if (lastFullscreenElement) {
+            // ENTER fullscreen
+            lastFullscreenElement = document.fullscreenElement;
             handleFullscreenElement(fullscreenMap, lastFullscreenElement.id);
-          }
-          lastFullscreenElement = null;
+        } else {
+            // EXIT fullscreen
+            if (lastFullscreenElement) {
+                handleFullscreenElement(fullscreenMap, lastFullscreenElement.id);
+            }
+            lastFullscreenElement = null;
         }
     });
+
+    /*
+        Connectome toggle
+    */
+    if (isNeuroPAL) {
+        const buttonToggleConnectome = document.getElementById("buttonToggleConnectome")
+        buttonToggleConnectome.addEventListener("click", () => {
+            if (colConnectome.style.display == "none") {
+                colConnectome.style.display = "block";
+                colPlot.classList.add("col-lg-6");
+                colPlot.classList.remove("col-lg-12");
+                colConnectome.classList.add("col-lg-6");
+                colConnectome.classList.remove("col-lg-12");
+                setTimeout(() => adjustWidth("col-plot", plotManager.plotElementId), 375);
+            } else if (colConnectome.style.display == "block") {
+                colConnectome.style.display = "none";
+                colPlot.classList.remove("col-lg-6");
+                colPlot.classList.add("col-lg-12");
+                colConnectome.classList.remove("col-lg-6");
+                colConnectome.classList.add("col-lg-12");
+                setTimeout(() => adjustWidth("col-plot", plotManager.plotElementId), 375);
+            }
+        })
+    }
 
     /*
         Collapse
@@ -227,7 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         Tooltips
     */
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))   
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
     /*
         Tours
