@@ -106,18 +106,27 @@ document.addEventListener('DOMContentLoaded', async() => {
             useModalOverlay: true,
             defaultStepOptions: {
                 classes: 'shadow-md bg-white',
-                scrollTo: false
-            }
+                scrollTo: false,
+                cancelIcon: {
+                    enabled: true
+                }    
+            },
         });
+        tour.addStep({
+            id: "init",
+            text: '<strong>Tutorial</strong><br>Click the "X" button on the top right of this modal to skip',
+            buttons: [
+                { text: 'Next', action: tour.next }
+            ],
+        })
 
         tour.addStep({
             id: 'step-1-search',
             text: 'Select one or more neurons or neuron classes',
             attachTo: {
-                element: '.tom-select-container',
+                element: '#ts-select-neuron',
                 on: 'right'
             },
-            // classes: 'example-step-extra-class',
             buttons: [
                 { text: 'Next', action: tour.next }
             ],
@@ -126,13 +135,12 @@ document.addEventListener('DOMContentLoaded', async() => {
         tour.addStep({
             id: 'step-2-sort-table',
             text: 'Sort by selecting a column header',
-            attachTo: { element: 'th[data-field="id"]', on: 'top' },
+            attachTo: { element: 'th[data-field="label"]', on: 'top' },
             beforeShowPromise: () => {
                 neuronSelector.selector.addItems(["AVAL", "AVEL"])
                 return Promise.resolve();
             },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ]
         });
@@ -142,7 +150,6 @@ document.addEventListener('DOMContentLoaded', async() => {
             text: 'Plot the found neurons in this dataset or download the whole dataset.',
             attachTo: { element: '.actions-column', on: 'left' },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Next', action: tour.next }
             ]
         });
@@ -152,12 +159,17 @@ document.addEventListener('DOMContentLoaded', async() => {
             text: 'Select multiple datasets and plot the selected datasets to conveniently browse through multiple datasets at once.',
             attachTo: { element: '#plotSelected', on: 'left' },
             buttons: [
-                { text: 'Back', action: tour.back },
                 { text: 'Complete', action: tour.complete }
             ]
         });
 
         tour.on('complete', () => {
+            neuronSelector.clearSelector()
+
+            setLocalBool("tour-activity-find", false)
+        });
+
+        tour.on('cancel', () => {
             neuronSelector.clearSelector()
 
             setLocalBool("tour-activity-find", false)
