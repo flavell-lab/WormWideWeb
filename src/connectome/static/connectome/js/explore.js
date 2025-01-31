@@ -36,9 +36,20 @@ document.addEventListener('DOMContentLoaded', () => {
             useModalOverlay: true,
             defaultStepOptions: {
                 classes: 'shadow-md bg-white',
-                scrollTo: false
+                scrollTo: false,
+                cancelIcon: {
+                    enabled: true
+                }
             }
         });
+
+        tour.addStep({
+            id: "init",
+            text: '<strong>Tutorial</strong><br>Click the "X" button on the top right of this modal to skip',
+            buttons: [
+                { text: 'Next', action: tour.next }
+            ],
+        })
 
         tour.addStep({
             id: 'step-selector',

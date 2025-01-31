@@ -77,8 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     tour.addStep({
+      id: "init",
+      text: '<strong>Tutorial</strong><br>Click the "X" button on the top right of this modal to skip',
+      buttons: [
+        { text: 'Next', action: tour.next }
+      ],
+    })
+
+    tour.addStep({
       id: 'step-selector',
-      text: 'Select neurons to add to the diagram.',
+      text: '<strong>Select neurons</strong> to add to the diagram.',
       attachTo: {
         element: '#selectNeuronContainer',
         on: 'top',
@@ -90,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tour.addStep({
       id: 'step-nodes',
-      text: 'Neurons and synapses are displayed in the diagram.<br><br>You can scroll to zoom in/out and click the background and move to pan around.<br><br>You can select to color the displayed nodes with an encoding feature such as forwardness, as displayed here.',
+      text: 'Neurons and synapses are displayed in the diagram.<br><br>You can <strong>scroll to zoom in/out</strong> and click the background and move to pan around.<br><br>You can select to color the displayed nodes with an encoding feature such as forwardness, as displayed here.',
       attachTo: {
         element: '#connectome-graph',
         on: 'top'
