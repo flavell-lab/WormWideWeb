@@ -133,7 +133,6 @@
 <script>const paperDatasetTypes = JSON.parse('{{ dataset_type_per_paper|safe }}');</script>
 <script>const papers = JSON.parse('{{ papers|safe }}');</script>
 
-<!-- <script>const data = JSON.parse(document.getElementById('data-data').textContent);</script> -->
-<script type="module" src="{% static 'activity/js/activity_common.js' %}" defer></script>
+<script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
 <script type="module" src="{% static 'activity/js/views/dataset.js' %}" defer></script>
 {% endblock %}
