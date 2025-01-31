@@ -15,7 +15,7 @@ import { ConnectomeLegend } from './connectome_legend.js';
  * @param {string} [otherButtonId="updateCustomLayout"] - The ID of the other button element for updating the custom layout.
  */
 export class NodeManager {
-    constructor(graphParent, defaultColor="nt", localKeyPrefix=null, availableNeurons=null, dropdownIdColor="dropdownColor", containerId="node-position-list", buttonId="updateCustomColor", otherButtonId="updateCustomLayout") {
+    constructor(graphParent, defaultColor="type", localKeyPrefix=null, availableNeurons=null, dropdownIdColor="dropdownColor", containerId="node-position-list", buttonId="updateCustomColor", otherButtonId="updateCustomLayout") {
         this.availableNeurons = availableNeurons
         this.colorScheme = [
             'rgb(221,221,221)', // 0 Light Gray
