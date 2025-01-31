@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
 
         tour.on('complete', () => {
-            neuronSelector.clearSelector()
+            neuronSelector.selector.clear()
 
             setLocalBool("tour-activity-find", false)
         });
