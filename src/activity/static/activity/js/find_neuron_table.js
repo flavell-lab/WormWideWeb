@@ -21,7 +21,7 @@ export class DatasetTable {
                 label: dataset.dataset_name,
                 paper_id: dataset.paper.paper_id,
                 paper: dataset.paper.title,
-                dataset_type: dataset.dataset_type.map(typeId=>getDatasetTypePill(typeId, this.data.neuropal_dataset_type)).join(" "),
+                dataset_type: dataset.dataset_type.map(typeId => getDatasetTypePill(typeId, this.data.neuropal_dataset_type)).join(" "),
                 n_neuron: dataset.n_neuron,
                 n_labeled: dataset.n_labeled,
                 action: ""
@@ -36,7 +36,7 @@ export class DatasetTable {
 
         // hide rows
         this.tableData.forEach((data) => {
-            $(this.tableElementSelector).bootstrapTable("hideRow", {uniqueId: data.id});
+            $(this.tableElementSelector).bootstrapTable("hideRow", { uniqueId: data.id });
         })
     }
 
@@ -51,7 +51,7 @@ export class DatasetTable {
             this.matched[datasetId] = matchDict[datasetId]
 
             const listIdxNeuron = matchDict[datasetId]
-            
+
             // update buttons urls
             const urlPlot = `/activity/explore/${datasetId}/?n=${listIdxNeuron.join("-")}&b=v`
             const urlData = `/static/activity/data/${datasetId}.json`
@@ -79,7 +79,7 @@ export class DatasetTable {
             const neuronParam = neuronList.length === 1 ? neuronList[0] : neuronList.join("-");
             window.location.href = `/activity/explore/${id}/?n=${neuronParam}&b=v`;
         });
-        
+
         $(this.tableElementSelector).bootstrapTable("uncheckAll")
     }
 
@@ -117,18 +117,18 @@ export class DatasetTable {
             },
             body: JSON.stringify(postData) // Convert the JavaScript object to JSON
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json()
-        })
-        .then(data => {
-            window.location.href = data.redirect
-        })
-        .catch(error => console.error('Error:', error));    
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json()
+            })
+            .then(data => {
+                window.location.href = data.redirect
+            })
+            .catch(error => console.error('Error:', error));
     }
-    
+
     downloadFile(url, fileName) {
         const link = document.createElement('a');
         link.href = url;
@@ -138,7 +138,7 @@ export class DatasetTable {
         link.click();
         document.body.removeChild(link);
     }
-      
+
     downloadSelected() {
         const selected = this.getSelected()
 
@@ -151,5 +151,5 @@ export class DatasetTable {
             const urlData = `/static/data/${option.id}.json`
             this.downloadFile(urlData, `${option.id}.json`)
         })
-    }   
+    }
 }
