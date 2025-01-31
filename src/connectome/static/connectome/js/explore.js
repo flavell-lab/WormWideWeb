@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 on: 'right'
             },
             buttons: [
-                { text: 'Next', action: tour.next }
+                { text: 'Complete', action: tour.complete }
             ],
             beforeShowPromise: () => {
                 const node = connectomeGraph.graph.getElementById("AVA"); // Get the node by ID
