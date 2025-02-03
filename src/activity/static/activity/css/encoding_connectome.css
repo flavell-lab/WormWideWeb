@@ -5,7 +5,7 @@
 #connectome-graph {
     width: 100%;
     /* height: 85vh; */
-    height: calc(100vh - 175px); /* Adjust this value based on other UI elements */
+    height: calc(100vh - 211.8px); /* Adjust this value based on other UI elements */
     /* border: 1px solid #ccc; */
     /* background-color: red; */
 }
