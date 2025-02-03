@@ -8,11 +8,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
   const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
+  // default options
   const defaultDataset = localStorage.getItem("encoding_connectome_selected_dataset_str")
   if (defaultDataset === null) {
     setLocalStr("encoding_connectome_selected_dataset_str", "white_1986_whole,witvliet_2020_7,witvliet_2020_8")
   }
 
+  const connectomeLayout = localStorage.getItem("encoding_connectome_layout")
+  if (connectomeLayout === null) {
+    setLocalStr("encoding_connectome_layout", "grid")
+  }
+
+  const splitLR = localStorage.getItem("encoding_connectome_show_individual_neuron")
+  if (splitLR === null) {
+    setLocalBool("encoding_connectome_show_individual_neuron", true)
+  }
+
+  // init
   const connectomeGraph = new ConnectomeGraph("connectome-graph", "encoding");
   const selectorDatasetNeuron = new SelectorDatasetNeuron("select-dataset", "select-neuron", connectomeGraph);
   const featureManager = new EncodingFeatureManager(connectomeGraph, "select-feature", matchData)
@@ -180,7 +192,7 @@ buttonClearNeurons.addEventListener('click', ()=>{
         node.trigger('unselect');
         connectomeGraph.infoPanel.hidePanel();
 
-        const layoutGrid = document.querySelector('.dropdown-item[data-value="grid"]');
+        const layoutGrid = document.querySelector('.dropdown-item[data-value="concentric"]');
         layoutGrid.click();
         return Promise.resolve();
       },
