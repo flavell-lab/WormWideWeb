@@ -6,6 +6,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.min.css"
     integrity="sha512-dV0cHrb/JTqn0t9UxaPyHhP4aBjgeEpBpUVULdDnuNsQq55DdKEP4nkiPffoLGVN6FXAEUCPZEZSnI3fxY64vg=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
 <link rel="stylesheet" href="{% static 'activity/css/encoding_connectome.css' %}">
 <link rel="stylesheet" href="{% static 'connectome/css/connectome_common.css' %}">
 <link rel="stylesheet" href="{% static 'connectome/css/connectome_selector.css' %}">
@@ -357,5 +359,6 @@
 
 <script>const datasets = JSON.parse('{{ datasets_json|safe }}');</script>
 <script>const matchData = JSON.parse('{{ match_data|safe }}');</script>
+<script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
 <script type="module" src="{% static 'activity/js/views/encoding_connectome.js' %}" defer></script>
 {% endblock %}
