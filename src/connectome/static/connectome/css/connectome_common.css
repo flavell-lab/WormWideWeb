@@ -51,6 +51,7 @@ body {
     /* font-family: Arial, sans-serif; */
     font-size: 12px;
     z-index: 1;
+    min-width: 100px;
 }
 
 /* Legend items */
@@ -83,6 +84,7 @@ body {
 
 /* The vertical color bar */
 .colorbar-vertical {
+    min-width: 10px;
     width: 10px;
     /* narrower, since it's a vertical bar */
     height: 120px;

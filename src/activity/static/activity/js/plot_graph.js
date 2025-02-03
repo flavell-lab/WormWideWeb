@@ -183,7 +183,7 @@ export class PlotGraph {
                 this.nodeManager.setNodeColors(colorBackground);
                 this.nodeManager.adjustNodeLabelColor(colorPie, colorBackground)
 
-                // legend
+                // legend                
                 document.getElementById("connectome-legend").classList.add("d-none")
                 document.getElementById("connectome-legend-cbar").classList.remove("d-none")
             });
