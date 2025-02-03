@@ -156,19 +156,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isNeuroPAL) {
         const buttonToggleConnectome = document.getElementById("buttonToggleConnectome")
         buttonToggleConnectome.addEventListener("click", () => {
-            if (colConnectome.style.display == "none") {
-                colConnectome.style.display = "block";
+            if (colConnectome.classList.contains("d-none")) {
                 colPlot.classList.add("col-lg-6");
                 colPlot.classList.remove("col-lg-12");
+
                 colConnectome.classList.add("col-lg-6");
                 colConnectome.classList.remove("col-lg-12");
+                colConnectome.classList.remove("d-none");
                 setTimeout(() => adjustWidth("col-plot", plotManager.plotElementId), 375);
-            } else if (colConnectome.style.display == "block") {
-                colConnectome.style.display = "none";
+            } else {
                 colPlot.classList.remove("col-lg-6");
                 colPlot.classList.add("col-lg-12");
+                
                 colConnectome.classList.remove("col-lg-6");
                 colConnectome.classList.add("col-lg-12");
+                colConnectome.classList.add("d-none");
                 setTimeout(() => adjustWidth("col-plot", plotManager.plotElementId), 375);
             }
         })
