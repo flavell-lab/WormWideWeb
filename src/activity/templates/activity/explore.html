@@ -164,7 +164,7 @@
     </div>
 
     <!-- connectome column -->
-    <div id="col-connectome" style="display: block;" class="{% if show_connectome is not True %}d-none hidden-forced{% endif %} col-lg-6 d-flex flex-column">
+    <div id="col-connectome" class="{% if show_connectome is not True %}d-none{% endif %} col-lg-6 d-flex flex-column">
       <div class="card card-body d-flex flex-column flex-fill">
         <h5>Connectome</h5>
         <div class="d-flex flex-wrap align-items-center gap-2">
@@ -340,7 +340,7 @@
       </div> <!-- collapseConfig -->
 
       <!-- connectome -->
-      <div id="connectome-graph" class="flex-lg-fill">
+      <div id="connectome-graph" class="flex-fill">
         <div id="connectome-legend">
           <div id="connectome-legend-items"></div>
         </div>

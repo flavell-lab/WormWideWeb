@@ -29,6 +29,7 @@
     min-height: 400px;  /* Important in flex layout so child can shrink properly. */
     overflow: hidden; /* Or 'hidden' if you don't want scrollbars */
 
+    flex: 1 1 auto;
     /* border: 1px solid black; */
     /* background-color: red; */
 } 
