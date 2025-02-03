@@ -236,8 +236,7 @@ export class SelectorDatasetNeuron {
      * Clear the neuron selector and remove the dataset key from localStorage.
      */
     clearNeuronSelector() {
-        // Remove only the dataset key rather than clearing all localStorage
-        localStorage.removeItem("connectome_selected_dataset_str");
+        localStorage.removeItem(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_selected_dataset_str`);
         this.selectorNeuron.clear();
         this.selectorNeuron.clearOptions();
     }
