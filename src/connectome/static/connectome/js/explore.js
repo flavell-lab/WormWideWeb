@@ -11,6 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectorDatasetNeuron = new SelectorDatasetNeuron("select-dataset", "select-neuron", connectomeGraph, true);
 
     // button
+    // clear neurons
+    const buttonClearNeurons = document.getElementById("clearNeurons")
+    buttonClearNeurons.addEventListener('click', ()=>{
+    selectorDatasetNeuron.selectorNeuron.clear();
+    })
+
     const connectomeContainer = document.getElementById("connectome-container");
     const buttonConnectomeFullscreen = document.getElementById("buttonConnectomeFullscreen");
     const connectomeFullscreenIcon = document.getElementById("connectomeFullscreenIcon");
