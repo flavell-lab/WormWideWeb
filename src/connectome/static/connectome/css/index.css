@@ -22,6 +22,8 @@
 .hero-image {
     max-width: 400px;
     width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     height: auto;
     margin: 0 auto;
     display: block;
