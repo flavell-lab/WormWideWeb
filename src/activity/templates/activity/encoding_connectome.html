@@ -43,12 +43,6 @@
                     </button>
                 </div>
 
-                <div class="btn-group btn-group-sm" role="group" aria-label="Neuron select button">
-                    <button id="buttonAllNeurons" class="btn btn-light btn-sm" type="button"
-                        aria-label="Add all neurons" data-bs-toggle="tooltip" title="Add all neurons with encoding data"
-                        aria-label="Add all neurons">All Neurons</button>
-                </div>
-
                 <!-- Second group of buttons -->
                 <div class="btn-group btn-group-sm" role="group" aria-label="Dataset and layout options">
                     <!-- Dataset button with tooltip -->
@@ -113,6 +107,18 @@
 
                 <!-- Third group of buttons -->
                 <div class="btn-group btn-group-sm" role="group" aria-label="Download and settings">
+                    <!-- all neurons -->
+                    <button id="buttonAllNeurons" class="btn btn-light btn-sm" type="button"
+                        aria-label="Add all neurons" data-bs-toggle="tooltip" title="Add all neurons with encoding data">
+                        All Neurons
+                    </button>
+
+                    <!-- clear -->
+                    <button id="clearNeurons" class="btn btn-light btn-sm" type="button"
+                    aria-label="Clear all selected neurons" data-bs-toggle="tooltip" title="Clear all selected neurons">
+                        Clear
+                    </button>
+
                     <!-- Settings/gear button -->
                     <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse"
                         data-bs-target="#collapseConfig" aria-expanded="false" aria-controls="collapseConfig"

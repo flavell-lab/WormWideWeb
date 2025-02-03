@@ -54,10 +54,17 @@ document.addEventListener('DOMContentLoaded', () => {
     tomSelectInstance.setValue(listNeuronOptions);
   }
 
+  // select all neurons
   const buttonAllNeurons = document.getElementById("buttonAllNeurons")
   buttonAllNeurons.addEventListener('click', () => {
     selectAllLabeledNeuron(selectorDatasetNeuron.selectorNeuron)
   });
+
+// clear neurons
+const buttonClearNeurons = document.getElementById("clearNeurons")
+buttonClearNeurons.addEventListener('click', ()=>{
+  selectorDatasetNeuron.selectorNeuron.clear();
+})
 
   /*
       Tour
