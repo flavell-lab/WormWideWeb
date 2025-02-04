@@ -88,6 +88,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         plotManager.exportCSV()
     });
 
+    const buttonToggleConnectome = document.getElementById("buttonToggleConnectome")
+
     /*
         Fullscreen logic
     */
@@ -123,6 +125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             label: plotFullscreenLabel,
             // A callback for any special logic (like adjusting width)
             onToggle() {
+                buttonToggleConnectome.classList.toggle("d-none")
                 // Force reflow, then adjust width
                 colPlot.offsetWidth;
                 setTimeout(() => adjustWidth("col-plot", plotManager.plotElementId), 350);
@@ -154,7 +157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         Connectome toggle
     */
     if (isNeuroPAL) {
-        const buttonToggleConnectome = document.getElementById("buttonToggleConnectome")
         buttonToggleConnectome.addEventListener("click", () => {
             if (colConnectome.classList.contains("d-none")) {
                 colPlot.classList.add("col-lg-6");
