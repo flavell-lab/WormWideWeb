@@ -3,7 +3,7 @@ import { NeuronSelector } from "../plot_neuron_selector.js"
 import { BehaviorSelector } from "../plot_behavior_selector.js"
 import { DatasetSelector } from "../plot_dataset_selector.js"
 import { NeuronBehaviorPlot } from "../plot_manager.js"
-import { getDatasetTypePill, initSlider, setLocalBool, getLocalBool, toggleFullscreen, handleFullscreenElement } from "/static/core/js/utility.js"
+import { getDatasetTypePill, initSlider, setLocalStr, setLocalBool, getLocalBool, toggleFullscreen, handleFullscreenElement } from "/static/core/js/utility.js"
 import { EncodingTable } from "../encoding_table.js"
 import { adjustWidth } from "../plot_data.js"
 import { PlotGraph } from "../plot_graph.js"
@@ -53,6 +53,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     /*
         Connectome
     */
+    const connectomeLayout = localStorage.getItem("activity_connectome_layout")
+    if (connectomeLayout === null) {
+        setLocalStr("activity_connectome_layout", "grid")
+    }      
     const isNeuroPAL = "common-neuropal" in data.dataset_type;
     const plotGraph = isNeuroPAL ? new PlotGraph("connectome-graph", data) : null;
     const datasetSelector = isNeuroPAL ? new DatasetSelector("select-dataset", plotGraph) : null;
@@ -275,7 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (tourActivity) {
         tour.addStep({
-            id: 'step-1-select-neuron',
+            id: 'step-select-neuron',
             text: 'Search and select neurons to plot.',
             attachTo: {
                 element: '#select-neuron-container',
@@ -287,7 +291,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         tour.addStep({
-            id: 'step-2-select-behavior',
+            id: 'step-select-behavior',
             text: 'Select which behavior data to plot.',
             attachTo: {
                 element: '#select-behavior-container',
@@ -299,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         tour.addStep({
-            id: 'step-2.5-subplot-neuron',
+            id: 'step-subplot-neuron',
             text: 'This section of the plot shows the neural activity traces (GCaMP) of the selected neurons.',
             attachTo: {
                 element: '.xy',
@@ -311,7 +315,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         tour.addStep({
-            id: 'step-2.5-subplot-behavior',
+            id: 'step-subplot-behavior',
             text: 'This section of the plot shows the selected behavioral data.',
             attachTo: {
                 element: '.xy2',
@@ -335,7 +339,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         tour.addStep({
-            id: 'step-4-cor-button',
+            id: 'step-cor-button',
             text: 'Examine the Pearson correlation among the neurons and hehaviors.',
             attachTo: {
                 element: '#button_cor',
@@ -347,7 +351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         tour.addStep({
-            id: 'step-67-encoding-table',
+            id: 'step-encoding-table',
             text: 'This table shows the encoding parameters determined by the CePNEM models.',
             attachTo: {
                 element: '#encodingTableCard',
@@ -361,7 +365,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (tourConnectome) {
         tour.addStep({
-            id: 'step-5-connectome-column',
+            id: 'step-connectome-column',
             text: "Here you can see the connectivity of the plotted neural traces. Note that only the NeuroPAL-identified neurons can be displayed here.<br><br>\
                 Scroll to zoom in/out and click and move to pan.",
             attachTo: {
@@ -374,7 +378,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         tour.addStep({
-            id: 'step-5-connectome-layout',
+            id: 'step-connectome-layout',
             text: 'Change the connectome diagram layout.',
             attachTo: {
                 element: '#dropdownLayoutContainer',
@@ -384,14 +388,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 { text: 'Next', action: tour.next }
             ],
             beforeShowPromise: () => {
-                const layoutGrid = document.querySelector('.dropdown-item[data-value="grid"]');
-                layoutGrid.click();
+                const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
+                layoutConcentric.click();
                 return Promise.resolve();
             },
         });
 
         tour.addStep({
-            id: 'step-6-connectome-color',
+            id: 'step-connectome-color',
             text: 'Change the connectome node coloring to display different info such as neuron types.',
             attachTo: {
                 element: '#dropdownColorContainer',
@@ -447,9 +451,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (tourActivity || tourConnectome) {
         tour.on('complete', () => {
             if (tourConnectome) {
-                const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
+                const layoutGrid = document.querySelector('.dropdown-item[data-value="grid"]');
                 const colorType = document.querySelector('.dropdown-item[data-value="gcamp"]');
-                layoutConcentric.click();
+                layoutGrid.click();
                 colorType.click();
             }
 
@@ -467,9 +471,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         tour.on('cancel', () => {
             if (tourConnectome) {
-                const layoutConcentric = document.querySelector('.dropdown-item[data-value="concentric"]');
+                const layoutGrid = document.querySelector('.dropdown-item[data-value="grid"]');
                 const colorType = document.querySelector('.dropdown-item[data-value="gcamp"]');
-                layoutConcentric.click();
+                layoutGrid.click();
                 colorType.click();
             }
 
