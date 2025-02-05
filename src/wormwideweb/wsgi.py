@@ -13,9 +13,9 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wormwideweb.settings')
 
+application = get_wsgi_application()
+
 # init graph computation
 from connectome.graph_init import initialize_graphs
 import connectome.graph_data
 connectome.graph_data.GRAPH_OBJECTS = initialize_graphs()
-
-application = get_wsgi_application()
