@@ -23,55 +23,7 @@
             </div>
         </div>
     </div>
-</section>
-
-<section class="stats-section" id="stats">
-    <div class="container">
-      <div class="row">
-        <!-- Counter 1 -->
-        <div class="col-md-2">
-          <div class="counter-box">
-            <span class="counter" data-target={{n_paper}}>0</span>
-            <p>Publications</p>
-          </div>
-        </div>
-        <!-- Counter 2 -->
-        <div class="col-md-2">
-          <div class="counter-box">
-            <span class="counter" data-target={{n_dataset}}>0</span>
-            <p>Neural Activity Datasets</p>
-          </div>
-        </div>
-        <!-- Counter 3 -->
-        <div class="col-md-2">
-          <div class="counter-box">
-            <span class="counter" data-target="{{n_neuron}}">0</span>
-            <p>Recorded Neurons</p>
-          </div>
-        </div>
-        <!-- Counter 4 -->
-        <div class="col-md-3">
-          <div class="counter-box">
-            <span class="counter" data-target={{n_connectome_dataset}}>0</span>
-            <p>Connectome Datasets</p>
-          </div>
-        </div>
-        <!-- Counter 5 -->
-        <div class="col-md-3">
-          <div class="counter-box">
-            <span class="counter" data-target={{n_synapse}}>0</span>
-            <p>Synapses</p>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <p class="section-description">
-          At your fingertips to explore
-        </p>
-      </div>
-    </div>
-  </section>
-  
+</section>  
 
 <!-- GCaMP -->
 <section class="feature-section" id="explore">
@@ -144,61 +96,4 @@
         </div>
     </div>
 </section> -->
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Function to animate a single counter
-    function animateCounter(counter) {
-      const target = +counter.getAttribute('data-target'); // final number
-      const duration = 1000; // total animation duration in ms
-      const startTime = performance.now();
-  
-      function updateCount(currentTime) {
-        const elapsed = currentTime - startTime;
-        // Calculate progress from 0 to 1
-        const progress = Math.min(elapsed / duration, 1);
-        // Ease out or linear (optional)
-        const easedProgress = 1 - Math.pow(1 - progress, 3);
-  
-        // Current value
-        const currentValue = Math.floor(easedProgress * target);
-  
-        // Update the counter display
-        counter.innerText = currentValue;
-  
-        // Continue animating if not reached target
-        if (progress < 1) {
-          requestAnimationFrame(updateCount);
-        } else {
-          // Ensure final value is set
-          counter.innerText = target;
-        }
-      }
-  
-      requestAnimationFrame(updateCount);
-    }
-  
-    // Intersection Observer to trigger animation on scroll
-    const counters = document.querySelectorAll('.counter');
-    const observerOptions = {
-      root: null,       // viewport
-      threshold: 0.1    // trigger when 10% of the element is visible
-    };
-  
-    const counterObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          animateCounter(entry.target);
-          // Stop observing once animated
-          observer.unobserve(entry.target);
-        }
-      });
-    }, observerOptions);
-  
-    counters.forEach(counter => {
-      counterObserver.observe(counter);
-    });
-  </script>
-  
 {% endblock %}
