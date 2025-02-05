@@ -69,7 +69,9 @@ export function getEncodingTable(data, neuron, skipUnlabeled=false, idxFirst=fal
         if (skipUnlabeled && label_ == "") continue
 
         table_encoding_data.push({
-            "neuron": getTableNeuronLabel(label_, idx_neuron, idxFirst),
+            "neuron": label_,
+            // "neuron": getTableNeuronLabel(label_, idx_neuron, idxFirst),
+            "idx_neuron": idx_neuron,
             // "label": label_,
             "dataset_name": data["dataset_name"],
             "dataset": data["uid"],

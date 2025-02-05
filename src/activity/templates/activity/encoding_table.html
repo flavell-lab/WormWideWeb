@@ -31,6 +31,9 @@
       {% if show_dataset %}
       <th rowspan=2 data-field="dataset_name" data-sortable="true" data-searchable="true">Dataset</th>
       {% endif %}
+      {% if show_neuronid %}
+      <th rowspan=2 data-field="idx_neuron" data-sortable="true" data-searchable="true">Neuron ID</th>
+      {% endif %}
       <th rowspan=2 data-field="neuron" data-sortable="true" data-searchable="true">Neuron</th>
       <th colspan=10 data-align="center" data-sortable="false" data-searchable="false">Velocity tuning</th>
       <th colspan=10 data-align="center" data-sortable="false" data-searchable="false">Head curvature tuning</th>
