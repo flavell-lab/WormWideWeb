@@ -31,33 +31,62 @@ def path(request):
 
     return render(request, "connectome/path.html", context)
 
-# @cache_page(60*60) # in seconds
-@cache_page(60*60*24*14)
+@cache_page(60*60*24*180)
 def available_neurons(request):
-    datasets_str = request.GET.get('datasets') 
+    datasets_str = request.GET.get('datasets')
     if datasets_str is None:
         return HttpResponse("Error: datasets parameter not found", status=400)
     dataset_ids = datasets_str.split(',')
 
-    # filter datasets
-    datasets = Dataset.objects.filter(dataset_id__in=dataset_ids)
+    # Prepare querysets that load only needed fields.
+    neuron_qs = (
+        Neuron.objects
+        .only('name', 'cell_type', 'neurotransmitter_type', 'in_head', 'in_tail', 'is_embryonic', 'neuron_class__name')
+        .select_related('neuron_class')
+    )
+    neuron_class_qs = (
+        NeuronClass.objects
+        .only('name')
+        .prefetch_related(Prefetch('neurons', queryset=Neuron.objects.only('name')))
+    )
 
-    # Use sets to collect unique neurons and neuron classes
-    neurons = set()
-    neuron_classes = set()
+    # Filter datasets and prefetch only needed related objects.
+    datasets = (
+        Dataset.objects
+        .filter(dataset_id__in=dataset_ids)
+        .only('dataset_id')  # We only need the dataset_id from Dataset.
+        .prefetch_related(
+            Prefetch('available_neurons', queryset=neuron_qs),
+            Prefetch('available_classes', queryset=neuron_class_qs)
+        )
+    )
+
+    # Use sets to collect unique neurons and neuron classes across datasets.
+    neurons_set = set()
+    neuron_classes_set = set()
     for dataset in datasets:
-        neurons.update(dataset.available_neurons.all())
-        neuron_classes.update(dataset.available_classes.all())
+        neurons_set.update(dataset.available_neurons.all())
+        neuron_classes_set.update(dataset.available_classes.all())
 
-    # Serialize neurons and neuron classes
-    neurons_data = {}
-    neuron_classes_data = {}
-    for neuron in neurons:
-        neurons_data[neuron.name] = {'neuron_class': neuron.neuron_class.name, 'name': neuron.name,
-                                'cell_type': neuron.cell_type, 'neurotransmitter_type': neuron.neurotransmitter_type,
-                                'in_head': neuron.in_head, 'in_tail': neuron.in_tail, 'is_embryonic': neuron.is_embryonic}
-    for cls in neuron_classes:
-        neuron_classes_data[cls.name] = [neuron.name for neuron in cls.neurons.all()]
+    # Serialize neurons.
+    neurons_data = {
+        neuron.name: {
+            'neuron_class': neuron.neuron_class.name if neuron.neuron_class else None,
+            'name': neuron.name,
+            'cell_type': neuron.cell_type,
+            'neurotransmitter_type': neuron.neurotransmitter_type,
+            'in_head': neuron.in_head,
+            'in_tail': neuron.in_tail,
+            'is_embryonic': neuron.is_embryonic
+        }
+        for neuron in neurons_set
+    }
+
+    # Serialize neuron classes.
+    neuron_classes_data = {
+        cls.name: [n.name for n in cls.neurons.all()]
+        for cls in neuron_classes_set
+    }
 
     data = {
         'neurons': neurons_data,
