@@ -165,23 +165,37 @@ def get_dataset_neuron_data(dataset):
 
 
 def plot_dataset(request, dataset_id):
-    dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
+    # Use select_related and prefetch_related to fetch related objects in one go.
+    dataset = get_object_or_404(
+        GCaMPDataset.objects.select_related('paper').prefetch_related('dataset_type'),
+        dataset_id=dataset_id
+    )
     neuron_data = get_dataset_neuron_data(dataset)
     encoding = dataset.encoding
 
-    # neural trace for initial plot
+    # Build initial trace data using a batched query for neurons.
     trace_init = {}
     str_neuron_list = request.GET.get("n")
     if str_neuron_list:
-        list_neuron = str_neuron_list.split('-')
         try:
-            list_idx_neuron = [int(x) for x in list_neuron]
-            for idx_neuron in list_idx_neuron:
-                neuron = get_object_or_404(GCaMPNeuron, dataset=dataset, idx_neuron=idx_neuron)
-                trace_init[idx_neuron] = {"trace": neuron.trace, "idx_neuron": neuron.idx_neuron, "dataset_id": dataset_id}
+            list_idx_neuron = [int(x) for x in str_neuron_list.split('-')]
         except ValueError:
             return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
+        # Retrieve all neurons in one query instead of per-neuron queries.
+        neurons_qs = list(GCaMPNeuron.objects.filter(dataset=dataset, idx_neuron__in=list_idx_neuron))
+        # Ensure that all requested neurons are found.
+        if len(neurons_qs) != len(list_idx_neuron):
+            return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
+        neurons_map = {neuron.idx_neuron: neuron for neuron in neurons_qs}
+        for idx_neuron in list_idx_neuron:
+            neuron = neurons_map.get(idx_neuron)
+            trace_init[idx_neuron] = {
+                "trace": neuron.trace,
+                "idx_neuron": neuron.idx_neuron,
+                "dataset_id": dataset_id
+            }
 
+    # Build main data structure.
     data = {
         "neuron": neuron_data,
         "dataset_id": dataset_id,
@@ -193,25 +207,32 @@ def plot_dataset(request, dataset_id):
         "dataset_type": {}
     }
 
+    # Use the prefetched dataset types to build the mapping.
     for dtype in dataset.dataset_type.all():
-        data["dataset_type"][dtype.type_id] = {"type_id": dtype.type_id, "description": dtype.description, "name": dtype.name, "background-color": dtype.color_background}
+        data["dataset_type"][dtype.type_id] = {
+            "type_id": dtype.type_id,
+            "description": dtype.description,
+            "name": dtype.name,
+            "background-color": dtype.color_background
+        }
 
     if dataset.events:
         data["events"] = dataset.events
-    if len(trace_init) > 0:
+    if trace_init:
         data["trace_init"] = trace_init
-    
-    # connectome dataset
-    datasets = Dataset.objects.all()
-    datasets_json = json.dumps(list(datasets.values(
-        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time')), cls=DjangoJSONEncoder)
+
+    # Optimize the connectome dataset query by retrieving only the needed fields.
+    datasets = Dataset.objects.all().values(
+        'name', 'dataset_id', 'dataset_type', 'description', 'animal_visual_time'
+    )
+    datasets_json = json.dumps(list(datasets), cls=DjangoJSONEncoder)
 
     context = {
         "paper": dataset.paper,
         "dataset_id": dataset_id,
         "dataset_name": dataset.dataset_name,
         "data": json.dumps(data, cls=DjangoJSONEncoder),
-        'datasets_json': datasets_json,
+        "datasets_json": datasets_json,
         "show_connectome": "common-neuropal" in data["dataset_type"],
         "show_encoding": bool(encoding)
     }
