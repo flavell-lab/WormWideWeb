@@ -152,17 +152,16 @@ def get_behavior(request, dataset_id):
     return JsonResponse(data)
 
 def get_dataset_neuron_data(dataset):
-    neuron_data = {}
-    for neuron in dataset.neurons.all():
-        neuron_data[neuron.idx_neuron] = {
-            "name": str(neuron.idx_neuron) if neuron.neuron_name == "" else f"{neuron.idx_neuron} ({neuron.neuron_name})",
+    qs = dataset.neurons.select_related("neuron_class").all()
+    return {
+        neuron.idx_neuron: {
+            "name": f"{neuron.idx_neuron} ({neuron.neuron_name})" if neuron.neuron_name else str(neuron.idx_neuron),
             "label": neuron.neuron_name,
             "class": neuron.neuron_class.name if neuron.neuron_class else "",
             "idx_neruon": neuron.idx_neuron
         }
-
-    return neuron_data
-
+        for neuron in qs
+    }
 
 def plot_dataset(request, dataset_id):
     # Use select_related and prefetch_related to fetch related objects in one go.
