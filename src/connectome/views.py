@@ -67,23 +67,29 @@ def available_neurons(request):
     return JsonResponse(data)
 
 def get_edge_response_data(data):
-    # Unpack and convert to sets for fast membership testing
+    # Unpack parameters and convert lists to sets for fast membership testing.
     datasets = data["datasets"]
     neurons_input = data["neurons"]
     classes_input = set(data["classes"])
     show_individual_neuron = data["show_individual_neuron"]
     show_connected_neuron = data["show_connected_neuron"]
 
-    # Fetch datasets, neuron classes, and neurons
-    dataset_objs = list(Dataset.objects.filter(dataset_id__in=datasets))
+    # Instead of retrieving full Dataset objects, fetch only their primary keys.
+    dataset_ids = list(
+        Dataset.objects.filter(dataset_id__in=datasets).values_list('pk', flat=True)
+    )
+    # Build a mapping from dataset primary key to an index.
+    dataset_index_map = {ds_id: idx for idx, ds_id in enumerate(dataset_ids)}
+    
+    # Use the list of IDs in the Q filter.
+    synapse_filters = Q(dataset__pk__in=dataset_ids)
+    
+    # Retrieve neuron classes and neurons.
     neuron_class_objs = list(NeuronClass.objects.filter(name__in=classes_input))
     neuron_objs = list(Neuron.objects.filter(name__in=neurons_input))
-    
-    # Build sets for fast membership testing by primary key
     neuron_ids = {neuron.pk for neuron in neuron_objs}
-
-    # Build synapse filters
-    synapse_filters = Q(dataset__in=dataset_objs)
+    
+    # Apply additional filtering on synapses based on the connectedness flags.
     if not show_connected_neuron:
         synapse_filters &= (
             Q(pre__in=neuron_objs, post__in=neuron_objs) |
@@ -96,28 +102,27 @@ def get_edge_response_data(data):
             Q(pre__in=neuron_objs) | Q(post__in=neuron_objs) |
             Q(pre__neuron_class__in=neuron_class_objs) | Q(post__neuron_class__in=neuron_class_objs)
         )
-
+    
+    # Retrieve synapses using select_related to avoid extra queries.
     synapses = Synapse.objects.select_related(
         'pre__neuron_class', 'post__neuron_class', 'dataset'
     ).filter(synapse_filters)
-
-    # Prepare data structures
-    synapse_dict = defaultdict(lambda: {"count": 0, "list_count": [0] * len(dataset_objs)})
+    
+    # Prepare data structures.
+    # Note: list_count is sized according to the number of dataset IDs.
+    synapse_dict = defaultdict(lambda: {"count": 0, "list_count": [0] * len(dataset_ids)})
     list_nodes = set()
-    # Precompute a set of neuron class names from neuron_objs for quick checking
+    # Precompute a set of neuron class names from the neuron_objs.
     list_separate_class = {neuron.neuron_class.name for neuron in neuron_objs}
-
-    # Build a mapping from dataset primary key to its index
-    dataset_index_map = {ds.pk: idx for idx, ds in enumerate(dataset_objs)}
-
-    # Process synapses and aggregate counts
+    
+    # Process synapses and aggregate counts.
     for synapse in synapses:
         pre_neuron = synapse.pre
         post_neuron = synapse.post
         pre_class_name = pre_neuron.neuron_class.name
         post_class_name = post_neuron.neuron_class.name
 
-        # Determine label for pre node
+        # Determine the label for the pre node.
         if pre_class_name in classes_input:
             pre_label = pre_class_name
         elif show_individual_neuron or pre_neuron.pk in neuron_ids or pre_class_name in list_separate_class:
@@ -125,7 +130,7 @@ def get_edge_response_data(data):
         else:
             pre_label = pre_class_name
 
-        # Determine label for post node
+        # Determine the label for the post node.
         if post_class_name in classes_input:
             post_label = post_class_name
         elif show_individual_neuron or post_neuron.pk in neuron_ids or post_class_name in list_separate_class:
@@ -140,10 +145,11 @@ def get_edge_response_data(data):
         if ds_idx is not None:
             synapse_dict[key]['list_count'][ds_idx] += synapse.synapse_count
 
-    # Build the final list of synapses with unique keys for symmetric ("e") edges
+    # Build the final list of synapse data.
     list_synapse_dict = []
     list_e_synapse_key = set()
     for (pre_label, post_label, synapse_type), value in synapse_dict.items():
+        # For symmetric "e" type edges, avoid duplicate inverse keys.
         e_key = pre_label + post_label
         e_key_inverse = post_label + pre_label
 
@@ -161,7 +167,7 @@ def get_edge_response_data(data):
         if synapse_type == "e":
             list_e_synapse_key.add(e_key)
 
-    # Add orphaned nodes if necessary
+    # Add orphaned nodes if not showing connected neurons.
     if not show_connected_neuron:
         for neuron_class in neuron_class_objs:
             if neuron_class.name not in list_nodes:
@@ -170,7 +176,7 @@ def get_edge_response_data(data):
             if neuron.name not in list_nodes:
                 list_nodes.add(neuron.name)
 
-    # Format and return the response
+    # Format and return the response.
     response = {
         "datasets": datasets,
         "neurons": sorted(list_nodes),
