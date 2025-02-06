@@ -9,7 +9,7 @@ from django.urls import reverse
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from connectome.models import Neuron, NeuronClass, Dataset, Synapse
 from core.models import JSONCache
-
+from collections import defaultdict
 
 def index(request):
     context = {}
@@ -259,37 +259,84 @@ def plot_dataset(request, dataset_id):
 render plot multiple datasets from the selected datsets from the find_neuron view
 """
 def plot_multiple(request):
-    # start_time = time.time()  # Record start time
+    # Pop session data, which is a dict mapping dataset_id -> list of neuron indices.
     data = request.session.pop("plot-multiple-data", {})
+    if not data:
+        # Early exit if no data
+        return render(request, "activity/plot_multiple.html", {"list_dataset_meta": [], "plots": "{}"})
+
     dataset_ids = list(data.keys())
-    datasets = GCaMPDataset.objects.filter(dataset_id__in=dataset_ids)
-    dataset_map = {dataset.dataset_id: dataset for dataset in datasets}
+
+    # Prefetch related dataset types, limiting the fields.
+    dt_qs = GCaMPDatasetType.objects.only('type_id', 'description', 'name', 'color_background')
+    # Fetch only needed fields for datasets.
+    datasets_qs = (
+        GCaMPDataset.objects.filter(dataset_id__in=dataset_ids)
+        .select_related('paper')
+        .prefetch_related(Prefetch('dataset_type', queryset=dt_qs))
+        .only('dataset_id', 'dataset_name', 'avg_timestep', 'max_t', 'paper__paper_id', 'paper__title_short')
+    )
+    # Map dataset_id to dataset.
+    dataset_map = {ds.dataset_id: ds for ds in datasets_qs}
+
+    # Instead of querying neurons one dataset at a time, batch query all needed neurons.
+    # Gather all neuron indices requested across datasets.
+    all_required_idx = {idx for idx_list in data.values() for idx in idx_list}
+    # Query neurons for all datasets that are in our list.
+    neurons_qs = (
+        GCaMPNeuron.objects.filter(
+            dataset__dataset_id__in=dataset_ids,
+            idx_neuron__in=all_required_idx
+        )
+        .select_related('dataset')
+        .only('dataset__dataset_id', 'idx_neuron', 'neuron_name', 'trace')
+    )
+    # Group neurons by their dataset's dataset_id and idx_neuron.
+    neurons_grouped = defaultdict(dict)
+    for neuron in neurons_qs:
+        ds_id = neuron.dataset.dataset_id
+        neurons_grouped[ds_id][neuron.idx_neuron] = neuron
 
     plots = []
     colors = {}
     list_dataset_meta = []
     dataset_types = {}
-    for dataset_id in data:
+
+    # Process each dataset from the session data.
+    for dataset_id, list_idx_neuron in data.items():
         dataset = dataset_map[dataset_id]
 
-        for dtype in dataset.dataset_type.all():
+        # Cache the prefetched dataset types to avoid re-querying.
+        dtypes = list(dataset.dataset_type.all())
+        # Update the global dataset_types mapping.
+        for dtype in dtypes:
             if dtype.type_id not in dataset_types:
-                dataset_types[dtype.type_id] = {"type_id": dtype.type_id, "description": dtype.description, "name": dtype.name, "background-color": dtype.color_background}
+                dataset_types[dtype.type_id] = {
+                    "type_id": dtype.type_id,
+                    "description": dtype.description,
+                    "name": dtype.name,
+                    "background-color": dtype.color_background,
+                }
 
-        list_idx_neuron = data[dataset_id]
-        neurons = GCaMPNeuron.objects.filter(dataset__dataset_id=dataset_id, idx_neuron__in=list_idx_neuron)
-        neuron_map = {neuron.idx_neuron: neuron for neuron in neurons}
-
+        # Get neurons for this dataset from the grouped results.
+        neuron_map = neurons_grouped.get(dataset_id, {})
         trace_data = []
         for idx_neuron in list_idx_neuron:
-            neuron = neuron_map[idx_neuron]
+            neuron = neuron_map.get(idx_neuron)
+            if not neuron:
+                continue  # Optionally handle missing neurons.
             neuron_name = neuron.neuron_name
-            trace_data.append({"idx_neuron": idx_neuron, "trace": neuron.trace, "name": neuron_name}) # "trace_original": neuron.trace_original
+            trace_data.append({
+                "idx_neuron": idx_neuron,
+                "trace": neuron.trace,
+                "name": neuron_name
+            })
+            # Assign a new color index if needed.
             if neuron_name not in colors:
                 colors[neuron_name] = len(colors)
 
         plots.append({
-            "dataset_type": [type.type_id for type in dataset.dataset_type.all()],
+            "dataset_type": [dtype.type_id for dtype in dtypes],
             "dataset_id": dataset.dataset_id,
             "dataset_name": dataset.dataset_name,
             "trace_data": trace_data,
@@ -302,15 +349,15 @@ def plot_multiple(request):
             "dataset_id": dataset.dataset_id,
             "dataset_name": dataset.dataset_name,
         })
-    
+
     context = {
         "list_dataset_meta": list_dataset_meta,
-        "plots": json.dumps({"dataset_types": dataset_types, "data": plots, "colors": colors}, cls=DjangoJSONEncoder)
+        "plots": json.dumps({
+            "dataset_types": dataset_types,
+            "data": plots,
+            "colors": colors
+        }, cls=DjangoJSONEncoder)
     }
-    # end_time = time.time()  # Record end time
-    # processing_time = end_time - start_time
-    # print(f"View processing time: {processing_time:.4f} seconds")
-
     return render(request, "activity/plot_multiple.html", context)
 
 """
