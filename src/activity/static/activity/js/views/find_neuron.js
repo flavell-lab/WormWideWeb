@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async() => {
     */
     const buttonClear = document.getElementById("clearSelector")
     buttonClear.addEventListener('click', () => {
-        neuronSelector.clearSelector();
+        neuronSelector.selector.clear();
     });
 
     const buttonPlotSelected = document.getElementById("plotSelected")
