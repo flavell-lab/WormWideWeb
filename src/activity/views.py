@@ -137,18 +137,19 @@ def get_encoding(request, dataset_id):
 
 @cache_page(60*60*24*14)
 def get_behavior(request, dataset_id):
-    dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
-    behavior = dataset.truncated_behavior
+    dataset = get_object_or_404(
+        GCaMPDataset.objects.only("truncated_behavior", "events", "avg_timestep", "max_t"),
+        dataset_id=dataset_id
+    )
     data = {
         "data": {
-            "behavior": behavior,
+            "behavior": dataset.truncated_behavior,
             "events": dataset.events
         },
         "dataset_id": dataset_id,
         "avg_timestep": dataset.avg_timestep,
         "max_t": dataset.max_t
     }
-
     return JsonResponse(data)
 
 def get_dataset_neuron_data(dataset):
