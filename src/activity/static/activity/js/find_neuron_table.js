@@ -41,47 +41,58 @@ export class DatasetTable {
     }
 
     updateMatch(matchDict, valuePaper) {
-        $(this.tableElementSelector).bootstrapTable("filterBy", {}, {
-            "filterAlgorithm": (row, filters) => {
-                return valuePaper.includes(row.paper_id) && row.id in matchDict
+        const $table = $(this.tableElementSelector);
+        
+        // 1. Apply the filter
+        $table.bootstrapTable("filterBy", {}, {
+            filterAlgorithm: (row) => {
+                return valuePaper.includes(row.paper_id) && (row.id in matchDict);
             }
-        })
-
-        Object.keys(matchDict).forEach((datasetId) => {
-            this.matched[datasetId] = matchDict[datasetId]
-
-            const listIdxNeuron = matchDict[datasetId]
-
-            // update buttons urls
-            const urlPlot = `/activity/explore/${datasetId}/?n=${listIdxNeuron.join("-")}&b=v`
-            const urlData = `/static/activity/data/${datasetId}.json`
-            const htmlBtn = `<div class="actions-column">
+        });
+    
+        // 2. Gather all row updates first
+        const updates = [];
+        for (const [datasetId, neuronList] of Object.entries(matchDict)) {
+            // Store in local matched cache
+            this.matched[datasetId] = neuronList;
+    
+            // Prepare new action button HTML
+            const urlPlot = `/activity/explore/${datasetId}/?n=${neuronList.join("-")}&b=v`;
+            const urlData = `/static/activity/data/${datasetId}.json`;
+            const htmlBtn = `
+                <div class="actions-column">
                     <a href="${urlPlot}" class="action-btn" title="Plot">
                         <i class="bi bi-graph-up"></i>
                     </a>
-                    <a href="${urlData}" class="action-btn" title="Download"">
+                    <a href="${urlData}" class="action-btn" title="Download">
                         <i class="bi bi-download"></i>
                     </a>
-                </div>`
-            $(this.tableElementSelector).bootstrapTable('updateCellByUniqueId', {
+                </div>
+            `;
+    
+            // Push update instructions
+            updates.push({
                 id: datasetId,
-                field: 'action',
-                value: htmlBtn,
-                reinit: true
-            })
-        })
-
-        // double click links to plot
-        $(this.tableElementSelector).off("dbl-click-row.bs.table")
-        $(this.tableElementSelector).on("dbl-click-row.bs.table", (row, $element, field) => {
-            const id = $element.id
-            const neuronList = this.matched[id];
-            const neuronParam = neuronList.length === 1 ? neuronList[0] : neuronList.join("-");
-            window.location.href = `/activity/explore/${id}/?n=${neuronParam}&b=v`;
-        });
-
-        $(this.tableElementSelector).bootstrapTable("uncheckAll")
-    }
+                row: { action: htmlBtn } // We only update the 'action' field
+            });
+        }
+    
+        // 3. Apply all updates in one go
+        $table.bootstrapTable("updateByUniqueId", updates);
+    
+        // 4. (Re)bind the double-click event for row navigation
+        $table
+          .off("dbl-click-row.bs.table")
+          .on("dbl-click-row.bs.table", (event, row) => {
+              const id = row.id;
+              const neuronList = this.matched[id];
+              const neuronParam = (neuronList.length === 1) ? neuronList[0] : neuronList.join("-");
+              window.location.href = `/activity/explore/${id}/?n=${neuronParam}&b=v`;
+          });
+    
+        // 5. Finally, uncheck all rows
+        $table.bootstrapTable("uncheckAll");
+    }    
 
     getSelected() {
         return $(this.tableElementSelector).bootstrapTable("getSelections")
