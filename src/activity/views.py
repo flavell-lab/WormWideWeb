@@ -36,7 +36,7 @@ def encoding_connectome(request):
 
     return render(request, "activity/encoding_connectome.html", context)    
 
-@cache_page(60*60*24*30)
+@cache_page(60*60*24*180)
 def dataset(request):
     datasets = []
     for dataset in GCaMPDataset.objects.all():
@@ -77,14 +77,14 @@ def dataset(request):
 
     return render(request, "activity/dataset.html", context)
 
-@cache_page(60*60*24*30)
+@cache_page(60*60*24*180)
 def get_all_dataset(request):
     datasets = GCaMPDataset.objects.all().values("dataset_id", "dataset_type", "n_neuron",
                                                  "n_labeled", "max_t", "avg_timestep")
     
     return JsonResponse(list(datasets), safe=False)
 
-@cache_page(60*60*24*30)
+@cache_page(60*60*24*180)
 def get_find_neuron_data(request):
     data = get_object_or_404(JSONCache, name="neuropal_match").json
 
@@ -135,7 +135,7 @@ def get_encoding(request, dataset_id):
 
     return JsonResponse(get_dataset_encoding(dataset))
 
-@cache_page(60*60*24*14)
+@cache_page(60*60*24*180)
 def get_behavior(request, dataset_id):
     dataset = get_object_or_404(
         GCaMPDataset.objects.only("truncated_behavior", "events", "avg_timestep", "max_t"),
