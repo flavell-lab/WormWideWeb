@@ -1,5 +1,6 @@
 # data #
 initial_data/
+/src/staticfiles/
 
 # env #
 default*.env
