@@ -1,0 +1,7 @@
+python manage.py makemigrations --noinput
+python manage.py migrate --noinput
+python manage.py init_data_connectome
+python manage.py init_data_gcamp
+python manage.py update_encoding_dict_neuron_match
+python manage.py update_encoding_dict
+python manage.py update_neuron_match_dict
