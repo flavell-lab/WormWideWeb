@@ -1,5 +1,6 @@
 python manage.py makemigrations --noinput
 python manage.py migrate --noinput
+python manage.py collectstatic --no-input
 python manage.py init_data_connectome
 python manage.py init_data_gcamp
 python manage.py update_encoding_dict_neuron_match
