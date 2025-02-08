@@ -3,7 +3,7 @@ initial_data/
 /src/staticfiles/
 
 # env #
-default*.env
+*.env
 
 # Django #
 *.log
