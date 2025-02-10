@@ -42,6 +42,7 @@ class GCaMPDataset(models.Model):
     dataset_id = models.CharField(max_length=200, unique=True)
     dataset_name = models.CharField(max_length=100)
     dataset_type = models.ManyToManyField(GCaMPDatasetType, related_name="datasets")
+    dataset_meta = models.JSONField(default=empty_json)
 
     # time
     avg_timestep = models.FloatField(default=0.)
