@@ -7,8 +7,8 @@
   integrity="sha512-JSzoYh+JmOgeqypu22l1ePSza/E8xx3GHYWoY84eTdYKv7ojcA3XLundlKhNItzxgRJuvwW02ylrjslDUb3zrw=="
   crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@14.4.0/dist/css/shepherd.css"/>  
-<link rel="stylesheet" href="{% static 'css/shepard_custom.css' %}"> 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@14.4.0/dist/css/shepherd.css" />
+<link rel="stylesheet" href="{% static 'css/shepard_custom.css' %}">
 
 <link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
 <link rel="stylesheet" href="{% static 'activity/css/explore.css' %}">
@@ -20,20 +20,56 @@
 <div class="container-xxxl py-3">
   <div>
     <!-- Title -->
-    <h4>Neural Activity Dataset</h4>
+    <div class="d-flex align-items-center">
+      <h4 class="mb-0 me-2">Neural Activity Dataset</h4>
+      <button class="btn btn-sm btn-light" data-bs-toggle="collapse" data-bs-target="#collapseDatasetInfo">
+        <i class="bi bi-info-circle" data-bs-toggle="tooltip" data-bs-placement="top"
+          data-bs-title="Additional information on this dataset"></i>
+      </button>
+    </div>
+
     <div class="d-flex flex-wrap flex-lg-nowrap align-items-center gap-3">
       <!-- Paper short title -->
       <h5 class="mb-0">
         <a href="/about/#{{ paper.paper_id }}" class="text-muted paper_title">{{ paper.title_short }}</a>
       </h5>
-      
+
       <!-- Dataset ID -->
       <h5 class="text-muted mb-0">{{ dataset_name }}</h5>
-  
+
       <!-- Badges -->
-      <div id="datasetTypeBadges"class="mb-0"></div>
+      <div id="datasetTypeBadges" class="mb-0"></div>
     </div>
   </div>
+
+  <div class="collapse mt-2" id="collapseDatasetInfo">
+    <div class="card card-body">
+      <h5>Dataset Info</h5>
+      <p>{{ dataset_note|default:"No additional note/info available." }}</p>
+      
+      <div class="row mt-3">
+        <div class="col-lg-6 mt-3 mt-lg-0">
+          <h5>Dataset Type</h5>
+          <div id="datasetTypeLegend"></div>
+        </div>
+
+        <div class="col-lg-6 mt-3 mt-lg-0">
+          <h5>NeuroPAL label</h5>
+          <h6>What does ? mean in the neuron labels?</h6>
+          <p>For neuron class with Dorsal/Ventral (D/V) and/or Left/Right (L/R) differentiation, ? denotes that
+            it was not possible to determine that attribute.</p>
+          <h6>Example</h6>
+          <p>For the class RMD:
+          <ul>
+            <li>RMD?L: was not possible to determine D/V.</li>
+            <li>RMD??: was not possible to determine both L/R and D/V.</li>
+          </ul>
+          </p>
+        </div>
+      </div> <!-- row -->
+
+    </div>
+  </div> <!-- end collapse-->
 </div>
 
 <div class="container-xxxl mb-3">
@@ -71,10 +107,6 @@
                 <i class="bi bi-gear-wide-connected" data-bs-toggle="tooltip" data-bs-placement="top"
                   data-bs-title="Plot configurations"></i>
               </button>
-              <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#modalInfo">
-                <i class="bi bi-info-circle" data-bs-toggle="tooltip" data-bs-placement="top"
-                  data-bs-title="Additional information"></i>
-              </button>
               <button id="button_csv_export" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
                 data-bs-title="Download currently plotted neurons(s)/behavior(s) as a CSV file">
                 <i class="bi bi-download"></i>
@@ -90,15 +122,16 @@
                 data-bs-target="#collapseCor" aria-controls="collapseCor">
                 <span class="bi bi-calculator" data-bs-toggle="tooltip" data-bs-placement="top"
                   data-bs-title="Compute Pearson cor among the neural trace(s) and behavior(s)">Correlation</span>
-              </button>            
+              </button>
 
-              <button id="buttonPlotFullscreen" class="btn btn-light" data-bs-toggle="tooltip"
-                data-bs-placement="top" data-bs-title="Fullscreen Activity Plot" style="display: block;">
-                <i id="plotFullscreenIcon" class="bi bi-fullscreen"></i> <span id="plotFullscreenLabel">Fullscreen</span>
+              <button id="buttonPlotFullscreen" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="Fullscreen Activity Plot" style="display: block;">
+                <i id="plotFullscreenIcon" class="bi bi-fullscreen"></i> <span
+                  id="plotFullscreenLabel">Fullscreen</span>
               </button>
               {% if show_connectome %}
-              <button id="buttonToggleConnectome" class="btn btn-light" data-bs-toggle="tooltip"
-                data-bs-placement="top" data-bs-title="Show or Hide the connectome diagram" style="display: block;">
+              <button id="buttonToggleConnectome" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="Show or Hide the connectome diagram" style="display: block;">
                 <i id="toggleConnectomeId" class="bi bi-diagram-2"></i> <span>Connectome</span>
               </button>
               {% endif %}
@@ -171,8 +204,8 @@
           <!-- First group of buttons -->
           <div class="btn-group btn-group-sm" role="group" aria-label="layout, color, and other options">
             <!-- Dataset button with tooltip -->
-            <button class="btn btn-light btn-sm" id="buttonConnectomeDataset" type="button" data-bs-toggle="collapse" data-bs-target="#collapseData"
-              aria-expanded="false" aria-controls="collapseData" data-bs-toggle="tooltip"
+            <button class="btn btn-light btn-sm" id="buttonConnectomeDataset" type="button" data-bs-toggle="collapse"
+              data-bs-target="#collapseData" aria-expanded="false" aria-controls="collapseData" data-bs-toggle="tooltip"
               title="Customize which connectomes to use">
               Dataset
             </button>
@@ -210,7 +243,8 @@
                 Neuron Color
               </button>
               <ul class="dropdown-menu" aria-labelledby="dropdownColor" role="menu">
-                <li><a class="dropdown-item" href="#" role="menuitem" data-value="gcamp">Dataset (Neural Activity)</a></li>
+                <li><a class="dropdown-item" href="#" role="menuitem" data-value="gcamp">Dataset (Neural Activity)</a>
+                </li>
                 <li><a class="dropdown-item" href="#" role="menuitem" data-value="type">Type</a></li>
                 <!-- <li><a class="dropdown-item" href="#" role="menuitem" data-value="nt">Neurotransmitter</a></li> -->
                 <li>
@@ -237,7 +271,8 @@
             <!-- Settings/gear button -->
             <button id="buttonConnectomeFullscreen" class="btn btn-light" data-bs-toggle="tooltip"
               data-bs-placement="top" data-bs-title="Fullscreen Connectome" style="display: block;">
-              <i id="connectomeFullscreenIcon" class="bi bi-fullscreen"></i> <span id="connectomeFullscreenLabel">Fullscreen</span>
+              <i id="connectomeFullscreenIcon" class="bi bi-fullscreen"></i> <span
+                id="connectomeFullscreenLabel">Fullscreen</span>
             </button>
           </div>
         </div> <!-- connectome menu buttons -->
@@ -253,7 +288,8 @@
           </h5>
           <p><b>White et al. 1986</b> must be selected for the neurons outside of the head ganglia (e.g. NSM).</p>
           <!-- tom-select-container -->
-          <input id="select-dataset" autocomplete="off" placeholder="Select dataset(s)" class="form-control form-control-sm">
+          <input id="select-dataset" autocomplete="off" placeholder="Select dataset(s)"
+            class="form-control form-control-sm">
         </div>
       </div>
 
@@ -344,23 +380,23 @@
         <div id="connectome-legend">
           <div id="connectome-legend-items"></div>
         </div>
-    
+
         <div id="connectome-legend-cbar" class="legend-container-vertical d-none">
-            <!--  text label -->
-            <div class="vertical-label"><span id="cbarLegendLabel">Correlation w/ the<br>selected neuron</span></div>
-    
-            <!-- The vertical color bar -->
-            <div id="colorBar" class="colorbar-vertical"></div>
-    
-            <!-- Tick labels along the bar -->
-            <div class="ticks-vertical">
-                <span id="tick-max">1</span>
-                <span id="tick-mid">0</span>
-                <span id="tick-min">-1</span>
-            </div>
+          <!--  text label -->
+          <div class="vertical-label"><span id="cbarLegendLabel">Correlation w/ the<br>selected neuron</span></div>
+
+          <!-- The vertical color bar -->
+          <div id="colorBar" class="colorbar-vertical"></div>
+
+          <!-- Tick labels along the bar -->
+          <div class="ticks-vertical">
+            <span id="tick-max">1</span>
+            <span id="tick-mid">0</span>
+            <span id="tick-min">-1</span>
+          </div>
         </div>
-  
-        <div id="watermark">Connectome data: Witvliet et al. 2021</div>  
+
+        <div id="watermark">Connectome data: Witvliet et al. 2021</div>
       </div>
     </div> <!-- connectome column-->
   </div> <!-- row -->
@@ -403,33 +439,6 @@
   </div>
 </div>
 {% endif %}
-
-<!-- modal label info -->
-<div class="modal fade" id="modalInfo" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-  aria-labelledby="modalInfoLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="modalInfoLabel">Information</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <h5>NeuroPAL label</h5>
-        <h6>What does ? mean in the neuron labels?</h6>
-        <p>For neuron class with Dorsal/Ventral (D/V) and/or Left/Right (L/R) differentiation, ? notes that
-          it was not possible to determine that attribute.</p>
-        <h6>Example</h6>
-        <p>For the class RMD:
-        <ul>
-          <li>RMD?L: was not possible to determine D/V.</li>
-          <li>RMD??: was not possible to determine both L/R and D/V.</li>
-        </ul>
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- END modal -->
 
 <!-- modal connecotme node -->
 <div class="modal fade" id="modalLayout" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"

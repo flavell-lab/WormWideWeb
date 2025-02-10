@@ -170,7 +170,7 @@ def plot_dataset(request, dataset_id):
     # Fetch dataset with related objects
     # Adjust these field lists as needed.
     dataset_fields = (
-        'dataset_id', 'dataset_name', 'avg_timestep', 'max_t', 'neuron_cor', 'encoding', 'events', 'paper'
+        'dataset_id', 'dataset_name', 'avg_timestep', 'max_t', 'neuron_cor', 'encoding', 'events', 'paper', 'dataset_meta'
     )
     paper_fields = ('id', 'title')  # Adjust to the fields you actually need from paper.
     dataset_type_fields = ('type_id', 'description', 'name', 'color_background')
@@ -254,6 +254,10 @@ def plot_dataset(request, dataset_id):
         "show_connectome": "common-neuropal" in data["dataset_type"],
         "show_encoding": bool(encoding)
     }
+
+    # dataset note
+    if "note" in dataset.dataset_meta:
+        context["dataset_note"] = dataset.dataset_meta["note"]
 
     return render(request, "activity/explore.html", context)
 

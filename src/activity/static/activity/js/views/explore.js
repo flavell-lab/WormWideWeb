@@ -47,6 +47,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         getDatasetTypePill(typeId, data.dataset_type)
     ).join(" ")
 
+    /*
+        Dataset type legend
+    */
+    const typeLegend = document.getElementById("datasetTypeLegend")
+    typeLegend.innerHTML = Object.keys(data.dataset_type).map(typeId =>
+        `<div class="col-12">
+            <div class="row justify-content-start">
+                <div class="col-md-2">${getDatasetTypePill(typeId, data.dataset_type)}</div>
+                <div class="col-md-10">${data.dataset_type[typeId].description}</div>
+            </div>
+        </div>`
+    ).join("")
+
     // init PlotManager
     const plotManager = await initPlotManager(data);
 
@@ -208,7 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const updatePlotHeight = (height) => {
         Plotly.relayout(plotManager.plot, { height: height });
     }
-    initSlider("plotHeightSlider", null, "activity_plot_height", 800, () => { })
+    initSlider("plotHeightSlider", null, "activity_plot_height", 600, () => { })
     updatePlotHeight(sliderPlotHeight.value)
     const buttonUpdatePlotHeight = document.getElementById("updatePlotHeight")
     buttonUpdatePlotHeight.addEventListener('click', () => {
