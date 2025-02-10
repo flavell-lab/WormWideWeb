@@ -213,7 +213,7 @@ def get_edge_response_data(data):
     }
     return response
 
-# @csrf_exempt
+@csrf_exempt
 def get_edges(request):
     if request.method == "POST":
         try:

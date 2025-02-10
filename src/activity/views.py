@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from connectome.models import Neuron, NeuronClass, Dataset, Synapse
@@ -365,6 +366,7 @@ def plot_multiple(request):
 plot multipel datasets. receive data request and handle
 """
 @require_POST
+@csrf_exempt
 def plot_multiple_data(request):
     try:
         # Parse the JSON data from the request body
