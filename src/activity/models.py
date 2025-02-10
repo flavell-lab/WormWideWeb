@@ -55,32 +55,12 @@ class GCaMPDataset(models.Model):
 
     # behavior
     behavior = models.JSONField(default=empty_json)
-    # pumping = models.JSONField(default=empty_json)
-    # head_curvature = models.JSONField(default=empty_json)
-    # body_curvature = models.JSONField(default=empty_json)
-    # angular_velocity = models.JSONField(default=empty_json)
-    # velocity = models.JSONField(default=empty_json)
-    # reversal_events = models.JSONField(default=empty_json)
 
     # behavior truncated
     truncated_behavior = models.JSONField(default=empty_json)
-    # truncated_pumping = models.JSONField(default=empty_json)
-    # truncated_head_curvature = models.JSONField(default=empty_json)
-    # truncated_body_curvature = models.JSONField(default=empty_json)
-    # truncated_angular_velocity = models.JSONField(default=empty_json)
-    # truncated_velocity = models.JSONField(default=empty_json)
 
     # encoding
     encoding = models.JSONField(default=empty_json)
-    # neuron_categorization = models.JSONField(default=empty_json)
-    # encoding_change = models.JSONField(default=empty_json)
-    # rel_enc_str_v = models.JSONField(default=empty_json)
-    # rel_enc_str_θh = models.JSONField(default=empty_json)
-    # rel_enc_str_P = models.JSONField(default=empty_json)
-    # forwardness = models.JSONField(default=empty_json)
-    # dorsalness = models.JSONField(default=empty_json)
-    # feedingness = models.JSONField(default=empty_json)
-    # tau_vals = models.JSONField(default=empty_json)
     
     # event
     events = models.JSONField(default=empty_json)
