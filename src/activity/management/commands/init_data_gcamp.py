@@ -313,6 +313,7 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         paper=paper,
         dataset_id=paper.paper_id + "-" + data["uid"],
         dataset_name=data["uid"],
+        dataset_meta=data["meta"] if "meta" in data else {},
         
         avg_timestep=data["avg_timestep"],
         max_t=data["max_t"],
