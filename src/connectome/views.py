@@ -31,7 +31,7 @@ def path(request):
 
     return render(request, "connectome/path.html", context)
 
-@cache_page(None)
+@cache_page(7*3600*24)
 def available_neurons(request):
     datasets_str = request.GET.get('datasets')
     if datasets_str is None:
