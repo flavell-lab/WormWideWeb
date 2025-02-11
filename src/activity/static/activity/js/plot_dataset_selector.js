@@ -16,6 +16,7 @@ export class DatasetSelector {
         this.selectorDataset = new TomSelect(this.selectorDatasetElement, {
             options: datasets,
             optgroups: [
+                { value: "pharynx", label: "Pharynx" },
                 { value: "complete", label: "Complete" },
                 { value: "head", label: "Head ganglia" },
                 { value: "tail", label: "Tail ganglia" },

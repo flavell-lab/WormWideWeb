@@ -18,6 +18,7 @@ export class ConnectomeGraph {
         this.manifest = {};
         this.listDataset = [];
         this.datsetNameFormatted = {
+            "cook_2020": "Cook 2020",
             "white_1986_jse": "White 1986 JSE",
             "white_1986_jsh": "White 1986 JSH",
             "white_1986_n2u": "White 1986 N2U",

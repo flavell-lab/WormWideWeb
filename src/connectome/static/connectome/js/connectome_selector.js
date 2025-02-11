@@ -73,6 +73,7 @@ export class SelectorDatasetNeuron {
         this.selectorDataset = new TomSelect(this.selectorDatasetElement, {
             options: datasets, // ensure 'datasets' is defined in your scope
             optgroups: [
+                { value: "pharynx", label: "Pharynx" },
                 { value: "complete", label: "Complete" },
                 { value: "head", label: "Head ganglia" },
                 { value: "tail", label: "Tail ganglia" },
