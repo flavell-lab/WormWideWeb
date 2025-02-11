@@ -2,6 +2,7 @@ import networkx as nx
 import time
 from .models import Dataset, Synapse
 from django.db.models import Prefetch
+import pickle
 
 def add_min_edge(g, a, b, syn_weight, syn_type):
     """
@@ -71,4 +72,13 @@ def initialize_graphs():
     t2 = time.time_ns()
     print(f"init graph done. elapsed: {(t2-t1)/1e9} seconds")
 
+    return dataset_graphs
+
+def load_precomputed_graphs(file_path="connectome_graphs.pkl"):
+    t1 = time.time_ns()
+    with open(file_path, "rb") as f:
+        dataset_graphs = pickle.load(f)
+    t2 = time.time_ns()
+    print(f"graph loading done. elapsed: {(t2-t1)/1e9} seconds")
+    
     return dataset_graphs

@@ -1,6 +1,7 @@
 # data #
 initial_data/
 /src/staticfiles/
+*.pkl
 
 # env #
 *.env

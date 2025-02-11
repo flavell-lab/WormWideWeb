@@ -16,6 +16,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wormwideweb.settings')
 application = get_wsgi_application()
 
 # init graph computation
-from connectome.graph_init import initialize_graphs
+from connectome.graph_init import load_precomputed_graphs
 import connectome.graph_data
-connectome.graph_data.GRAPH_OBJECTS = initialize_graphs()
+connectome.graph_data.GRAPH_OBJECTS = load_precomputed_graphs()
