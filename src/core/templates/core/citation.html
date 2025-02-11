@@ -2,23 +2,15 @@
 <!-- Citation and Website Section -->
 <section class="row mt-5">
     <h3 class="fw-semibold">Citations</h3>
-    <p>
-        To cite this project (datasets, encoding data, methods, modeling, code, etc.), please refer to Atanas & Kim
-        et al. 2023.
-        <br>
-        If you use the connectome features, please cite the Witvliet et al. 2021 and others. Please refer to the
-        "Citation Details" on the section below.
-        <br>
-        If you use any other datasets (such as the serotonin datasets, Dag, Nwabudike & Kang et al. 2023), please
-        refer to the respective papers.
-    </p>
 </section>
-<section class="row g-4">
+<section>
+    <h4 class="fw-semibold">The original study for the WormWideWeb</h4>
+    <p>To cite this project (datasets, encoding data, methods, modeling, code, website, etc.), please refer to Atanas & Kim et al., 2023 below.</p>
     <!-- atanas kim -->
     <div class="col-lg-6" id="atanas_kim_2023">
         <div class="h-100 d-flex flex-column p-4 bg-white shadow-sm rounded-3">
             <!-- Headings (stay at the top) -->
-            <h4 class="fw-semibold">The original study for the WormWideWeb</h4>
+            <h4 class="fw-semibold">Atanas & Kim et al., 2023</h4>
             <h5 class="card-title mb-3">
                 Brain-wide representations of behavior spanning multiple timescales
                 and states in <i>C. elegans</i>
@@ -27,7 +19,7 @@
             <!-- Middle row that expands and centers its contents vertically -->
             <div class="row flex-grow-1 d-flex align-items-center mb-3">
                 <div class="col-md-3">
-                    <img src="{% static '/core/img/cell_cover.webp' %}" class="img-fluid rounded" alt="Paper Thumbnail"
+                    <img src="{% static '/core/img/cover_atanas_kim_2023.webp' %}" class="img-fluid rounded" alt="Paper Thumbnail"
                         style="max-height: 250px; object-fit: cover; margin-right: -1rem;">
                 </div>
                 <div class="col-md-9">
@@ -67,143 +59,198 @@
             </div>
         </div>
     </div>
+</section>
 
-    <!-- connectome -->
-    <div class="col-lg-6" id="connectome_citation">
-        <div class="h-100 d-flex flex-column p-4 bg-white shadow-sm rounded-3">
-            <!-- Headings (stay at the top) -->
-            <h4 class="fw-semibold">Connectome Citations</h4>
-            <h5 class="card-title mb-3">
-                Connectomes across development reveal principles of brain maturation
-            </h5>
+<!-- connectome papers -->
+<section class="mt-3" id="connectome_citation">
+    <h4 class="fw-semibold">Connectome Citations</h4>
+    <p class="mb-0">If you use the connectome features, please cite the Witvliet et al., 2021, Cook et al., 2020, and others. Please refer to the
+        "Citation Details" below for more information. The processed dataset are from Witvliet et al., 2021 and Cook et al., 2020.
+    </p>
+    <div class="btn-group mb-3 mt-3" role="group">
+        <button type="button" class="btn btn-custom-primary" data-bs-toggle="modal"
+            data-bs-target="#datasetsModal">Citation Details</button>
+    </div>
 
-            <!-- Middle row that expands and centers its contents vertically -->
-            <div class="row flex-grow-1 d-flex align-items-center mb-3">
-                <div class="col-md-3">
-                    <img src="{% static 'core/img/witvliet_cover.webp' %}" class="img-fluid rounded" alt="Paper Thumbnail"
-                        style="max-height: 250px; object-fit: cover; margin-right: -1rem;">
+    <div class="row g-4">
+        <!-- witvliet 2021 -->
+        <div class="col-lg-6" id="witvliet">
+            <div class="h-100 d-flex flex-column p-4 bg-white shadow-sm rounded-3">
+                <h4 class="fw-semibold">NemaNode datasets, Witvliet et al., 2021</h4>
+                <!-- Headings (stay at the top) -->
+                <h5 class="card-title mb-3">
+                    Connectomes across development reveal principles of brain maturation
+                </h5>
+
+                <!-- Middle row that expands and centers its contents vertically -->
+                <div class="row flex-grow-1 d-flex align-items-center mb-3">
+                    <div class="col-md-3">
+                        <img src="{% static 'core/img/cover_witvliet_2021.webp' %}" class="img-fluid rounded" alt="Paper Thumbnail"
+                            style="max-height: 250px; object-fit: cover; margin-right: -1rem;">
+                    </div>
+                    <div class="col-md-9">
+                        <p>
+                            <strong>Daniel Witvliet</strong>, Ben Mulcahy*, James K. Mitchell*, Yaron
+                            Meirovitch,
+                            Daniel R. Berger, Yuelong Wu, Yufang Liu, Wan Xian Koh, Rajeev Parvathala, Douglas
+                            Holmyard, Richard L. Schalek, Nir Shavit, Andrew D. Chisholm, Jeff W. Lichtman,
+                            Aravinthan D. T. Samuel, Mei Zhen
+                        </p>
+                        <p class="text-muted">* equal contribution</p>
+                    </div>
                 </div>
-                <div class="col-md-9">
-                    <p>
-                        <strong>Daniel Witvliet</strong>, Ben Mulcahy*, James K. Mitchell*, Yaron
-                        Meirovitch,
-                        Daniel R. Berger, Yuelong Wu, Yufang Liu, Wan Xian Koh, Rajeev Parvathala, Douglas
-                        Holmyard, Richard L. Schalek, Nir Shavit, Andrew D. Chisholm, Jeff W. Lichtman,
-                        Aravinthan D. T. Samuel, Mei Zhen
-                    </p>
-                    <p class="text-muted">* equal contribution</p>
+
+                <!-- Last row, pinned to bottom via mt-auto -->
+                <div class="row mt-auto">
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div class="btn-group" role="group">
+                            <a href="https://www.nature.com/articles/s41586-021-03778-8" target="_blank"
+                                class="btn btn-custom-primary">
+                                Nature
+                            </a>
+                            <a href="https://pubmed.ncbi.nlm.nih.gov/34349261/" target="_blank"
+                                class="btn btn-custom-primary">
+                                PubMed
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Last row, pinned to bottom via mt-auto -->
-            <div class="row mt-auto">
-                <div class="d-flex flex-wrap align-items-center gap-3">
-                    <div class="btn-group" role="group">
-                        <a href="https://www.nature.com/articles/s41586-021-03778-8" target="_blank"
-                            class="btn btn-custom-primary">
-                            Nature
-                        </a>
-                        <a href="https://pubmed.ncbi.nlm.nih.gov/34349261/" target="_blank"
-                            class="btn btn-custom-primary">
-                            PubMed
-                        </a>
+        <!-- cook 2020 -->
+        <div class="col-lg-6" id="cook">
+            <div class="h-100 d-flex flex-column p-4 bg-white shadow-sm rounded-3">
+                <!-- Headings (stay at the top) -->
+                <h4 class="fw-semibold">Pharyngeal Connectome, Cook et al., 2020</h4>
+                <h5 class="card-title mb-3">
+                    The connectome of the <i>Caenorhabditis elegans</i> pharynx
+                </h5>
+
+                <!-- Middle row that expands and centers its contents vertically -->
+                <div class="row flex-grow-1 d-flex align-items-center mb-3">
+                    <div class="col-md-3">
+                        <img src="{% static 'core/img/cover_cook_2020.webp' %}" class="img-fluid rounded" alt="Paper Thumbnail"
+                            style="max-height: 250px; object-fit: cover; margin-right: -1rem;">
                     </div>
+                    <div class="col-md-9">
+                        <p>
+                            <b>Steven J. Cook</b>, Charles M. Crouse, Eviatar Yemini, David H. Hall, Scott W. Emmons, Oliver Hobert
+                        </p>
+                    </div>
+                </div>
 
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-custom-primary" data-bs-toggle="modal"
-                            data-bs-target="#datasetsModal">Citation Details</button>
+                <!-- Last row, pinned to bottom via mt-auto -->
+                <div class="row mt-auto">
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div class="btn-group" role="group">
+                            <a href="https://doi.org/10.1002/cne.24932" target="_blank"
+                                class="btn btn-custom-primary">
+                                JCN
+                            </a>
+                            <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7601127/" target="_blank"
+                                class="btn btn-custom-primary">
+                                PubMed
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
-
 <!-- other studies -->
-<section class="row g-4 mt-1">
-    <!-- 5-ht study -->
-    <div class="col-lg-6" id="dag_nwabudike_kang_2023">
-        <div class="h-100 d-flex flex-column p-4 bg-white shadow-sm rounded-3">
-            <!-- Headings (stay at the top) -->
-            <h4 class="fw-semibold">Dag, Nwabudike & Kang et al. 2023</h4>
-            <h5 class="card-title mb-3">
-                Dissecting the functional organization of the <i>C. elegans</i> serotonergic system at whole-brain scale
-            </h5>
+<section class="mt-3">
+    <h4 class="fw-semibold">Other datasets</h4>
+    <p>If you use any other neural activity and behavior datasets (such as the serotonin datasets, Dag, Nwabudike & Kang et al., 2023), please
+        refer to the respective papers.
+    </p>
 
-            <!-- Middle row that expands and centers its contents vertically -->
-            <div class="row flex-grow-1 d-flex align-items-center mb-3">
-                <div class="col-md-3">
-                    <img src="{% static 'core/img/serotonin_cover.webp' %}" class="img-fluid rounded" alt="Paper Thumbnail"
-                        style="max-height: 250px; object-fit: cover; margin-right: -1rem;">
-                </div>
-                <div class="col-md-9">
-                    <p>
-                        <strong>Ugur Dag*</strong>, <strong>Ijeoma Nwabudike*</strong>, <strong>Di
-                            Kang*</strong>, Matthew A. Gomes, Jungsoo Kim, Adam A. Atanas, Eric Bueno, Cassi
-                        Estrem, Sarah Pugliese, Ziyu Wang, Emma Towlson, Steven W. Flavell
-                    </p>
-                    <p class="text-muted">* equal contribution</p>
-                </div>
-            </div>
+    <div class="row g-4">
+        <!-- 5-ht study -->
+        <div class="col-lg-6" id="dag_nwabudike_kang_2023">
+            <div class="h-100 d-flex flex-column p-4 bg-white shadow-sm rounded-3">
+                <!-- Headings (stay at the top) -->
+                <h4 class="fw-semibold">Dag, Nwabudike & Kang et al., 2023</h4>
+                <h5 class="card-title mb-3">
+                    Dissecting the functional organization of the <i>C. elegans</i> serotonergic system at whole-brain scale
+                </h5>
 
-            <!-- Last row, pinned to bottom via mt-auto -->
-            <div class="row mt-auto">
-                <div class="d-flex flex-wrap align-items-center gap-3">
+                <!-- Middle row that expands and centers its contents vertically -->
+                <div class="row flex-grow-1 d-flex align-items-center mb-3">
+                    <div class="col-md-3">
+                        <img src="{% static 'core/img/cover_dag_nwabudike_kang_2023.webp' %}" class="img-fluid rounded" alt="Paper Thumbnail"
+                            style="max-height: 250px; object-fit: cover; margin-right: -1rem;">
+                    </div>
+                    <div class="col-md-9">
+                        <p>
+                            <strong>Ugur Dag*</strong>, <strong>Ijeoma Nwabudike*</strong>, <strong>Di
+                                Kang*</strong>, Matthew A. Gomes, Jungsoo Kim, Adam A. Atanas, Eric Bueno, Cassi
+                            Estrem, Sarah Pugliese, Ziyu Wang, Emma Towlson, Steven W. Flavell
+                        </p>
+                        <p class="text-muted">* equal contribution</p>
+                    </div>
+                </div>
+
+                <!-- Last row, pinned to bottom via mt-auto -->
+                <div class="row mt-auto">
                     <div class="d-flex flex-wrap align-items-center gap-3">
-                        <div class="btn-group" role="group">
-                            <a href="https://www.cell.com/cell/fulltext/S0092-8674(23)00419-1" target="_blank"
-                                class="btn btn-custom-primary">Cell</a>
-                            <a href="https://pubmed.ncbi.nlm.nih.gov/37192620/" target="_blank"
-                                class="btn btn-custom-primary">PubMed</a>
-                        </div>
-    
-                        <div class="btn-group" role="group">
-                            <a href="https://zenodo.org/records/7830052" target="_blank" class="btn btn-custom-primary">
-                                <i class="bi bi-file-earmark"></i> Data Repository
-                            </a>
-                        </div>
-                    </div>    
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- sickness study -->
-    <div class="col-lg-6" id="pradhan_madan_2024">
-        <div class="h-100 d-flex flex-column p-4 bg-white shadow-sm rounded-3">
-            <!-- Headings (stay at the top) -->
-            <h4 class="fw-semibold">Pradhan & Madan et al. 2024</h4>
-            <h5 class="card-title mb-3">
-                Pathogen infection induces sickness behaviors by recruiting
-                neuromodulatory systems linked to stress and satiety in <i>C. elegans</i>
-            </h5>
-
-            <!-- Middle row that expands and centers its contents vertically -->
-            <div class="row flex-grow-1 d-flex align-items-center mb-3">
-                <div class="col-md-3">
-                    <img src="{% static 'core/img/pradhan_madan_2024.webp' %}" class="img-fluid rounded" alt="Pradhan Madan Paper Thumbnail"
-                        style="max-height: 250px; object-fit: cover; margin-right: -1rem;">
-                </div>
-                <div class="col-md-9">
-                    <p>
-                        <strong>Sreeparna Pradhan*</strong>, <strong>Gurrein K. Madan*</strong>, Di Kang, Eric Bueno, Adam A. Atanas, Talya S. Kramer, Ugur Dag, Jessica D. Lage, Matthew A. Gomes, Alicia Kun-Yang Lu, Jungyeon Park, Steven W. Flavell                    </p>
-                    <p class="text-muted">* equal contribution</p>
-                </div>
-            </div>
-
-            <!-- Last row, pinned to bottom via mt-auto -->
-            <div class="row mt-auto">
-                <div class="d-flex flex-wrap align-items-center gap-3">
-                    <div class="btn-group" role="group">
-                        <a href="https://www.biorxiv.org/content/10.1101/2024.01.05.574345v1" target="_blank"
-                            class="btn btn-custom-primary">
-                            bioRxiv
-                        </a>
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <div class="btn-group" role="group">
+                                <a href="https://www.cell.com/cell/fulltext/S0092-8674(23)00419-1" target="_blank"
+                                    class="btn btn-custom-primary">Cell</a>
+                                <a href="https://pubmed.ncbi.nlm.nih.gov/37192620/" target="_blank"
+                                    class="btn btn-custom-primary">PubMed</a>
+                            </div>
+        
+                            <div class="btn-group" role="group">
+                                <a href="https://zenodo.org/records/7830052" target="_blank" class="btn btn-custom-primary">
+                                    <i class="bi bi-file-earmark"></i> Data Repository
+                                </a>
+                            </div>
+                        </div>    
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- sickness study -->
+        <div class="col-lg-6" id="pradhan_madan_2024">
+            <div class="h-100 d-flex flex-column p-4 bg-white shadow-sm rounded-3">
+                <!-- Headings (stay at the top) -->
+                <h4 class="fw-semibold">Pradhan & Madan et al., 2024</h4>
+                <h5 class="card-title mb-3">
+                    Pathogen infection induces sickness behaviors by recruiting
+                    neuromodulatory systems linked to stress and satiety in <i>C. elegans</i>
+                </h5>
+
+                <!-- Middle row that expands and centers its contents vertically -->
+                <div class="row flex-grow-1 d-flex align-items-center mb-3">
+                    <div class="col-md-3">
+                        <img src="{% static 'core/img/cover_pradhan_madan_2024.webp' %}" class="img-fluid rounded" alt="Pradhan Madan Paper Thumbnail"
+                            style="max-height: 250px; object-fit: cover; margin-right: -1rem;">
+                    </div>
+                    <div class="col-md-9">
+                        <p>
+                            <strong>Sreeparna Pradhan*</strong>, <strong>Gurrein K. Madan*</strong>, Di Kang, Eric Bueno, Adam A. Atanas, Talya S. Kramer, Ugur Dag, Jessica D. Lage, Matthew A. Gomes, Alicia Kun-Yang Lu, Jungyeon Park, Steven W. Flavell                    </p>
+                        <p class="text-muted">* equal contribution</p>
+                    </div>
+                </div>
+
+                <!-- Last row, pinned to bottom via mt-auto -->
+                <div class="row mt-auto">
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div class="btn-group" role="group">
+                            <a href="https://www.biorxiv.org/content/10.1101/2024.01.05.574345v1" target="_blank"
+                                class="btn btn-custom-primary">
+                                bioRxiv
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 </section>
 
@@ -216,13 +263,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <h4>NemaNode datasets</h4>
                 <p>
-                    The connectome datasets used in this website are from NemaNode. To cite the connectome data, see <a
-                        href="https://pubmed.ncbi.nlm.nih.gov/34349261/" target="_blank">Witvliet et al., 2020</a>.
-                    Please also cite the
-                    original datasets you use.
-                </p>
-                <p>The following dataset description is from NemaNode:</p>
+                    To cite the connectome datasets from NemaNode, see <a
+                        href="https://pubmed.ncbi.nlm.nih.gov/34349261/" target="_blank">Witvliet et al., 2021</a>.
+                    Please also cite the original datasets you use. The following dataset description is from NemaNode:</p>
                 <h5>White et al., 1986, compilation</h5>
                 <p>This dataset is a compilation of multiple partially overlapping animals. The cells making up the
                     somatic nervous system were reconstructed by <b><a href="https://pubmed.ncbi.nlm.nih.gov/22462104/">White et al., 1986</a></b> and compiled by <b><a href="https://pubmed.ncbi.nlm.nih.gov/21304930/">Varshney
@@ -233,7 +278,7 @@
                 </p>
 
                 <h5>Witvliet et al., 2020, datasets 1-8</h5>
-                <p>Chemical synapses for all eight datasets were acquired from <b>Witvliet et al., 2020.</b> Chemical
+                <p>Chemical synapses for all eight datasets were acquired from <a href="https://bossdb.org/project/witvliet2020"><b>Witvliet et al., 2020</b></a> data. Chemical
                     synapes were annotated independently by three annotators and only chemical synapses that at least
                     two annotators agreed to were included in the final dataset. Gap junctions were not thoroughly
                     annotated but have been provided by the authors for anyone interested. The gap junction annotation
@@ -246,6 +291,13 @@
                     the originally listed anonymous neuromuscular junctions.</p>
                 <h5>White et al., 1986, JSE</h5>
                 <p>The dataset was reconstructed by <b>White et al., 1986</b> and compiled by <b><a href="https://pubmed.ncbi.nlm.nih.gov/1986064/">Hall and Russell, 1991</a></b>.</p>
+
+                <hr>
+                <h4>Cook et al., 2020 dataset</h4>
+                <p>
+                    The pharyngeal connectome is from the supplementary data 3 from <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7601127/">Cook et al., 2020</a>, which includes N2T, JSA, and N2W from the MRC collection.
+                    Please refer to <b><a href="https://pubmed.ncbi.nlm.nih.gov/22462104/">White et al., 1986</a></b> and <b><a href="https://pubmed.ncbi.nlm.nih.gov/8805/">Albertson and Thomson, 1976</a></b>.
+                </p>
             </div>
         </div>
     </div>
