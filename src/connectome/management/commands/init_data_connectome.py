@@ -3,9 +3,9 @@ from connectome.models import Neuron, NeuronClass, Dataset, Synapse
 import json
 import os
 
-PATH_WITVLIET_DATSETS = ["connectome", "witvliet_datasets.json"]
-PATH_WITVLIET_NEURONS = ["connectome", "witvliet_neurons.json"]
-PATH_WITVLIET_CONNECTOME_DIR = ["connectome", "connectome"]
+PATH_DATSETS = ["connectome", "connectome_datasets.json"]
+PATH_NEURONS = ["connectome", "connectome_neurons.json"]
+PATH_CONNECTOME_DIR = ["connectome", "connectome"]
 PATH_NEURON_CLASS_SPLIT = ["config", "neuron_class_split.json"]
 
 def get_dataset_path(list_part):
@@ -62,7 +62,7 @@ class Command(BaseCommand):
     # dataset
     def import_dataset(self):
         try:
-            path_json = get_dataset_path(PATH_WITVLIET_DATSETS)
+            path_json = get_dataset_path(PATH_DATSETS)
             with open(path_json, 'r') as file:
                 json_data = json.load(file)
 
@@ -79,7 +79,7 @@ class Command(BaseCommand):
     def import_neuron(self):
         try:
             # connectome neuron data
-            path_json = get_dataset_path(PATH_WITVLIET_NEURONS)
+            path_json = get_dataset_path(PATH_NEURONS)
             with open(path_json, 'r') as file:
                 json_data = json.load(file)
             
@@ -106,7 +106,6 @@ class Command(BaseCommand):
                                                                                 split_lr=split_lr, split_dv=split_dv,
                                                                                 split_d_lr=split_d_lr, split_v_lr=split_v_lr)
 
-                # Assume 'str_diff' is defined elsewhere
                 neuron_suffix = str_diff(neuron_class_str, neuron_name)
 
                 # Initialize lr and dv
@@ -214,7 +213,7 @@ class Command(BaseCommand):
 
     # add connectome
     def import_connectome(self):
-        path_connectome_dir = get_dataset_path(PATH_WITVLIET_CONNECTOME_DIR)
+        path_connectome_dir = get_dataset_path(PATH_CONNECTOME_DIR)
         json_files = [f for f in os.listdir(path_connectome_dir) if f.endswith('.json')]
 
         for json_name in json_files:
