@@ -1,4 +1,4 @@
-import { setLocalStr, setLocalJSON, getLocalStr } from '/static/core/js/utility.js'
+import { setLocalStr, setLocalJSON, getLocalStr, updateCitation } from '/static/core/js/utility.js'
 
 const urlAvailableNeuron = "/connectome/api/available-neurons/";
 
@@ -130,6 +130,9 @@ export class SelectorDatasetNeuron {
     async selectorDatasetUpdate(valuesStr, callback = null) {
         const listDataset = valuesStr.split(",");
         this.connectomeGraph.listDataset = listDataset;
+
+        // update citations
+        updateCitation(listDataset, "connectomeCitation", this.selectorDataset.options)
 
         // If no datasets selected, clear the neuron selector and bail
         if (!valuesStr.length) {

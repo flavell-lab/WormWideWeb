@@ -30,7 +30,7 @@ def encoding_table(request):
 def encoding_connectome(request):
     datasets = Dataset.objects.all()
     datasets_json = json.dumps(list(datasets.values(
-        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time')), cls=DjangoJSONEncoder)
+        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time', 'citation')), cls=DjangoJSONEncoder)
     
     match_data = get_object_or_404(JSONCache, name="atanas_kim_2023_all_encoding_dict_match").json
     context = {'datasets_json': datasets_json, "match_data": match_data}
@@ -104,7 +104,7 @@ def get_neural_trace(request, dataset_id, idx_neuron):
     return JsonResponse(data)
 
 """
-get all encoding from Atanas & Kim et al. 2023
+get all encoding from 
 """
 def get_all_dataset_encoding(request):
     data = get_object_or_404(JSONCache, name="atanas_kim_2023_all_encoding_dict").json
@@ -241,7 +241,7 @@ def plot_dataset(request, dataset_id):
 
     # Retrieve connectome datasets with only the needed fields.
     datasets_qs = Dataset.objects.all().values(
-        'name', 'dataset_id', 'dataset_type', 'description', 'animal_visual_time'
+        'name', 'dataset_id', 'dataset_type', 'description', 'animal_visual_time', 'citation'
     )
     datasets_json = json.dumps(list(datasets_qs), cls=DjangoJSONEncoder)
 

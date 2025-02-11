@@ -18,7 +18,7 @@ def index(request):
 def explore(request):
     datasets = Dataset.objects.all()
     datasets_json = json.dumps(list(datasets.values(
-        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time')), cls=DjangoJSONEncoder)
+        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time','citation')), cls=DjangoJSONEncoder)
     context = {'datasets_json': datasets_json}
 
     return render(request, "connectome/explore.html", context)
@@ -26,7 +26,7 @@ def explore(request):
 def path(request):
     datasets = Dataset.objects.all()
     datasets_json = json.dumps(list(datasets.values(
-        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time')), cls=DjangoJSONEncoder)
+        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time', 'citation')), cls=DjangoJSONEncoder)
     context = {'datasets_json': datasets_json}
 
     return render(request, "connectome/path.html", context)

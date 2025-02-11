@@ -1,4 +1,4 @@
-import { setLocalStr, setLocalJSON, getLocalStr } from '/static/core/js/utility.js'
+import { setLocalStr, setLocalJSON, getLocalStr, updateCitation } from '/static/core/js/utility.js'
 
 export class DatasetSelector {
     constructor(selectorDatasetId, connectomeGraph) {
@@ -64,6 +64,8 @@ export class DatasetSelector {
     selectorDatasetUpdate(valuesStr, callback=null) {
         const listDataset = valuesStr.split(",");
         this.connectomeGraph.listDataset = listDataset;
+
+        updateCitation(listDataset, "connectomeCitation", this.selectorDataset.options)
 
         if (!valuesStr.length) {
             console.warn("No datasets selected");

@@ -339,3 +339,17 @@ export function handleFullscreenElement(fullscreenMap, elementId) {
       entry.onToggle();
     }
 }
+
+//
+// connectome
+//
+export function updateCitation(listDataset, elementId, datasetOptions) {
+    if (listDataset.length == 1 && listDataset[0] === "") {
+        document.getElementById(elementId).textContent = "N/A"
+    } else {
+        const citations = listDataset.map(datasetId => datasetOptions[datasetId].citation).join("$");
+        const citationText = [...new Set(citations.split('$').map(s => s.trim()))].sort().join(', ');
+
+        document.getElementById(elementId).textContent = citationText
+    }
+}

@@ -1,4 +1,4 @@
-import { setLocalStr, setLocalJSON, getLocalStr, setLocalBool, getLocalBool, initSwitch } from '/static/core/js/utility.js'
+import { setLocalStr, setLocalJSON, getLocalStr, setLocalBool, getLocalBool, initSwitch, updateCitation } from '/static/core/js/utility.js'
 
 export class PathSelector
 {
@@ -52,6 +52,7 @@ export class PathSelector
         this.selectorDataset = new TomSelect(this.selectorDatasetElement, {
             options: datasets,
             optgroups: [
+                { value: "pharynx", label: "Pharynx"},
                 { value: "complete", label: "Complete" },
                 { value: "head", label: "Head ganglia" },
                 { value: "tail", label: "Tail ganglia" },
@@ -94,6 +95,8 @@ export class PathSelector
 
     selectorDatasetUpdate(valuesStr, callback=null) {
         const listDataset = valuesStr.split(",");
+
+        updateCitation(listDataset, "connectomeCitation", this.selectorDataset.options)
 
         if (!valuesStr.length) {
             console.warn("No datasets selected");

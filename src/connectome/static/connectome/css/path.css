@@ -1,6 +1,6 @@
 #path-graph {
   width: 100%;
-  height: 80vh;
+  height: calc(100vh - 320px);
   /* border: 1px solid #ccc; */
 }
 
