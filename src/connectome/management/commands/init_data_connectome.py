@@ -69,7 +69,7 @@ class Command(BaseCommand):
             for dataset in json_data:
                 dataset_obj, q_created = Dataset.objects.get_or_create(dataset_id = dataset["id"], name = dataset["name"], dataset_type = dataset["type"],
                                     animal_time = dataset["time"], animal_visual_time = dataset["visualTime"],
-                                    description = dataset["description"])
+                                    description = dataset["description"], citation=",".join(dataset["citation"]))
                 
             self.stdout.write(self.style.SUCCESS("Imported dataset"))
         except:

@@ -58,6 +58,7 @@ class Dataset(models.Model):
         return self.dataset_id
     
     dataset_id = models.CharField(max_length=25, unique=True)
+    citation = models.CharField(max_length=500)
     name = models.CharField(max_length=50)
     dataset_type = models.CharField(max_length=10)
     animal_time = models.DecimalField(max_digits=3,decimal_places=1)
