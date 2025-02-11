@@ -85,7 +85,10 @@ export class SelectorDatasetNeuron {
             searchField: ["name", "description", "dataset_type"],
             sortField: [{ field: "name" }],
             create: false,
-            plugins: this.getPluginsConfig("Remove this dataset", "Clear all datasets"),
+            plugins: {
+                "n_items": {}, "checkbox_options": {}, "dropdown_input": {},
+                "remove_button": { title: "Remove this dataset" },
+            },
             onChange: (valuesStr) => this.selectorDatasetUpdate(valuesStr),
             // Optionally close the neuron selector (or both) on certain actions
             onClear: () => {
