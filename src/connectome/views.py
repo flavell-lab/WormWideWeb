@@ -15,6 +15,7 @@ def index(request):
     
     return render(request, "connectome/index.html", context)
 
+
 def explore(request):
     datasets = Dataset.objects.all()
     datasets_json = json.dumps(list(datasets.values(
@@ -23,6 +24,7 @@ def explore(request):
 
     return render(request, "connectome/explore.html", context)
 
+
 def path(request):
     datasets = Dataset.objects.all()
     datasets_json = json.dumps(list(datasets.values(
@@ -30,6 +32,7 @@ def path(request):
     context = {'datasets_json': datasets_json}
 
     return render(request, "connectome/path.html", context)
+
 
 @cache_page(7*3600*24)
 def available_neurons(request):
@@ -94,6 +97,7 @@ def available_neurons(request):
     }
 
     return JsonResponse(data)
+
 
 def get_edge_response_data(data):
     datasets = data["datasets"]
@@ -213,6 +217,7 @@ def get_edge_response_data(data):
     }
     return response
 
+
 @csrf_exempt
 def get_edges(request):
     if request.method == "POST":
@@ -295,6 +300,3 @@ def find_paths(request):
         'paths': paths_with_details
     }
     return JsonResponse(response)
-
-    # except Exception as e:
-    #     return JsonResponse({'error': str(e)}, status=500)
