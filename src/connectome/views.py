@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.cache import cache
-from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q, Prefetch
 from .models import Neuron, NeuronClass, Dataset, Synapse
@@ -39,67 +39,98 @@ def path(request):
 
     return render(request, "connectome/path.html", context)
 
-
-@cache_page(7*3600*24)
+@cache_control(public=True, max_age=60*60*24*90)
 def available_neurons(request):
+    """
+    Return a JSON response with available neurons and neuron classes for each dataset
+    specified by the "datasets" GET parameter. Instead of caching every combination,
+    the results are cached per dataset_id.
+    """
     datasets_str = request.GET.get('datasets')
-    if datasets_str is None:
+    if not datasets_str:
         return HttpResponse("Error: datasets parameter not found", status=400)
+    
+    # Get the list of dataset IDs from the request.
     dataset_ids = datasets_str.split(',')
+    
+    # Final union dictionaries.
+    final_neurons = {}
+    final_neuron_classes = {}
 
-    # Prepare querysets that load only needed fields.
-    neuron_qs = (
-        Neuron.objects
-        .only('name', 'cell_type', 'neurotransmitter_type', 'in_head', 'in_tail', 'is_embryonic', 'neuron_class__name')
-        .select_related('neuron_class')
-    )
-    neuron_class_qs = (
-        NeuronClass.objects
-        .only('name')
-        .prefetch_related(Prefetch('neurons', queryset=Neuron.objects.only('name')))
-    )
-
-    # Filter datasets and prefetch only needed related objects.
-    datasets = (
-        Dataset.objects
-        .filter(dataset_id__in=dataset_ids)
-        .only('dataset_id')  # We only need the dataset_id from Dataset.
-        .prefetch_related(
-            Prefetch('available_neurons', queryset=neuron_qs),
-            Prefetch('available_classes', queryset=neuron_class_qs)
-        )
-    )
-
-    # Use sets to collect unique neurons and neuron classes across datasets.
-    neurons_set = set()
-    neuron_classes_set = set()
-    for dataset in datasets:
-        neurons_set.update(dataset.available_neurons.all())
-        neuron_classes_set.update(dataset.available_classes.all())
-
-    # Serialize neurons.
-    neurons_data = {
-        neuron.name: {
-            'neuron_class': neuron.neuron_class.name if neuron.neuron_class else None,
-            'name': neuron.name,
-            'cell_type': neuron.cell_type,
-            'neurotransmitter_type': neuron.neurotransmitter_type,
-            'in_head': neuron.in_head,
-            'in_tail': neuron.in_tail,
-            'is_embryonic': neuron.is_embryonic
-        }
-        for neuron in neurons_set
-    }
-
-    # Serialize neuron classes.
-    neuron_classes_data = {
-        cls.name: [n.name for n in cls.neurons.all()]
-        for cls in neuron_classes_set
-    }
+    # For each dataset, try to get its available neurons from cache; if not, query and cache.
+    for dataset_id in dataset_ids:
+        cache_key = f"available_neurons_{dataset_id}"
+        dataset_result = cache.get(cache_key)
+        if dataset_result is None:
+            # Prepare querysets with only needed fields.
+            neuron_qs = (
+                Neuron.objects
+                .only('name', 'cell_type', 'neurotransmitter_type', 'in_head', 'in_tail', 'is_embryonic', 'neuron_class__name')
+                .select_related('neuron_class')
+            )
+            neuron_class_qs = (
+                NeuronClass.objects
+                .only('name')
+                .prefetch_related(Prefetch('neurons', queryset=Neuron.objects.only('name')))
+            )
+            # Fetch the dataset with prefetches for available neurons and classes.
+            dataset_obj = (
+                Dataset.objects
+                .filter(dataset_id=dataset_id)
+                .only('dataset_id')
+                .prefetch_related(
+                    Prefetch('available_neurons', queryset=neuron_qs),
+                    Prefetch('available_classes', queryset=neuron_class_qs)
+                )
+                .first()
+            )
+            if not dataset_obj:
+                continue  # Skip if no such dataset exists.
+            
+            # Collect available neurons and classes.
+            neurons_set = set(dataset_obj.available_neurons.all())
+            neuron_classes_set = set(dataset_obj.available_classes.all())
+            
+            # Serialize neurons keyed by name.
+            neurons_data = {
+                neuron.name: {
+                    'neuron_class': neuron.neuron_class.name if neuron.neuron_class else None,
+                    'name': neuron.name,
+                    'cell_type': neuron.cell_type,
+                    'neurotransmitter_type': neuron.neurotransmitter_type,
+                    'in_head': neuron.in_head,
+                    'in_tail': neuron.in_tail,
+                    'is_embryonic': neuron.is_embryonic
+                }
+                for neuron in neurons_set
+            }
+            # Serialize neuron classes mapping class name to list of neuron names.
+            neuron_classes_data = {
+                cls.name: [n.name for n in cls.neurons.all()]
+                for cls in neuron_classes_set
+            }
+            
+            dataset_result = {
+                'neurons': neurons_data,
+                'neuron_classes': neuron_classes_data
+            }
+            # Cache the serialized result for this dataset.
+            cache.set(cache_key, dataset_result, timeout=None)
+        
+        # Combine the dataset result into the final union.
+        for neuron_name, neuron_info in dataset_result.get('neurons', {}).items():
+            final_neurons[neuron_name] = neuron_info
+        
+        for cls_name, neuron_list in dataset_result.get('neuron_classes', {}).items():
+            if cls_name in final_neuron_classes:
+                # Merge lists and remove duplicates.
+                final_neuron_classes[cls_name] = list(set(final_neuron_classes[cls_name]).union(neuron_list))
+            else:
+                final_neuron_classes[cls_name] = neuron_list
 
     data = {
-        'neurons': neurons_data,
-        'neuron_classes': neuron_classes_data
+        'neurons': final_neurons,
+        'neuron_classes': final_neuron_classes
     }
 
     return JsonResponse(data)
