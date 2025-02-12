@@ -30,14 +30,20 @@
         <!-- control -->
         <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="tom-select-container" id="ts-select-paper">
-                <input style="width:300px" id="select-paper" autocomplete="off" type="text"
+                <input style="width:250px" id="select-paper" autocomplete="off" type="text"
                     class="form-control form-control-sm" placeholder="Select papers to include">
             </div>
 
             <div class="tom-select-container" id="ts-select-neuron">
-                <input style="width:300px" id="select-neuron" autocomplete="off" type="text"
+                <input style="width:250px" id="select-neuron" autocomplete="off" type="text"
                     class="form-control form-control-sm" placeholder="Neurons">
             </div>
+
+            <div>
+                <input style="width:200px" id="customSearch" class="form-control form-control-sm flex-grow-1" type="text"
+                    placeholder="Dataset search" aria-label="Find neuron table search">
+            </div>
+
             <div class="btn-group btn-group-sm">
                 <button id="clearSelector" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
                     data-bs-title="Clear the neuron selector">
@@ -60,16 +66,17 @@
             </div>
         </div>
         <!-- table -->
-        <table id="datasetTable" data-mobile-responsive="true" data-unique-id="id">
+        <table id="datasetTable" data-mobile-responsive="true" data-unique-id="id"
+            data-search-selector="#customSearch" data-search="true">
             <thead>
                 <tr>
                     <th data-checkbox="true"></th>
-                    <th data-field="paper" data-sortable="true">Paper</th>
-                    <th data-field="label" data-sortable="true">Dataset</th>
-                    <th data-field="dataset_type" data-sortable="true">Type</th>
-                    <th data-field="n_neuron" data-sortable="true">N(recorded)</th>
-                    <th data-field="n_labeled" data-sortable="true">N(labeled)</th>
-                    <th data-field="action" data-sortable="false"></th>
+                    <th data-field="paper" data-sortable="true" data-searchable="false">Paper</th>
+                    <th data-field="label" data-sortable="true" data-searchable="true">Dataset</th>
+                    <th data-field="dataset_type" data-sortable="true" data-searchable="false">Type</th>
+                    <th data-field="n_neuron" data-sortable="true" data-searchable="false">N(recorded)</th>
+                    <th data-field="n_labeled" data-sortable="true" data-searchable="false">N(labeled)</th>
+                    <th data-field="action" data-sortable="false" data-searchable="false"></th>
                 </tr>
             </thead>
         </table>
