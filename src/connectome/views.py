@@ -17,7 +17,7 @@ def connectome_datasets(cache_key="connectome_datasets_json"):
         datasets = Dataset.objects.all()
         datasets_json = json.dumps(list(datasets.values(
             'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time','citation')), cls=DjangoJSONEncoder)
-        cache.set(cache_key, datasets_json)
+        cache.set(cache_key, datasets_json, timeout=None)
 
     return datasets_json
 
