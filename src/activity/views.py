@@ -1,4 +1,5 @@
 import json
+import uuid
 from collections import defaultdict
 
 from django.core.cache import cache
@@ -362,31 +363,37 @@ def plot_dataset(request, dataset_id):
     return render(request, "activity/explore.html", context)
 
 
-"""
-render plot multiple datasets from the selected datsets from the find_neuron view
-"""
 def plot_multiple(request):
-    # Pop session data, which is a dict mapping dataset_id -> list of neuron indices.
-    data = request.session.pop("plot-multiple-data", {})
-    if not data:
-        # Early exit if no data
+    """
+    Render the plot multiple view using input data stored in the cache keyed by a token.
+    The token is passed via a GET parameter (e.g., ?token=...).
+    """
+    token = request.GET.get("token")
+    if not token:
+        # No token provided; return an empty page.
         return render(request, "activity/plot_multiple.html", {"list_dataset_meta": [], "plots": "{}"})
-
+    
+    # Retrieve the input data from cache using the token.
+    cache_key = "plot_multiple_data:" + token
+    data = cache.get(cache_key)
+    if not data:
+        # Token not found or expired.
+        return render(request, "activity/plot_multiple.html", {"list_dataset_meta": [], "plots": "{}"})
+    
     dataset_ids = list(data.keys())
-
-    # Prefetch related dataset types, limiting the fields.
+    
+    # Prefetch dataset types with limited fields.
     dt_qs = GCaMPDatasetType.objects.only('type_id', 'description', 'name', 'color_background')
-    # Fetch only needed fields for datasets.
     datasets_qs = (
         GCaMPDataset.objects.filter(dataset_id__in=dataset_ids)
         .select_related('paper')
         .prefetch_related(Prefetch('dataset_type', queryset=dt_qs))
         .only('dataset_id', 'dataset_name', 'avg_timestep', 'max_t', 'paper__paper_id', 'paper__title_short')
     )
-    # Map dataset_id to dataset.
+    # Map dataset_id to dataset instance.
     dataset_map = {ds.dataset_id: ds for ds in datasets_qs}
-
-    # Batchquery neurons.
+    
+    # Batch query neurons across all requested datasets.
     all_required_idx = {idx for idx_list in data.values() for idx in idx_list}
     neurons_qs = (
         GCaMPNeuron.objects.filter(
@@ -396,22 +403,24 @@ def plot_multiple(request):
         .select_related('dataset')
         .only('dataset__dataset_id', 'idx_neuron', 'neuron_name', 'trace')
     )
-    # Group neurons by their dataset's dataset_id and idx_neuron.
+    # Group neurons by dataset_id and their index.
     neurons_grouped = defaultdict(dict)
     for neuron in neurons_qs:
         ds_id = neuron.dataset.dataset_id
         neurons_grouped[ds_id][neuron.idx_neuron] = neuron
-    
+
     plots = []
     colors = {}
     list_dataset_meta = []
     dataset_types = {}
 
-    # Process each dataset from the session data.
+    # Process each dataset from the cached data.
     for dataset_id, list_idx_neuron in data.items():
-        dataset = dataset_map[dataset_id]
+        dataset = dataset_map.get(dataset_id)
+        if not dataset:
+            continue
 
-        # Cache the prefetched dataset types to avoid re-querying.
+        # Get dataset types.
         dtypes = list(dataset.dataset_type.all())
         for dtype in dtypes:
             if dtype.type_id not in dataset_types:
@@ -422,7 +431,7 @@ def plot_multiple(request):
                     "background-color": dtype.color_background,
                 }
 
-        # Get neurons for this dataset from the grouped results.
+        # Retrieve neurons for this dataset.
         neuron_map = neurons_grouped.get(dataset_id, {})
         trace_data = []
         for idx_neuron in list_idx_neuron:
@@ -435,7 +444,6 @@ def plot_multiple(request):
                 "trace": neuron.trace,
                 "name": neuron_name
             })
-            # Assign a new color index if needed.
             if neuron_name not in colors:
                 colors[neuron_name] = len(colors)
 
@@ -462,42 +470,40 @@ def plot_multiple(request):
             "colors": colors
         }, cls=DjangoJSONEncoder)
     }
-    
     return render(request, "activity/plot_multiple.html", context)
 
 
-"""
-plot multipel datasets. receive data request and handle
-"""
 @require_POST
 @csrf_exempt
 def plot_multiple_data(request):
+    """
+    Accept a POST request with JSON data mapping dataset_id -> list of neuron indices.
+    Instead of using the session, store the validated data in the cache with a unique token.
+    The returned JSON includes a redirect URL with the token in a query parameter.
+    """
     try:
-        # Parse the JSON data from the request body
         data = json.loads(request.body)
-        
-        # Validate that data is a dictionary
         if not isinstance(data, dict):
             return JsonResponse({'status': 'error', 'message': 'Data must be a JSON object.'}, status=400)
-        
-        # Validate the structure of data
+
+        # Validate the structure of the data.
         for dataset_id, neuron_ids in data.items():
             if not isinstance(dataset_id, str):
                 return JsonResponse({'status': 'error', 'message': f'Invalid dataset_id: {dataset_id}'}, status=400)
             if not isinstance(neuron_ids, list) or not all(isinstance(n, int) for n in neuron_ids):
                 return JsonResponse({'status': 'error', 'message': f'Invalid neuron_ids for dataset_id {dataset_id}.'}, status=400)
-        
-        # Store the validated data in the session
-        request.session["plot-multiple-data"] = data
-        
-        # Get the URL to redirect to
-        url = reverse("activity-plot_multiple")
-        
+
+        # Generate a unique token and store the data in the cache.
+        token = uuid.uuid4().hex
+        cache_key = "plot_multiple_data:" + token
+        cache.set(cache_key, data, timeout=600)  # Store for 10 minutes (adjust as needed).
+
+        # Build the redirect URL with the token as a GET parameter.
+        url = reverse("activity-plot_multiple") + f"?token={token}"
         return JsonResponse({'status': 'success', 'redirect': url}, status=200)
-    
+
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON.'}, status=400)
     except Exception as e:
-        # Optionally log the exception
-        # logger.error(f"Error in plot_multiple_data: {e}")
+        # Optionally log the exception.
         return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred.'}, status=500)
