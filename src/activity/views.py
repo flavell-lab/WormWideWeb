@@ -1,116 +1,188 @@
-import time
 import json
-from django.core.serializers.json import DjangoJSONEncoder
-from django.http import JsonResponse, HttpResponseBadRequest
-from django.shortcuts import render, get_object_or_404
-from django.views.decorators.http import require_POST
-from django.views.decorators.cache import cache_page
-from django.views.decorators.csrf import csrf_exempt
-from django.urls import reverse
-from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
-from connectome.models import Neuron, NeuronClass, Dataset, Synapse
-from core.models import JSONCache
 from collections import defaultdict
+
+from django.core.cache import cache
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Prefetch
+from django.http import JsonResponse, HttpResponseBadRequest, Http404
+from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
+from django.views.decorators.cache import cache_page, cache_control
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
+from connectome.models import Dataset
+from core.models import JSONCache
+
 
 def index(request):
     context = {}
     
     return render(request, "activity/index.html", context)
 
+
 def index_encoding(request):
     context = {}
 
     return render(request, "activity/index_encoding.html", context)    
 
-@cache_page(7*24*3600)
+
 def encoding_table(request):
     context = {}
 
     return render(request, "activity/encoding.html", context)    
 
+
 def encoding_connectome(request):
-    datasets = Dataset.objects.all()
-    datasets_json = json.dumps(list(datasets.values(
-        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time', 'citation')), cls=DjangoJSONEncoder)
-    
-    match_data = get_object_or_404(JSONCache, name="atanas_kim_2023_all_encoding_dict_match").json
-    context = {'datasets_json': datasets_json, "match_data": match_data}
+    """
+    Render the encoding connectome page using cached connectome dataset data.
+    If the data is not in cache, fetch it and store it.
+    """
+    encoding_data = cache.get("encoding_connectome_data")
+    if encoding_data is None:
+        datasets = Dataset.objects.all()
+        datasets_json = json.dumps(
+            list(
+                datasets.values(
+                    "name",
+                    "dataset_id",
+                    "dataset_type",
+                    "description",
+                    "animal_visual_time",
+                    "citation",
+                )
+            ),
+            cls=DjangoJSONEncoder,
+        )
+        match_data = get_object_or_404(
+            JSONCache, name="atanas_kim_2023_all_encoding_dict_match"
+        ).json
+        encoding_data = {"datasets_json": datasets_json, "match_data": match_data}
+        cache.set("encoding_connectome_data", encoding_data, timeout=None)
 
-    return render(request, "activity/encoding_connectome.html", context)    
+    return render(request, "activity/encoding_connectome.html", encoding_data)
 
-@cache_page(7*3600*24)
+
 def dataset(request):
-    datasets = []
-    for dataset in GCaMPDataset.objects.all():
-        datasets.append({
-            "paper": {"paper_id": dataset.paper.paper_id, "title": dataset.paper.title_short},
-            "dataset_id": dataset.dataset_id,
-            "dataset_name": dataset.dataset_name,
-            "dataset_type": [type.type_id for type in dataset.dataset_type.all()],
-            "n_neuron": dataset.n_neuron,
-            "n_labeled": dataset.n_labeled,
-            "max_t": dataset.max_t,
-            "avg_timestep": dataset.avg_timestep
-        })
+    """
+    Render the datasets page.
+    Optimizes queries by fetching papers and dataset types in bulk,
+    and caches the resulting JSON structures.
+    """
+    context = cache.get("dataset_data")
+    if context is None:
+        # Build list of datasets with required fields.
+        datasets = [
+            {
+                "paper": {"paper_id": ds.paper.paper_id, "title": ds.paper.title_short},
+                "dataset_id": ds.dataset_id,
+                "dataset_name": ds.dataset_name,
+                "dataset_type": [dtype.type_id for dtype in ds.dataset_type.all()],
+                "n_neuron": ds.n_neuron,
+                "n_labeled": ds.n_labeled,
+                "max_t": ds.max_t,
+                "avg_timestep": ds.avg_timestep,
+            }
+            for ds in GCaMPDataset.objects.all()
+        ]
 
-    dataset_types = {}
-    for type in GCaMPDatasetType.objects.all():
-        dataset_types[type.type_id] = {"type_id": type.type_id, "description": type.description, "name": type.name, "background-color": type.color_background}
-
-    dataset_papers = {}
-    for paper_id in GCaMPDataset.objects.values_list("paper", flat=True).distinct():
-        paper_obj = GCaMPPaper.objects.get(pk=paper_id)
-        dataset_papers[paper_obj.paper_id] = {
-            "paper_id": paper_obj.paper_id,
-            "title_short": paper_obj.title_short
+        # Build mapping for dataset types.
+        dataset_types = {
+            dt.type_id: {
+                "type_id": dt.type_id,
+                "description": dt.description,
+                "name": dt.name,
+                "background-color": dt.color_background,
+            }
+            for dt in GCaMPDatasetType.objects.all()
         }
 
-    dataset_type_per_paper = {"common":{}, "papers":{}}
-    for paper in GCaMPPaper.objects.all():
-        dataset_type_per_paper["papers"][paper.paper_id] = [type.type_id for type in paper.dataset_types.all()]    
-    dataset_type_per_paper["common"] = [type.type_id for type in GCaMPDatasetType.objects.filter(paper=None).all()]
+        # Optimize fetching papers in one query.
+        paper_ids = GCaMPDataset.objects.values_list("paper", flat=True).distinct()
+        papers = GCaMPPaper.objects.filter(pk__in=paper_ids).only("paper_id", "title_short")
+        dataset_papers = {
+            paper.paper_id: {
+                "paper_id": paper.paper_id,
+                "title_short": paper.title_short,
+            }
+            for paper in papers
+        }
 
-    context = {
-        "datasets": json.dumps(list(datasets)),
-        "dataset_types": json.dumps(dataset_types),
-        "dataset_type_per_paper": json.dumps(dataset_type_per_paper),
-        "papers": json.dumps(dataset_papers)
-    }
+        # Build mapping of dataset types per paper.
+        dataset_type_per_paper = {
+            "papers": {
+                paper.paper_id: [dtype.type_id for dtype in paper.dataset_types.all()]
+                for paper in GCaMPPaper.objects.all()
+            },
+            "common": [dt.type_id for dt in GCaMPDatasetType.objects.filter(paper=None)],
+        }
+
+        context = {
+            "datasets": json.dumps(datasets),
+            "dataset_types": json.dumps(dataset_types),
+            "dataset_type_per_paper": json.dumps(dataset_type_per_paper),
+            "papers": json.dumps(dataset_papers),
+        }
+        cache.set("dataset_data", context, timeout=None)
 
     return render(request, "activity/dataset.html", context)
 
-@cache_page(2*24*3600)
+
+@cache_page(60*60*24)
 def get_all_dataset(request):
     datasets = GCaMPDataset.objects.all().values("dataset_id", "dataset_type", "n_neuron",
                                                  "n_labeled", "max_t", "avg_timestep")
     
     return JsonResponse(list(datasets), safe=False)
 
-@cache_page(2*24*3600)
+
+@cache_page(60*60*24)
 def get_find_neuron_data(request):
     data = get_object_or_404(JSONCache, name="neuropal_match").json
 
     return JsonResponse(json.loads(data))
+
 
 def find_neuron(request):
     context = {}
 
     return render(request, "activity/find_neuron.html", context)
 
-def get_neural_trace(request, dataset_id, idx_neuron):
-    dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
-    neuron = get_object_or_404(GCaMPNeuron, dataset=dataset, idx_neuron=idx_neuron)
-    data = {"trace": neuron.trace, "idx_neuron": neuron.idx_neuron, "dataset_id": dataset_id}
 
-    return JsonResponse(data)
+def get_neural_trace_data(dataset_id, idx_neuron):
+    neuron = cache.get(f"{dataset_id}_{idx_neuron}")
+    if neuron is None:
+        neuron = (
+            GCaMPNeuron.objects
+            .filter(dataset__dataset_id=dataset_id, idx_neuron=idx_neuron)
+            .values("trace", "idx_neuron")
+            .first()
+        )
+        if neuron is None: return None
+        neuron["dataset_id"] = dataset_id
+        cache.set(f"{dataset_id}_{idx_neuron}", neuron, timeout=None)
+
+    return neuron
+
+
+@cache_control(public=True, max_age=60*60*24*90)
+def get_neural_trace(request, dataset_id, idx_neuron):
+    neuron = get_neural_trace_data(dataset_id, idx_neuron)
+    if neuron is None:
+        raise Http404
+    return JsonResponse(neuron)
+
 
 """
 get all encoding from 
 """
+@cache_page(60*60*24*365)
 def get_all_dataset_encoding(request):
     data = get_object_or_404(JSONCache, name="atanas_kim_2023_all_encoding_dict").json
 
     return JsonResponse(json.loads(data))
+
 
 def get_dataset_encoding(dataset):
     encoding = dataset.encoding
@@ -129,92 +201,134 @@ def get_dataset_encoding(dataset):
 
     return data
 
+
 """
 get encoding data of a dataset
 """
+@cache_control(public=True, max_age=60*60*24*90)
 def get_encoding(request, dataset_id):
-    dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
+    encoding = cache.get(f"{dataset_id}_encoding")
+    if encoding is None:
+        dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
+        encoding = get_dataset_encoding(dataset)
+        cache.set(f"{dataset_id}_encoding", encoding, timeout=None)
 
-    return JsonResponse(get_dataset_encoding(dataset))
+    return JsonResponse(encoding)
 
-@cache_page(7*3600*24)
+@cache_control(public=True, max_age=60*60*24*90)
 def get_behavior(request, dataset_id):
-    dataset = get_object_or_404(
-        GCaMPDataset.objects.only("truncated_behavior", "events", "avg_timestep", "max_t"),
-        dataset_id=dataset_id
-    )
-    data = {
-        "data": {
-            "behavior": dataset.truncated_behavior,
-            "events": dataset.events
-        },
-        "dataset_id": dataset_id,
-        "avg_timestep": dataset.avg_timestep,
-        "max_t": dataset.max_t
-    }
+    data = cache.get(f"{dataset_id}_behavior")
+    if data is None:
+        dataset = get_object_or_404(
+            GCaMPDataset.objects.only("truncated_behavior", "events", "avg_timestep", "max_t"),
+            dataset_id=dataset_id
+        )
+        data = {
+            "data": {
+                "behavior": dataset.truncated_behavior,
+                "events": dataset.events
+            },
+            "dataset_id": dataset_id,
+            "avg_timestep": dataset.avg_timestep,
+            "max_t": dataset.max_t
+        }
+        cache.set(f"{dataset_id}_behavior", data, timeout=None)
+
     return JsonResponse(data)
 
-def get_dataset_neuron_data(dataset):
-    qs = dataset.neurons.select_related("neuron_class").all()
-    return {
-        neuron.idx_neuron: {
-            "name": f"{neuron.idx_neuron} ({neuron.neuron_name})" if neuron.neuron_name else str(neuron.idx_neuron),
-            "label": neuron.neuron_name,
-            "class": neuron.neuron_class.name if neuron.neuron_class else "",
-            "idx_neruon": neuron.idx_neuron
-        }
-        for neuron in qs
-    }
-from django.db.models import Prefetch
 
+def get_dataset_neuron_data(dataset):
+    neuron_data = cache.get(f"{dataset.dataset_id}_dataset_neuron_data")
+    if neuron_data is None:
+        qs = dataset.neurons.select_related("neuron_class").all()
+        neuron_data = {
+            neuron.idx_neuron: {
+                "name": f"{neuron.idx_neuron} ({neuron.neuron_name})" if neuron.neuron_name else str(neuron.idx_neuron),
+                "label": neuron.neuron_name,
+                "class": neuron.neuron_class.name if neuron.neuron_class else "",
+                "idx_neruon": neuron.idx_neuron
+            }
+            for neuron in qs
+        }
+        cache.set(f"{dataset.dataset_id}_dataset_neuron_data", neuron_data, timeout=None)
+
+    return neuron_data
+
+#todo
 def plot_dataset(request, dataset_id):
     # Fetch dataset with related objects
-    # Adjust these field lists as needed.
     dataset_fields = (
         'dataset_id', 'dataset_name', 'avg_timestep', 'max_t', 'neuron_cor', 'encoding', 'events', 'paper', 'dataset_meta'
     )
-    paper_fields = ('id', 'title')  # Adjust to the fields you actually need from paper.
     dataset_type_fields = ('type_id', 'description', 'name', 'color_background')
 
     # Build a queryset that only selects the necessary fields.
     dataset_qs = (
         GCaMPDataset.objects
         .only(*dataset_fields)
-        .select_related('paper')  # For paper, if you need to restrict further, see note below.
+        .select_related('paper')
         .prefetch_related(
             Prefetch('dataset_type', queryset=GCaMPDatasetType.objects.only(*dataset_type_fields))
         )
     )
 
     dataset = get_object_or_404(dataset_qs, dataset_id=dataset_id)
-    neuron_data = get_dataset_neuron_data(dataset)  # Ensure this function uses select_related as needed.
+    neuron_data = get_dataset_neuron_data(dataset)  # using select_related. cached
     encoding = dataset.encoding
 
-    # Build initial trace data using a batched query for neurons,
-    # and restrict the fields to only what is needed.
+    # initial trace data with cache look up and batch query
     trace_init = {}
-    str_neuron_list = request.GET.get("n")
-    if str_neuron_list:
+    neuron_str = request.GET.get("n")
+    if neuron_str:
         try:
-            list_idx_neuron = [int(x) for x in str_neuron_list.split('-')]
+            list_idx_neuron = [int(x) for x in neuron_str.split('-')]
         except ValueError:
             return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
-        # Batch query: fetch only the fields needed.
-        neurons_qs = list(
-            GCaMPNeuron.objects.filter(dataset=dataset, idx_neuron__in=list_idx_neuron)
-            .only('idx_neuron', 'trace')
-        )
-        # Ensure all requested neurons are found.
-        if len(neurons_qs) != len(list_idx_neuron):
-            return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
-        neurons_map = {neuron.idx_neuron: neuron for neuron in neurons_qs}
-        for idx_neuron in list_idx_neuron:
-            neuron = neurons_map.get(idx_neuron)
-            trace_init[idx_neuron] = {
-                "trace": neuron.trace,
-                "idx_neuron": neuron.idx_neuron,
-                "dataset_id": dataset_id
+
+        # Map each neuron index to its cache key.
+        cache_key_map = {f"{dataset_id}_{idx}": idx for idx in list_idx_neuron}
+        
+        # Retrieve cached traces.
+        cached_traces = cache.get_many(list(cache_key_map.keys()))
+        
+        # Identify indices that were not found in cache.
+        missing_indices = [
+            idx for key, idx in cache_key_map.items() if key not in cached_traces
+        ]
+        
+        new_traces = {}
+        if missing_indices:
+            # Batch query to fetch missing neurons with only the needed fields.
+            neurons = list(
+                GCaMPNeuron.objects.filter(dataset=dataset, idx_neuron__in=missing_indices)
+                .only('idx_neuron', 'trace')
+            )
+            # Validate that all requested neurons were returned.
+            if len(neurons) != len(missing_indices):
+                return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
+            
+            # Create a mapping of neuron index to its trace data.
+            new_traces = {
+                neuron.idx_neuron: {
+                    "trace": neuron.trace,
+                    "idx_neuron": neuron.idx_neuron,
+                    "dataset_id": dataset_id
+                }
+                for neuron in neurons
             }
+            # Cache the new traces in bulk.
+            cache.set_many({
+                f"{dataset_id}_{neuron.idx_neuron}": trace_data for neuron_idx,
+                trace_data in new_traces.items() for neuron in neurons if neuron.idx_neuron == neuron_idx
+            })
+
+        # Convert cached keys back to neuron indices.
+        cached_traces_parsed = {
+            int(key.split("_")[-1]): value for key, value in cached_traces.items()
+        }
+
+        # Merge cached and newly fetched traces.
+        trace_init = {**cached_traces_parsed, **new_traces}
 
     # Build the main data structure.
     data = {
@@ -261,6 +375,7 @@ def plot_dataset(request, dataset_id):
         context["dataset_note"] = dataset.dataset_meta["note"]
 
     return render(request, "activity/explore.html", context)
+
 
 """
 render plot multiple datasets from the selected datsets from the find_neuron view
@@ -365,7 +480,9 @@ def plot_multiple(request):
             "colors": colors
         }, cls=DjangoJSONEncoder)
     }
+    
     return render(request, "activity/plot_multiple.html", context)
+
 
 """
 plot multipel datasets. receive data request and handle
