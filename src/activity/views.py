@@ -22,6 +22,7 @@ def index_encoding(request):
 
     return render(request, "activity/index_encoding.html", context)    
 
+@cache_page(7*24*3600)
 def encoding_table(request):
     context = {}
 
