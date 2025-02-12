@@ -11,6 +11,7 @@ from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
+from connectome.views import connectome_datasets
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from connectome.models import Dataset
 from core.models import JSONCache
@@ -41,20 +42,7 @@ def encoding_connectome(request):
     """
     encoding_data = cache.get("encoding_connectome_data")
     if encoding_data is None:
-        datasets = Dataset.objects.all()
-        datasets_json = json.dumps(
-            list(
-                datasets.values(
-                    "name",
-                    "dataset_id",
-                    "dataset_type",
-                    "description",
-                    "animal_visual_time",
-                    "citation",
-                )
-            ),
-            cls=DjangoJSONEncoder,
-        )
+        datasets_json = connectome_datasets()
         match_data = get_object_or_404(
             JSONCache, name="atanas_kim_2023_all_encoding_dict_match"
         ).json
@@ -355,10 +343,7 @@ def plot_dataset(request, dataset_id):
         data["trace_init"] = trace_init
 
     # Retrieve connectome datasets with only the needed fields.
-    datasets_qs = Dataset.objects.all().values(
-        'name', 'dataset_id', 'dataset_type', 'description', 'animal_visual_time', 'citation'
-    )
-    datasets_json = json.dumps(list(datasets_qs), cls=DjangoJSONEncoder)
+    datasets_json = connectome_datasets()
 
     context = {
         "paper": dataset.paper,

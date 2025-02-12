@@ -3,12 +3,24 @@ import networkx as nx
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q, Prefetch
 from .models import Neuron, NeuronClass, Dataset, Synapse
 from collections import defaultdict
 import connectome.graph_data 
+
+def connectome_datasets(cache_key="connectome_datasets_json"):
+    datasets_json = cache.get(cache_key)
+    if datasets_json is None:
+        datasets = Dataset.objects.all()
+        datasets_json = json.dumps(list(datasets.values(
+            'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time','citation')), cls=DjangoJSONEncoder)
+        cache.set(cache_key, datasets_json)
+
+    return datasets_json
+
 
 def index(request):
     context = {}
@@ -17,19 +29,13 @@ def index(request):
 
 
 def explore(request):
-    datasets = Dataset.objects.all()
-    datasets_json = json.dumps(list(datasets.values(
-        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time','citation')), cls=DjangoJSONEncoder)
-    context = {'datasets_json': datasets_json}
+    context = {'datasets_json': connectome_datasets()}
 
     return render(request, "connectome/explore.html", context)
 
 
 def path(request):
-    datasets = Dataset.objects.all()
-    datasets_json = json.dumps(list(datasets.values(
-        'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time', 'citation')), cls=DjangoJSONEncoder)
-    context = {'datasets_json': datasets_json}
+    context = {'datasets_json': connectome_datasets()}
 
     return render(request, "connectome/path.html", context)
 
