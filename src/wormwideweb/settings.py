@@ -91,6 +91,7 @@ DATABASES = {
         'NAME': f"file:{BASE_DIR / 'db.sqlite3'}?mode=ro&cache=shared",
         'OPTIONS': {
             'uri': True,
+            'timeout': 20,
         },
     }
 }
