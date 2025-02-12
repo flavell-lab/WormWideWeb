@@ -401,10 +401,8 @@ def plot_multiple(request):
     # Map dataset_id to dataset.
     dataset_map = {ds.dataset_id: ds for ds in datasets_qs}
 
-    # Instead of querying neurons one dataset at a time, batch query all needed neurons.
-    # Gather all neuron indices requested across datasets.
+    # Batchquery neurons.
     all_required_idx = {idx for idx_list in data.values() for idx in idx_list}
-    # Query neurons for all datasets that are in our list.
     neurons_qs = (
         GCaMPNeuron.objects.filter(
             dataset__dataset_id__in=dataset_ids,
@@ -418,7 +416,7 @@ def plot_multiple(request):
     for neuron in neurons_qs:
         ds_id = neuron.dataset.dataset_id
         neurons_grouped[ds_id][neuron.idx_neuron] = neuron
-
+    
     plots = []
     colors = {}
     list_dataset_meta = []
@@ -430,7 +428,6 @@ def plot_multiple(request):
 
         # Cache the prefetched dataset types to avoid re-querying.
         dtypes = list(dataset.dataset_type.all())
-        # Update the global dataset_types mapping.
         for dtype in dtypes:
             if dtype.type_id not in dataset_types:
                 dataset_types[dtype.type_id] = {
