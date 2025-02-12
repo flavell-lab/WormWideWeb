@@ -90,7 +90,6 @@ export class SelectorDatasetNeuron {
                 "remove_button": { title: "Remove this dataset" },
             },
             onChange: (valuesStr) => this.selectorDatasetUpdate(valuesStr),
-            // Optionally close the neuron selector (or both) on certain actions
             onClear: () => {
                 this.selectorDataset.close();
                 // this.selectorNeuron.close(); // if you want to close neuron as well
@@ -236,7 +235,7 @@ export class SelectorDatasetNeuron {
         }
 
         // Finally, refresh
-        this.selectorNeuron.refreshOptions();
+        this.selectorNeuron.refreshOptions(false);
     }
 
     /**
