@@ -92,6 +92,7 @@ DATABASES = {
         'OPTIONS': {
             'uri': True,
             'timeout': 20,
+            'init_command': 'PRAGMA synchronous = OFF; PRAGMA cache_size = 102400; PRAGMA temp_store = MEMORY;'
         },
     }
 }
