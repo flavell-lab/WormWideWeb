@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     */
     const buttonClear = document.getElementById("clearSelector")
     buttonClear.addEventListener('click', () => {
-        selectors.clearSelector();
+        neuronSelector.selector.clear();
     });
     const buttonDownloadSelected = document.getElementById("downloadSelected")
     buttonDownloadSelected.addEventListener('click', () => {
