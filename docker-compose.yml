@@ -5,7 +5,6 @@ services:
       dockerfile: Dockerfile
       secrets:
         - env_base
-        - env_build_override
     container_name: dj
     command: >
       sh -c "gunicorn wormwideweb.wsgi:application --bind 0.0.0.0:8000"
@@ -17,5 +16,3 @@ services:
 secrets:
   env_base:
     file: ./config/default.env
-  env_build_override:
-    file: ./config/build_override.env

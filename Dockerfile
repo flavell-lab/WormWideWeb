@@ -2,7 +2,7 @@ FROM python:3.13-slim AS builder
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 RUN mkdir /config
-COPY /config/ /config/
+COPY /config/requirement.pip /config/requirement.pip
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r /config/requirement.pip
 
@@ -13,8 +13,7 @@ COPY /initial_data/ /initial_data/
 WORKDIR /wormwideweb
 
 RUN --mount=type=secret,id=env_base,dst=/run/secrets/env_base \
-    --mount=type=secret,id=env_build_override,dst=/run/secrets/env_build_override \
-    bash -c 'set -a && source /run/secrets/env_base && source /run/secrets/env_build_override && set +a && \
+    bash -c 'set -a && source /run/secrets/env_base && set +a && \
         sh /wormwideweb/populate_db.sh'
 
 # for deployment
