@@ -9,7 +9,7 @@ services:
     container_name: dj
     command: >
       sh -c "gunicorn wormwideweb.wsgi:application --bind 0.0.0.0:8000"
-    image: wormwideweb/apprunner_deploy
+    image: wormwideweb/gcp_deploy
     ports:
       - "8000:8000"
     env_file:
