@@ -17,3 +17,13 @@ export const CONNECTOME_DATASET_ID_TO_DATASET_NAME = {
 };
 
 export const URL_CONNECTOME_EDGE = "/connectome/api/get-edges/"
+
+export const cellTypeDict = {
+    "s": "Sensory neuron", "i": "Interneuron", "m": "Motor neuron",
+    "n": "Neuromodulative neuron", "b": "Muscle", "": "Others", "u": "Others"
+}
+
+export const ntTypeDict = {
+    "a": "Acetylcholine", "d": "Dopamine", "g": "GABA", "l": "Glutamate",
+    "o": "Octopamine", "s": "Serotonin", "t": "Tyramine", "u": "Unknown", "n": "N/A"
+}

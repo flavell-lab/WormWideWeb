@@ -4,7 +4,7 @@ import { GraphLayoutManager, NodePositionManager } from './connectome_layout.js'
 import { NodeManager} from './connectome_node.js'
 import { getNeuronClassProperty } from './connectome_selector.js';
 import { InfoPanel } from '/static/core/js/info_panel.js'
-import { CONNECTOME_DATASET_ID_TO_DATASET_NAME, URL_CONNECTOME_EDGE } from '/static/core/js/constants.js';
+import { CONNECTOME_DATASET_ID_TO_DATASET_NAME, URL_CONNECTOME_EDGE, cellTypeDict, ntTypeDict } from '/static/core/js/constants.js';
 
 export class ConnectomeGraph {
     constructor(graphId, keyPrefix=null) {
@@ -206,16 +206,6 @@ export class ConnectomeGraph {
         const cellClass = nodeData.neuron_class;
         const cellType = nodeData.cell_type;
         const ntType = nodeData.neurotransmitter_type
-
-        const cellTypeDict = {
-            "s": "Sensory neuron", "i": "Interneuron", "m": "Motor neuron",
-            "n": "Neuromodulative neuron", "b": "Muscle", "": "Others", "u": "Others"
-        }
-
-        const ntTypeDict = {
-            "a": "Acetylcholine", "d": "Dopamine", "g": "GABA", "l": "Glutamate",
-            "o": "Octopamine", "s": "Serotonin", "t": "Tyramine", "u": "Unknown", "n": "N/A"
-        }
 
         const cellTypeFullStr = cellType.split("").map((str, index) => cellTypeDict[str]).join(', ')
         const ntTypeFullStr = ntType.split("").map((str, index) => ntTypeDict[str]).join(', ')
