@@ -4,9 +4,7 @@ import { GraphLayoutManager, NodePositionManager } from '/static/connectome/js/c
 import { sumArray, isNodeRectangle, initSwitch, debounce, getCSRFToken, initSlider, setLocalInt, getLocalInt, getLocalBool } from '/static/core/js/utility.js'
 import { InfoPanel } from '/static/core/js/info_panel.js'
 import { PLOTLY_COLOR_SCALES, getNodeColor, updateColorBar } from '/static/core/js/colorscale.js'
-import { CONNECTOME_DATASET_ID_TO_DATASET_NAME } from '/static/core/js/constants.js';
-
-const edgeRequestURL = "/connectome/api/get-edges/"
+import { CONNECTOME_DATASET_ID_TO_DATASET_NAME, URL_CONNECTOME_EDGE } from '/static/core/js/constants.js';
 
 export class PlotGraph {
     constructor(graphId, data) {
@@ -684,7 +682,7 @@ export class PlotGraph {
             nodeDict.neurons.sort()
 
             // request edges
-            fetch(edgeRequestURL, {
+            fetch(URL_CONNECTOME_EDGE, {
                 method: 'POST', // HTTP method
                 headers: {
                     'Content-Type': 'application/json', // Tell the server it's JSON

@@ -4,9 +4,7 @@ import { GraphLayoutManager, NodePositionManager } from './connectome_layout.js'
 import { NodeManager} from './connectome_node.js'
 import { getNeuronClassProperty } from './connectome_selector.js';
 import { InfoPanel } from '/static/core/js/info_panel.js'
-import { CONNECTOME_DATASET_ID_TO_DATASET_NAME } from '/static/core/js/constants.js';
-
-const edgeRequestURL = "/connectome/api/get-edges/"
+import { CONNECTOME_DATASET_ID_TO_DATASET_NAME, URL_CONNECTOME_EDGE } from '/static/core/js/constants.js';
 
 export class ConnectomeGraph {
     constructor(graphId, keyPrefix=null) {
@@ -417,7 +415,7 @@ export class ConnectomeGraph {
             nodeDict.neurons.sort()
 
             // request edges
-            fetch(edgeRequestURL, {
+            fetch(URL_CONNECTOME_EDGE, {
                 method: 'POST', // HTTP method
                 headers: {
                     'Content-Type': 'application/json', // Tell the server it's JSON
