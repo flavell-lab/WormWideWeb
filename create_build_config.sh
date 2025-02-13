@@ -11,8 +11,8 @@ SECRET_KEY_BACKUP="$(gcloud secrets versions access latest --secret=DJ_SECRET_KE
 # Write everything to the env file
 cat <<EOF > "$OUTFILE"
 DJ_DEBUG=0
-DJ_SECRET_KEY=$SECRET_KEY
-DJ_SECRET_KEY_BACKUP=$SECRET_KEY_BACKUP
+DJ_SECRET_KEY="$SECRET_KEY"
+DJ_SECRET_KEY_BACKUP="$SECRET_KEY_BACKUP"
 DJ_ALLOWED_HOSTS="localhost .run.app wormwideweb.org"
 EOF
 
