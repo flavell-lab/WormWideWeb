@@ -27,3 +27,10 @@ export const ntTypeDict = {
     "a": "Acetylcholine", "d": "Dopamine", "g": "GABA", "l": "Glutamate",
     "o": "Octopamine", "s": "Serotonin", "t": "Tyramine", "u": "Unknown", "n": "N/A"
 }
+
+export const CONNECTOME_DATASET_TYPE = [
+    { value: "pharynx", label: "Pharynx" },
+    { value: "complete", label: "Complete" },
+    { value: "head", label: "Head ganglia" },
+    { value: "tail", label: "Tail ganglia" },
+]

@@ -1,4 +1,5 @@
 import { setLocalStr, setLocalJSON, getLocalStr, updateCitation } from '/static/core/js/utility.js'
+import { CONNECTOME_DATASET_TYPE } from '/static/core/js/constants.js';
 
 export class DatasetSelector {
     constructor(selectorDatasetId, connectomeGraph) {
@@ -15,12 +16,7 @@ export class DatasetSelector {
     initializeDatasetSelector() {
         this.selectorDataset = new TomSelect(this.selectorDatasetElement, {
             options: datasets,
-            optgroups: [
-                { value: "pharynx", label: "Pharynx" },
-                { value: "complete", label: "Complete" },
-                { value: "head", label: "Head ganglia" },
-                { value: "tail", label: "Tail ganglia" },
-            ],
+            optgroups: CONNECTOME_DATASET_TYPE,
             hidePlaceholder: true,
             optgroupField: "dataset_type",
             valueField: "dataset_id",
