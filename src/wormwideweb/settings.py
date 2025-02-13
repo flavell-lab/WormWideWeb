@@ -85,25 +85,25 @@ CACHES = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': f"file:{BASE_DIR / 'db.sqlite3'}?mode=ro&cache=shared",
-        'OPTIONS': {
-            'uri': True,
-            'timeout': 20,
-            'init_command': 'PRAGMA synchronous = OFF; PRAGMA cache_size = 102400; PRAGMA temp_store = MEMORY;'
-        },
+if bool(int(os.environ.get("DJ_DB_BUILD", 0))):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': f"file:{BASE_DIR / 'db.sqlite3'}?mode=ro&cache=shared",
+            'OPTIONS': {
+                'uri': True,
+                'timeout': 20,
+                'init_command': 'PRAGMA synchronous = OFF; PRAGMA cache_size = 102400; PRAGMA temp_store = MEMORY;'
+            },
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
