@@ -1,4 +1,5 @@
 import { getDatasetTypePill } from '/static/core/js/utility.js';
+import { URL_ROOT_ACTIVITY_DATA } from '/static/core/js/constants.js';
 
 export class DatasetTable {
     constructor(tableElementId, data, datasetTypes) {
@@ -37,7 +38,7 @@ export class DatasetTable {
         this.tableData.forEach((dataset) => {
             // update buttons urls
             const urlPlot = `/activity/explore/${dataset.id}/?n=1-2-3&b=v-hc`
-            const urlData = `/static/data/${dataset.id}.json`
+            const urlData = `${URL_ROOT_ACTIVITY_DATA}${dataset.paper_id}/${dataset.label}.json`
             
             const htmlBtn = `<div class="actions-column">
                     <a href="${urlPlot}" class="action-btn" title="Plot">
@@ -90,8 +91,8 @@ export class DatasetTable {
     downloadSelected() {
         const selected = this.getSelected()
         selected.forEach((option) => {
-            const urlData = `/static/data/${option.id}.json`
-            this.downloadFile(urlData, `${option.id}.json`)
+            const urlData = `${URL_ROOT_ACTIVITY_DATA}${option.paper_id}/${option.label}.json`
+            this.downloadFile(urlData, `${option.paper_id}-${option.label}.json`)
         })
     }   
 }

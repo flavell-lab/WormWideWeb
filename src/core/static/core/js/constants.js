@@ -1,0 +1,1 @@
+export const URL_ROOT_ACTIVITY_DATA = "https://storage.googleapis.com/www-deploy-bucket/activity/"

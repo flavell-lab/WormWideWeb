@@ -1,4 +1,5 @@
 import { getDatasetTypePill, getCSRFToken } from '/static/core/js/utility.js';
+import { URL_ROOT_ACTIVITY_DATA } from '/static/core/js/constants.js';
 
 const plotMultipleURL = "/activity/plot-multiple-data/"
 
@@ -10,6 +11,11 @@ export class DatasetTable {
         this.datasets = data.neuropal_datasets_data
         this.tableData = []
         this.matched = {}
+
+        this.datasetIdToPaperAndUID = {}
+        this.datasets.forEach(dataset => {
+            this.datasetIdToPaperAndUID[dataset.dataset_id] = [dataset.paper.paper_id, dataset.dataset_name];
+        })
 
         this.initTable()
     }
@@ -58,7 +64,7 @@ export class DatasetTable {
     
             // Prepare new action button HTML
             const urlPlot = `/activity/explore/${datasetId}/?n=${neuronList.join("-")}&b=v`;
-            const urlData = `/static/activity/data/${datasetId}.json`;
+            const urlData = `${URL_ROOT_ACTIVITY_DATA}${this.datasetIdToPaperAndUID[datasetId][0]}/${this.datasetIdToPaperAndUID[datasetId][1]}.json`
             const htmlBtn = `
                 <div class="actions-column">
                     <a href="${urlPlot}" class="action-btn" title="Plot">
@@ -159,8 +165,8 @@ export class DatasetTable {
         }
 
         selected.forEach((option) => {
-            const urlData = `/static/data/${option.id}.json`
-            this.downloadFile(urlData, `${option.id}.json`)
+            const urlData = `${URL_ROOT_ACTIVITY_DATA}${option.paper_id}/${option.label}.json`
+            this.downloadFile(urlData, `${option.paper_id}-${option.label}.json`)
         })
     }
 }
