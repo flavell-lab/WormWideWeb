@@ -4,6 +4,7 @@ import { GraphLayoutManager, NodePositionManager } from './connectome_layout.js'
 import { NodeManager} from './connectome_node.js'
 import { getNeuronClassProperty } from './connectome_selector.js';
 import { InfoPanel } from '/static/core/js/info_panel.js'
+import { CONNECTOME_DATASET_ID_TO_DATASET_NAME } from '/static/core/js/constants.js';
 
 const edgeRequestURL = "/connectome/api/get-edges/"
 
@@ -17,21 +18,6 @@ export class ConnectomeGraph {
 
         this.manifest = {};
         this.listDataset = [];
-        this.datsetNameFormatted = {
-            "cook_2020": "Cook 2020",
-            "white_1986_jse": "White 1986 JSE",
-            "white_1986_jsh": "White 1986 JSH",
-            "white_1986_n2u": "White 1986 N2U",
-            "white_1986_whole": "White 1986 Whole",
-            "witvliet_2020_1": "Witvliet 2020 1",
-            "witvliet_2020_2": "Witvliet 2020 2",
-            "witvliet_2020_3": "Witvliet 2020 3",
-            "witvliet_2020_4": "Witvliet 2020 4",
-            "witvliet_2020_5": "Witvliet 2020 5",
-            "witvliet_2020_6": "Witvliet 2020 6",
-            "witvliet_2020_7": "Witvliet 2020 7",
-            "witvliet_2020_8": "Witvliet 2020 8",
-        };
 
         // download
         this.jsonData = null;
@@ -151,7 +137,7 @@ export class ConnectomeGraph {
                     const edgeData = selectedEdge.data();
                     const edgeCount = edgeData.list_count;
                     const countText = this.listDataset
-                        .map((str, index) => `${this.datsetNameFormatted[str]}: ${edgeCount[index]}`)
+                        .map((str, index) => `${CONNECTOME_DATASET_ID_TO_DATASET_NAME[str]}: ${edgeCount[index]}`)
                         .join('\n');
                     const edgeLabel = `${edgeData.type=="c" ? "Chemical" : "Electrical"}, n=${sumArray(edgeCount)}\n${countText}`
                     edge.style('label', edgeLabel || ''); // Show edge label from data
