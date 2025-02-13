@@ -16,4 +16,4 @@ export const CONNECTOME_DATASET_ID_TO_DATASET_NAME = {
     "witvliet_2020_8": "Witvliet 2020 8",
 };
 
-const URL_CONNECTOME_EDGE = "/connectome/api/get-edges/"
+export const URL_CONNECTOME_EDGE = "/connectome/api/get-edges/"
