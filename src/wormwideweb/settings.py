@@ -75,12 +75,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'wormwideweb.wsgi.application'
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',  # In-memory cache
-        'LOCATION': 'unique-snowflake',
+if bool(int(os.environ.get("DJ_USE_REDIS", 0))):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.environ.get("DJ_REDIS_URI"),
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',  # In-memory cache
+            'LOCATION': 'unique-snowflake',
+        }
+    }
+
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -140,7 +149,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 
-STATIC_URL = 'static/'
+STATIC_URL = 'http://test.qwe/static/'
 
 # Directory where Django will collect all static files (for production)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
