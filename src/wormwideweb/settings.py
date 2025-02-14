@@ -149,7 +149,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 
-STATIC_URL = 'http://test.qwe/static/'
+STATIC_URL = 'static/'
 
 # Directory where Django will collect all static files (for production)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
