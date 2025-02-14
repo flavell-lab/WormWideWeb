@@ -68,7 +68,6 @@ class GCaMPDataset(models.Model):
 
     # processed trace
     neuron_cor = models.JSONField(default=empty_json) # z-normalized
-    neuron_cor_original = models.JSONField(default=empty_json) # original
 
     class Meta:
         verbose_name = 'GCaMP Dataset'

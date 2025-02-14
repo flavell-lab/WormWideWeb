@@ -238,10 +238,6 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         "neuron": correlation_matrix_to_dict(np.around(np.corrcoef(list_trace_array), 3)),
         "behavior": calculate_cor_behavior(list_trace_array, data)
     }
-    cor_trace_original = {
-        "neuron": correlation_matrix_to_dict(np.around(np.corrcoef(list_trace_original), 3)),
-        "behavior": calculate_cor_behavior(list_trace_original, data)
-    }
 
     # behavior data
     def create_trace_data(data_list, multiplier=1, truncate=False):
@@ -328,8 +324,7 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
 
         events=data["events"] if "events" in data else {},
 
-        neuron_cor=cor_trace,
-        neuron_cor_original=cor_trace_original
+        neuron_cor=cor_trace
     )
 
     # add dataset type

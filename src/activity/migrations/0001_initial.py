@@ -59,7 +59,6 @@ class Migration(migrations.Migration):
                 ('encoding', models.JSONField(default=activity.models.empty_json)),
                 ('events', models.JSONField(default=activity.models.empty_json)),
                 ('neuron_cor', models.JSONField(default=activity.models.empty_json)),
-                ('neuron_cor_original', models.JSONField(default=activity.models.empty_json)),
                 ('dataset_type', models.ManyToManyField(related_name='datasets', to='activity.gcampdatasettype')),
                 ('paper', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='datasets', to='activity.gcamppaper')),
             ],
