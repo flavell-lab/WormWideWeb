@@ -17,19 +17,21 @@ from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from connectome.models import Dataset
 from core.models import JSONCache
 
-
+@cache_page(60*60*24*30)
 def index(request):
     context = {}
     
     return render(request, "activity/index.html", context)
 
 
+@cache_page(60*60*24*30)
 def index_encoding(request):
     context = {}
 
     return render(request, "activity/index_encoding.html", context)    
 
 
+@cache_page(60*60*24*30)
 def encoding_table(request):
     context = {}
 
@@ -133,6 +135,7 @@ def get_find_neuron_data(request):
     return JsonResponse(json.loads(data))
 
 
+@cache_page(60*60*24*30)
 def find_neuron(request):
     context = {}
 
@@ -150,7 +153,7 @@ def get_neural_trace_data(dataset_id, idx_neuron):
         )
         if neuron is None: return None
         neuron["dataset_id"] = dataset_id
-        cache.set(f"{dataset_id}_{idx_neuron}", neuron, timeout=7*24*3600)
+        cache.set(f"{dataset_id}_{idx_neuron}", neuron, timeout=14*24*3600)
 
     return neuron
 
@@ -166,7 +169,7 @@ def get_neural_trace(request, dataset_id, idx_neuron):
 """
 get all encoding from 
 """
-@cache_page(60*60*24*365)
+@cache_page(60*60*24*90)
 def get_all_dataset_encoding(request):
     data = get_object_or_404(JSONCache, name="atanas_kim_2023_all_encoding_dict").json
 
@@ -194,17 +197,18 @@ def get_dataset_encoding(dataset):
 """
 get encoding data of a dataset
 """
-@cache_control(public=True, max_age=60*60*24*90)
+@cache_control(public=True, max_age=60*60*24*7)
 def get_encoding(request, dataset_id):
     encoding = cache.get(f"{dataset_id}_encoding")
     if encoding is None:
         dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
         encoding = get_dataset_encoding(dataset)
-        cache.set(f"{dataset_id}_encoding", encoding, timeout=3600*24*14)
+        cache.set(f"{dataset_id}_encoding", encoding, timeout=None)
 
     return JsonResponse(encoding)
 
-@cache_control(public=True, max_age=60*60*24*90)
+
+@cache_control(public=True, max_age=60*60*24*7)
 def get_behavior(request, dataset_id):
     data = cache.get(f"{dataset_id}_behavior")
     if data is None:
@@ -221,7 +225,7 @@ def get_behavior(request, dataset_id):
             "avg_timestep": dataset.avg_timestep,
             "max_t": dataset.max_t
         }
-        cache.set(f"{dataset_id}_behavior", data, timeout=3600*24*14)
+        cache.set(f"{dataset_id}_behavior", data, timeout=None)
 
     return JsonResponse(data)
 
@@ -243,7 +247,7 @@ def get_dataset_neuron_data(dataset):
 
     return neuron_data
 
-#todo
+
 def plot_dataset(request, dataset_id):
     # Fetch dataset with related objects
     dataset_fields = (
@@ -309,7 +313,7 @@ def plot_dataset(request, dataset_id):
             cache.set_many({
                 f"{dataset_id}_{neuron.idx_neuron}": trace_data for neuron_idx,
                 trace_data in new_traces.items() for neuron in neurons if neuron.idx_neuron == neuron_idx
-            })
+            }, timeout=3600*24*14)
 
         # Convert cached keys back to neuron indices.
         cached_traces_parsed = {

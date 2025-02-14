@@ -22,22 +22,26 @@ def connectome_datasets(cache_key="connectome_datasets_json"):
     return datasets_json
 
 
+@cache_page(60*60*24*30)
 def index(request):
     context = {}
     
     return render(request, "connectome/index.html", context)
 
 
+@cache_page(60*60*24*30)
 def explore(request):
     context = {'datasets_json': connectome_datasets()}
 
     return render(request, "connectome/explore.html", context)
 
 
+@cache_page(60*60*24*30)
 def path(request):
     context = {'datasets_json': connectome_datasets()}
 
     return render(request, "connectome/path.html", context)
+
 
 @cache_control(public=True, max_age=60*60*24*90)
 def available_neurons(request):
@@ -266,6 +270,7 @@ def get_edges(request):
         except json.JSONDecodeError:
             return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
 
 def find_paths(request):
     """
