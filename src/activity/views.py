@@ -150,12 +150,12 @@ def get_neural_trace_data(dataset_id, idx_neuron):
         )
         if neuron is None: return None
         neuron["dataset_id"] = dataset_id
-        cache.set(f"{dataset_id}_{idx_neuron}", neuron, timeout=None)
+        cache.set(f"{dataset_id}_{idx_neuron}", neuron, timeout=7*24*3600)
 
     return neuron
 
 
-@cache_control(public=True, max_age=60*60*24*90)
+@cache_control(public=True, max_age=1*24*3600)
 def get_neural_trace(request, dataset_id, idx_neuron):
     neuron = get_neural_trace_data(dataset_id, idx_neuron)
     if neuron is None:
@@ -200,7 +200,7 @@ def get_encoding(request, dataset_id):
     if encoding is None:
         dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
         encoding = get_dataset_encoding(dataset)
-        cache.set(f"{dataset_id}_encoding", encoding, timeout=None)
+        cache.set(f"{dataset_id}_encoding", encoding, timeout=3600*24*14)
 
     return JsonResponse(encoding)
 
@@ -221,7 +221,7 @@ def get_behavior(request, dataset_id):
             "avg_timestep": dataset.avg_timestep,
             "max_t": dataset.max_t
         }
-        cache.set(f"{dataset_id}_behavior", data, timeout=None)
+        cache.set(f"{dataset_id}_behavior", data, timeout=3600*24*14)
 
     return JsonResponse(data)
 
