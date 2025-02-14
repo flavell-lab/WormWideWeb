@@ -169,7 +169,7 @@ def get_neural_trace(request, dataset_id, idx_neuron):
 """
 get all encoding from 
 """
-@cache_page(60*60*24*90)
+@cache_page(60*60*24*30)
 def get_all_dataset_encoding(request):
     data = get_object_or_404(JSONCache, name="atanas_kim_2023_all_encoding_dict").json
 
