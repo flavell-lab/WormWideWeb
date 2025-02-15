@@ -29,3 +29,5 @@ RUN pip install --no-cache-dir -r /config/requirement.pip
 COPY --from=builder /wormwideweb /wormwideweb
 
 WORKDIR /wormwideweb
+
+EXPOSE 8000
