@@ -8,6 +8,8 @@
 
 These factors in combination led to selecting `sqlite3` for the database, which minimizes the deployment cost. During the build process, the database is populated and then copied to the final image. Since each container instance would have a copy and since there's no write operations, there's no need to run a database service. Since each instance has its own read-only copy, there's no issue with DB concurrency. However, this implies that building a new container image is necessary if we want to add or modify the data.
 
+Note that this approach won't work if the number of datasets significantly increases since that'd make the container image too large. If so, setting up an instance of Cloud SQL PotgreSQL might be necessary.
+
 ### Cache: Redis
 Since the containers are ephemeral (i.e. they spin down if there's no traffic) and automatically scaled (i.e. automatically launch more instances if there's any traffic overflow), Redis is used as the singular place for caching (key value pairs).
 
