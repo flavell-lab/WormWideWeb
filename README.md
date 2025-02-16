@@ -117,7 +117,7 @@ Certain types such as NeuroPAL, which are common across multiple papers, should 
 }
 ```
 #### 3. add the dataset files
-Add the individual dataset files from the paper `paper_id` to the following location: 
+Add the individual dataset files from the paper `paper_id` to the following location:  
 `initial_data/activity/data/${paper_id}/$file`  
 Make sure that `paper_id` matches the `paper_id` in `dataset_types.json` and `papers.json`.  
 
