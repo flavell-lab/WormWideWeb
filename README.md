@@ -46,6 +46,30 @@ Note: if the database doesn't contain the connectome-related models/data, it is 
 - `api/data/datasets/`: for the dataset table. contains metadata (paper, name, length, number of neurons, etc.) for all neural datasets.  
 - `api/data/find_neuron/`: neuron-dataset match info for the find neuron feature.  
 
+## Environmental variables and secret keys
+Env variables: 
+- `DJ_DEBUG`: `0` or `1`. Must be set to `0` for deployment.  
+- `DJ_ALLOWED_HOSTS`: `localhost` should be included for local development. space separated. e.g. `127.0.0.1 .run.app wormwideweb.org`
+- `DJ_USE_REDIS`: `0` or `1`. Set it to `0` for local development (fallback to local memory caching).  
+- `DJ_REDIS_URI`: Redis instance URI e.g. `redis://x.x.x.x:6379`
+
+Secret keys (KEEP THESE SECRET):  
+Be careful not to print these or write into a file in the deployment image. On GCP, the secrets are managed by GCP Secret Manager, so there's no need to bake them into the image.  
+- `DJ_SECRET_KEY`:  your secret key.  
+- `DJ_SECRET_KEY_BACKUP`: secret key backup for rotating (no need to set for development).   
+
+## Local development
+For local testing and development, first set the following environmental variables:  
+- `DJ_DEBUG`: `1`  
+- `DJ_ALLOWED_HOSTS`: `localhost`  
+- `DJ_USE_REDIS`: `1`.  
+- `DJ_SECRET_KEY`: use a random secret key that's not your deployment key.
+
+Then run `src/populate_db.sh`. You only need to run this once for your local copy as long as you have the database file. On Apple M2, this takes about a minute.  
+If the scripts finishes without any error, you can run `python manage.py runserver`. This is recommened for development as you can immediately preview the code you write.
+
+For deployment testing, building a docker image with the supplied `docker-compose.yml` is recommended. Run `docker compose build` and then `docker compose run -d`.  
+
 ## initial_data
 All connectome datasets, GCaMP/behavior datasets, and various configurations are placed in the directory named `initial_data` located in the same directory as `src`.  
 
