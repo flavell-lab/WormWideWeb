@@ -45,3 +45,30 @@ Note: if the database doesn't contain the connectome-related models/data, it is 
 - `api/data/atanas_kim_2023_encoding/`: encoding table from the Atanas & Kim et al. 2023 paper.  
 - `api/data/datasets/`: for the dataset table. contains metadata (paper, name, length, number of neurons, etc.) for all neural datasets.  
 - `api/data/find_neuron/`: neuron-dataset match info for the find neuron feature.  
+
+## initial_data
+All connectome datasets, GCaMP/behavior datasets, and various configurations are placed in the directory named `initial_data` located in the same directory as `src`.  
+```
+initial_data
+- activity
+    - data
+        - atanas_kim_2023
+            - 2021-05-26-07.json
+              ...
+        - dag_nwabudike_kang_2023
+              ...
+    - dataset_types.json
+    - encoding_table.json
+    - papers.json
+- config
+    - gcamp_neuron_class_name_map_manual.json
+    - gcamp_neuron_name_map_manual.json
+    - neuron_class_split_manual.json
+    - neuron_class_split.json
+- connectome
+    - connectome
+        - white_1986_whole.json
+          ...
+    - connectome_datasets.json
+    - connectome_neurons.json
+```
