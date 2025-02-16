@@ -1,7 +1,15 @@
+# copy data
 gsutil cp -r gs://www-build-bucket/initial_data /www-build
+
+# create build config with the secret keys
 sh create_build_config.sh
+
+# build
 docker compose build
 
-docker tag gcp_deploy:latest us-central1-docker.pkg.dev/www-deploy/www-docker/gcp_deploy:latest
+# remove the config file
+rm -f config/default.env
 
+# tag and push to artifact repo
+docker tag gcp_deploy:latest us-central1-docker.pkg.dev/www-deploy/www-docker/gcp_deploy:latest
 docker push us-central1-docker.pkg.dev/www-deploy/www-docker/gcp_deploy:latest
