@@ -18,7 +18,7 @@ RUN --mount=type=secret,id=env_base,dst=/run/secrets/env_base \
 
 # for deployment
 FROM python:3.13-slim
-ENV PYTHONDONTWRITEBYTECODE=1
+# ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 RUN mkdir /config
 COPY /config/requirement.pip /config/requirement.pip
@@ -29,5 +29,8 @@ RUN pip install --no-cache-dir -r /config/requirement.pip
 COPY --from=builder /wormwideweb /wormwideweb
 
 WORKDIR /wormwideweb
+
+# Precompile all Python files into .pyc bytecode files
+RUN python -m compileall .
 
 EXPOSE 8000
