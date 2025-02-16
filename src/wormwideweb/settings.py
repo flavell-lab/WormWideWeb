@@ -31,12 +31,16 @@ DEBUG = bool(int(os.environ.get("DJ_DEBUG", 0)))
 ALLOWED_HOSTS = os.environ.get("DJ_ALLOWED_HOSTS").split()
 
 # Application definition
+USE_ADMIN = DEBUG = bool(int(os.environ.get("DJ_ADMIN", 0)))
 
 INSTALLED_APPS = [
     'activity.apps.ActivityConfig',
     'core.apps.CoreConfig',
-    'connectome.apps.ConnectomeConfig',
-    'django.contrib.admin',
+    'connectome.apps.ConnectomeConfig'
+]
+if USE_ADMIN:
+    INSTALLED_APPS.append('django.contrib.admin')
+INSTALLED_APPS += [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
