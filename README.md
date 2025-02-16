@@ -48,6 +48,8 @@ Note: if the database doesn't contain the connectome-related models/data, it is 
 
 ## initial_data
 All connectome datasets, GCaMP/behavior datasets, and various configurations are placed in the directory named `initial_data` located in the same directory as `src`.  
+
+Directory structure: 
 ```
 initial_data
 - activity
@@ -56,7 +58,7 @@ initial_data
             - 2021-05-26-07.json
               ...
         - dag_nwabudike_kang_2023
-             - 2022-01-16-01.json
+            - 2022-01-16-01.json
               ...
     - dataset_types.json
     - encoding_table.json
@@ -73,3 +75,49 @@ initial_data
     - connectome_datasets.json
     - connectome_neurons.json
 ```
+
+### Adding a new neural/behavioral dataset
+Follow the insructions and your datasets will be populated into the database during the image build time.  
+
+#### 1. add the paper metadata to `papers.json`
+```json
+[
+    {
+        "paper_id": "atanas_kim_2023",
+        "title_full": "Brain-wide representations of behavior spanning multiple timescales and states in C. elegans",
+        "title_short": "Atanas & Kim et al., 2023"
+    },
+    {
+        "paper_id": "dag_nwabudike_kang_2023",
+        "title_full": "Dissecting the functional organization of the C. elegans serotonergic system at whole-brain scale",
+        "title_short": "Dag, Nwabudike & Kang et al., 2023"
+    }
+]
+```
+#### 2. add the dataset type(s) to `dataset_types.json`
+Note that `id` should match the id in `dataset_type` within your neural data json file.  
+Certain types such as NeuroPAL, which are common across multiple papers, should be added to the `common` section. Please do not add types such as `Baseline`, `Control`, and `GFP` to the common section, as they usually mean different things across the papers.  
+
+```json
+{
+    "common": [
+        {"id": "neuropal", "name": "NeuroPAL", "color_background": "#0d6efd", "description": "Datasets with NeuroPAL (i.e. identities of the recorded neurons are available)"}
+    ],
+
+    "atanas_kim_2023": [
+        {"id": "baseline", "name": "Baseline", "color_background": "rgb(125,125,125)", "description": "Baseline dataset"},
+        {"id": "heat", "name": "Heat", "color_background": "#dc3545", "description": "Heat stimulation experiment data"},
+        {"id": "gfp", "name": "GFP", "color_background": "#198754", "description": "Control data with the GFP expression strain"}
+    ],
+
+    "dag_nwabudike_kang_2023": [
+        {"id": "patchEncounter", "name": "Patch", "color_background": "#dc3545", "description": "Starved worm started off in a foodless zone and encountered a food patch"},
+        {"id": "reFed", "name": "Re-fed", "color_background": "rgb(200,200,0)", "description": "Starved worm on a dense food patch"}
+    ]
+}
+```
+#### 3. add the dataset files
+Add the individual dataset files from the paper `paper_id` to the following location: 
+`initial_data/activity/data/${paper_id}/$file`  
+Make sure that `paper_id` matches the `paper_id` in `dataset_types.json` and `papers.json`.  
+
