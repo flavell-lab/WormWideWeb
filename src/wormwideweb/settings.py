@@ -31,7 +31,7 @@ DEBUG = bool(int(os.environ.get("DJ_DEBUG", 0)))
 ALLOWED_HOSTS = os.environ.get("DJ_ALLOWED_HOSTS").split()
 
 # Application definition
-USE_ADMIN = DEBUG = bool(int(os.environ.get("DJ_ADMIN", 0)))
+USE_ADMIN = bool(int(os.environ.get("DJ_ADMIN", 0)))
 
 INSTALLED_APPS = [
     'activity.apps.ActivityConfig',
