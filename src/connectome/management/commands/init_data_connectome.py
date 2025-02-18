@@ -241,8 +241,19 @@ class Command(BaseCommand):
                     syn_type = "e" # electrical
                 
                 # create synapse
-                Synapse.objects.create(pre=pre_, post=post_, dataset=dataset_,
-                                    synapse_count=sum(syn["syn"]), synapse_type=syn_type)
+                # Synapse.objects.create(pre=pre_, post=post_, dataset=dataset_,
+                #                     synapse_count=sum(syn["syn"]), synapse_type=syn_type)
+                synapse, created = Synapse.objects.get_or_create(
+                    pre=pre_,
+                    post=post_,
+                    dataset=dataset_,
+                    synapse_type=syn_type,
+                    defaults={'synapse_count': sum(syn["syn"])}
+                )
+                if not created:
+                    synapse.synapse_count += sum(syn["syn"])
+                    synapse.save()
+
                 n = n + 1
 
                 # add available neuron and neuron calss
