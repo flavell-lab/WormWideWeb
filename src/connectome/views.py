@@ -224,7 +224,7 @@ def get_edge_response_data(data):
         # Cache each result and update all_synapses.
         for val, syn_list in result_mapping.items():
             key = f"{dataset}!{val}"
-            cache.set(key, syn_list, timeout=60*60*24*14)
+            cache.set(key, syn_list, timeout=None)
             all_synapses[dataset][val] = syn_list
 
     # Helper functions.

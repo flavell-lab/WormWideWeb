@@ -153,7 +153,7 @@ def get_neural_trace_data(dataset_id, idx_neuron):
         )
         if neuron is None: return None
         neuron["dataset_id"] = dataset_id
-        cache.set(f"{dataset_id}_{idx_neuron}", neuron, timeout=14*24*3600)
+        cache.set(f"{dataset_id}_{idx_neuron}", neuron, timeout=None)
 
     return neuron
 
