@@ -142,47 +142,92 @@ def available_neurons(request):
 
 def get_edge_response_data(data):
     datasets = data["datasets"]
-    neurons_input = data["neurons"]
+    neurons_input = set(data["neurons"])
     classes_input = set(data["classes"])
     show_individual_neuron = data["show_individual_neuron"]
     show_connected_neuron = data["show_connected_neuron"]
 
-    list_class_split = list(Neuron.objects.filter(name__in=neurons_input).values_list("neuron_class__name", flat=True))
+    # neuron_class names for neurons in neurons_input.
+    list_class_split = set(
+        Neuron.objects.filter(name__in=neurons_input).values_list("neuron_class__name", flat=True)
+    )
 
-    all_synapses = {}
+    # Initialize synapses structure.
+    all_synapses = {dataset: {} for dataset in datasets}
+
+    # Build all cache keys we need and a mapping for later splitting.
+    keys_needed = []
+    key_mapping = {}  # key -> (dataset, type, neuron_or_class)
     for dataset in datasets:
-        all_synapses[dataset] = {}
+        for n in neurons_input:
+            key = f"{dataset}!{n}"
+            keys_needed.append(key)
+            key_mapping[key] = (dataset, "neuron", n)
+        for c in classes_input:
+            key = f"{dataset}!{c}"
+            keys_needed.append(key)
+            key_mapping[key] = (dataset, "class", c)
 
-    # fetch from cache
-    query_manifest = []
-    for dataset in datasets:
-        for (type_, neuron_or_class) in [("neuron", n) for n in neurons_input] + [("class", c) for c in classes_input]:
-            key_ = f"{dataset}!{neuron_or_class}"
-            synapses = cache.get(key_)
-            if synapses:
-                all_synapses[dataset][neuron_or_class] = synapses
-            else:
-                query_manifest.append((dataset, type_, neuron_or_class))
+    # Bulk fetch from cache.
+    cached_results = cache.get_many(keys_needed)
+    missing_keys = []
+    for key in keys_needed:
+        if key in cached_results and cached_results[key] is not None:
+            k_dataset = key_mapping[key][0]
+            k_neuron_or_class = key_mapping[key][2]
+            all_synapses[k_dataset][k_neuron_or_class] = cached_results[key]
+        else:
+            missing_keys.append(key)
 
-    # query database
-    for (dataset_, type_, neuron_or_class_) in query_manifest:
-        if type_ == "neuron":
-            synapses = Synapse.objects.filter(
-            Q(pre__name=neuron_or_class_) | Q(post__name=neuron_or_class_),
-            dataset__dataset_id=dataset_
-            ).values_list('pre__name', 'pre__neuron_class__name', 'post__name', 'post__neuron_class__name', 'synapse_type', 'synapse_count')
-        else:  # type_ == "class"
-            synapses = Synapse.objects.filter(
-            Q(pre__neuron_class__name=neuron_or_class_) | Q(post__neuron_class__name=neuron_or_class_),
-            dataset__dataset_id=dataset_
-            ).values_list('pre__name', 'pre__neuron_class__name', 'post__name', 'post__neuron_class__name', 'synapse_type', 'synapse_count')
+    # Group missing keys by (dataset, type) for bulk database queries.
+    missing_group = defaultdict(list)
+    for key in missing_keys:
+        dataset, typ, value = key_mapping[key]
+        missing_group[(dataset, typ)].append(value)
 
-        synapse_list = []
-        for synapse in synapses:
-            synapse_list.append(synapse)            
-        cache.set(f"{dataset_}!{neuron_or_class_}", synapse_list, timeout=None)
-        all_synapses[dataset_][neuron_or_class_] = synapse_list
+    # For each group, fetch synapses in one query and then split results.
+    for (dataset, typ), values in missing_group.items():
+        if typ == "neuron":
+            qs = Synapse.objects.filter(
+                dataset__dataset_id=dataset,
+            ).filter(
+                Q(pre__name__in=values) | Q(post__name__in=values)
+            ).values_list(
+                'pre__name', 'pre__neuron_class__name',
+                'post__name', 'post__neuron_class__name',
+                'synapse_type', 'synapse_count'
+            )
+        else:  # typ == "class"
+            qs = Synapse.objects.filter(
+                dataset__dataset_id=dataset,
+            ).filter(
+                Q(pre__neuron_class__name__in=values) | Q(post__neuron_class__name__in=values)
+            ).values_list(
+                'pre__name', 'pre__neuron_class__name',
+                'post__name', 'post__neuron_class__name',
+                'synapse_type', 'synapse_count'
+            )
 
+        # Prepare a dictionary to collect results per value.
+        result_mapping = {val: [] for val in values}
+        for syn in qs:
+            pre_name, pre_class, post_name, post_class, syn_type, syn_count = syn
+            if typ == "neuron":
+                for val in values:
+                    if pre_name == val or post_name == val:
+                        result_mapping[val].append(syn)
+            else:  # type "class"
+                for val in values:
+                    if pre_class == val or post_class == val:
+                        result_mapping[val].append(syn)
+
+        # Cache each result and update all_synapses.
+        for val, syn_list in result_mapping.items():
+            key = f"{dataset}!{val}"
+            cache.set(key, syn_list, timeout=None)
+            all_synapses[dataset][val] = syn_list
+
+    # Helper functions.
     def select_label(neuron, neuron_class):
         if neuron in neurons_input:
             return neuron
@@ -197,60 +242,70 @@ def get_edge_response_data(data):
                 else:
                     return neuron_class
 
-    def get_synapse_key(pre_, post_, type_):
-        if type_ == "e":
-            if pre_ < post_:
-                return f"{pre_}!{post_}!{type_}"
-            else:
-                return f"{post_}!{pre_}!{type_}"
-        else:
-            return f"{pre_}!{post_}!{type_}"
+    def get_synapse_key(pre_val, post_val, syn_type):
+        # For type 'e', sort the labels to ensure consistency, since gap junctions are bidrectional
+        if syn_type == "e":
+            return f"{min(pre_val, post_val)}!{max(pre_val, post_val)}!{syn_type}"
+        return f"{pre_val}!{post_val}!{syn_type}"
 
-    # collect synapses to return
+    # Precompute dataset indices.
+    dataset_index = {dataset: idx for idx, dataset in enumerate(datasets)}
+
+    # Aggregate synapse counts.
     collect_synapses = {}
-    for dataset, synapse_collections in all_synapses.items():
-        i_dataset = datasets.index(dataset)
+    for dataset, synapse_collection in all_synapses.items():
+        i_dataset = dataset_index[dataset]
+        # Maintain a per-dataset set to avoid double counting.
         set_pair_added = set()
-        for neuron_or_class, synapses in synapse_collections.items():
-            for synapse in synapses:
-                pre_ = synapse[0]
-                pre_class_ = synapse[1]
-                post_ = synapse[2]
-                post_class_ = synapse[3]
-                type_ = synapse[4]
-                
-                add_synapse = False
+        for neuron_or_class, syn_list in synapse_collection.items():
+            for syn in syn_list:
+                pre_name, pre_class, post_name, post_class, syn_type, syn_count = syn
+
+                # Decide whether to add the synapse based on filter conditions.
                 if not show_connected_neuron:
-                    if ((pre_ in neurons_input) or (pre_class_ in classes_input)) and \
-                        ((post_ in neurons_input) or (post_class_ in classes_input)):
+                    if ((pre_name in neurons_input) or (pre_class in classes_input)) and \
+                       ((post_name in neurons_input) or (post_class in classes_input)):
                         add_synapse = True
+                    else:
+                        add_synapse = False
                 else:
                     add_synapse = True
 
                 if add_synapse:
-                    key_ = get_synapse_key(select_label(pre_, pre_class_), select_label(post_, post_class_), type_)
-                    if key_ not in collect_synapses:
-                        collect_synapses[key_] = [0 for i in range(0, len(datasets))]
-                    
-                    key_neurons = get_synapse_key(pre_, post_, type_)
+                    key = get_synapse_key(select_label(pre_name, pre_class),
+                                          select_label(post_name, post_class),
+                                          syn_type)
+                    if key not in collect_synapses:
+                        collect_synapses[key] = [0] * len(datasets)
+
+                    # Use a secondary key to avoid double counting within this dataset.
+                    # i.e. ADAL->AVA might show up twice if both ADAL and AVA were given
+                    key_neurons = get_synapse_key(pre_name, post_name, syn_type)
                     if key_neurons not in set_pair_added:
-                        collect_synapses[key_][i_dataset] += synapse[5]
+                        collect_synapses[key][i_dataset] += syn_count
                         set_pair_added.add(key_neurons)
 
+    # Build the return dictionary.
     return_dict = {
         "datasets": datasets,
         "neurons": [],
         "synapses": []
     }
 
-    list_synapse_keys = sorted(collect_synapses.keys())
-    for synapse_key in list_synapse_keys:
-        pre_, post_, type_ = synapse_key.split("!")
-        return_dict["synapses"].append({"pre": pre_, "post": post_, "type": type_, "count": sum(collect_synapses[synapse_key]), "list_count": collect_synapses[synapse_key]})
-        if pre_ not in return_dict["neurons"]:
-            return_dict["neurons"].append(pre_)
-        if post_ not in return_dict["neurons"]:
-            return_dict["neurons"].append(post_)
+    for syn_key in sorted(collect_synapses.keys()):
+        pre, post, syn_type = syn_key.split("!")
+        list_count = collect_synapses[syn_key]
+        return_dict["synapses"].append({
+            "pre": pre,
+            "post": post,
+            "type": syn_type,
+            "count": sum(list_count),
+            "list_count": list_count,
+        })
+        if pre not in return_dict["neurons"]:
+            return_dict["neurons"].append(pre)
+        if post not in return_dict["neurons"]:
+            return_dict["neurons"].append(post)
 
     return_dict["neurons"].sort()
 
