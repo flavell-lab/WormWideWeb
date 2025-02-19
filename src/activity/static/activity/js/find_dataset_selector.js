@@ -17,11 +17,21 @@ export class PaperDatasetSelector {
         Object.keys(datasetTypes).forEach((typeId) => {
             options.push({
                 value: datasetTypes[typeId].type_id,
-                name: datasetTypes[typeId].name
+                name: datasetTypes[typeId].name,
+                paper: datasetTypes[typeId].paper,
             })
         });
 
-        this.selectorDataset = this.initSelectorDataset();
+        const optionGroups = [];
+        Object.keys(papers).forEach((paperId) => {
+            optionGroups.push({
+                value: paperId,
+                label: papers[paperId].title_short,
+            })
+        });
+        optionGroups.push({"value": "common", "label": "Common"})
+
+        this.selectorDataset = this.initSelectorDataset(optionGroups);
         this.selectorDataset.addOptions(options)
 
         /*
@@ -53,11 +63,13 @@ export class PaperDatasetSelector {
         });
     }
 
-    initSelectorDataset() {
+    initSelectorDataset(optionGroups) {
         return new TomSelect(this.selectorDatasetElement, {
             plugins: ['n_items', 'checkbox_options', 'dropdown_input'],
             persist: false,
             create: false,
+            optgroups: optionGroups,
+            optgroupField: "paper",
             maxOptions: null,
             sortField: [{ field: "name" }],
             valueField: "value",

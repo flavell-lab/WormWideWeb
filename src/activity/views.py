@@ -84,6 +84,7 @@ def dataset(request):
                 "type_id": dt.type_id,
                 "description": dt.description,
                 "name": dt.name,
+                "paper": dt.paper.paper_id if dt.paper else "common",
                 "background-color": dt.color_background,
             }
             for dt in GCaMPDatasetType.objects.all()
