@@ -162,7 +162,7 @@ export class SelectorDatasetNeuron {
             const neuronSelectedCount = Array.isArray(neuronSelectedValues) ? neuronSelectedValues.length : (neuronSelectedValues ? 1 : 0); // Handle single/multiple select
 
             if (neuronSelectedCount > 0) {
-                this.connectomeGraph.updateGraph();
+                this.connectomeGraph.debouncedUpdateGraph();
             }
 
             // Execute callback if provided
