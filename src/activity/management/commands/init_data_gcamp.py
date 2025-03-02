@@ -3,6 +3,7 @@ from connectome.models import NeuronClass
 from activity.models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 import numpy as np
 from scipy.stats import pearsonr
+import time
 import json
 import math
 import os
@@ -216,6 +217,8 @@ def check_list_lengths(self, list_trace_array, list_trace_original, pumping, hea
     return expected_length
 
 def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neuron_name_map=None):
+    neuron_class_cache = {nc.name: nc for nc in NeuronClass.objects.all()}
+
     data = load_json(self, path_json)
     # import neurons
     list_trace_array = data["trace_array"]
@@ -343,6 +346,7 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         dataset.dataset_type.add(dataset_type)
 
     # create neuron objects
+    new_neurons = []
     for i in range(0,len(list_trace_array)):
         idx_neuron = i + 1
         idx_neuron_str = str(idx_neuron)
@@ -350,10 +354,10 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
             label_ = data["labeled"][idx_neuron_str]
             neuron_name = map_neuron_name(label_["label"], neuron_name_map)
             neuron_class_name = map_neuron_name(label_["neuron_class"], neuron_class_name_map)
-            if not NeuronClass.objects.filter(name=neuron_class_name).exists():
-                self.stdout.write(self.style.WARNING(f"Neuron class {neuron_class_name} does not exist."))
-
-            neuron_class = NeuronClass.objects.get(name=neuron_class_name)
+            if neuron_class_name not in neuron_class_cache:
+                self.stdout.write(self.style.WARNING(f"Neuron class {neuron_class_name} does not exist. dataset: {data["uid"]} idx_neuron: {idx_neuron}"))
+                
+            neuron_class = neuron_class_cache[neuron_class_name]
             lr = process_lr(label_["LR"])
             dv = process_dv(label_["DV"])
         else:
@@ -365,16 +369,19 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
         trace = truncate_floats_in_list(list_trace_array[i])
         trace_original = truncate_floats_in_list(list_trace_original[i])
             
-        GCaMPNeuron.objects.create(
-            dataset=dataset,
-            neuron_name=neuron_name,
-            neuron_class=neuron_class,
-            idx_neuron=idx_neuron,
-            lr=lr,
-            dv=dv,
-            trace=trace,
-            trace_original=trace_original,
+        new_neurons.append(
+            GCaMPNeuron(
+                dataset=dataset,
+                neuron_name=neuron_name,
+                neuron_class=neuron_class,
+                idx_neuron=idx_neuron,
+                lr=lr,
+                dv=dv,
+                trace=trace,
+                trace_original=trace_original,
+            )
         )
+    GCaMPNeuron.objects.bulk_create(new_neurons)
 
 def import_all_paper(self):
     path_paper_json = get_dataset_path(PATH_PAPER)
@@ -409,6 +416,7 @@ def import_all_type(self):
     self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} dataset types"))
 
 def import_all_gcamp(self):
+    t1 = time.time_ns()
     papers = GCaMPPaper.objects.values_list("paper_id")
 
     path_json = get_dataset_path(PATH_CONFIG_GCAMP_NEURON_MAP)
@@ -432,7 +440,8 @@ def import_all_gcamp(self):
             #     self.stdout.write(self.style.WARNING(f"Error importing GCaMP dataset: {filename} error: {e}"))
             self.stdout.write(self.style.NOTICE(f"Processed {filename}"))
 
-    self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} GCaMP datasets"))
+    t2 = time.time_ns()
+    self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} GCaMP datasets. Time: {(t2-t1)/1e9} s"))
 
 class Command(BaseCommand):
     help = 'Import and initialize all GCaMP datasets'
