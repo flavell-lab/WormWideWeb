@@ -195,22 +195,24 @@ def get_dataset_encoding(dataset):
     return data
 
 
-"""
-get encoding data of a dataset
-"""
-@cache_control(public=True, max_age=60*60*24*7)
-def get_encoding(request, dataset_id):
+def get_encoding_data(dataset_id):
     encoding = cache.get(f"{dataset_id}_encoding")
     if encoding is None:
         dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
         encoding = get_dataset_encoding(dataset)
         cache.set(f"{dataset_id}_encoding", encoding, timeout=None)
 
-    return JsonResponse(encoding)
+    return encoding
 
 
+"""
+get encoding data of a dataset
+"""
 @cache_control(public=True, max_age=60*60*24*7)
-def get_behavior(request, dataset_id):
+def get_encoding(request, dataset_id):
+    return JsonResponse(get_encoding_data(dataset_id))
+
+def get_behavior_data(dataset_id):
     data = cache.get(f"{dataset_id}_behavior")
     if data is None:
         dataset = get_object_or_404(
@@ -228,7 +230,13 @@ def get_behavior(request, dataset_id):
         }
         cache.set(f"{dataset_id}_behavior", data, timeout=None)
 
-    return JsonResponse(data)
+    return data
+
+
+@cache_control(public=True, max_age=60*60*24*7)
+def get_behavior(request, dataset_id):
+
+    return JsonResponse(get_behavior_data(dataset_id))
 
 
 def get_dataset_neuron_data(dataset):
