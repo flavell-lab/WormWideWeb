@@ -1,4 +1,4 @@
-import Shepherd from 'https://cdn.jsdelivr.net/npm/shepherd.js@13.0.0/dist/esm/shepherd.mjs';
+import Shepherd from 'https://cdn.jsdelivr.net/npm/shepherd.js@14.5.1/dist/esm/shepherd.mjs';
 import { DatasetNeuronSelector } from '../find_neuron_selector.js';
 import { DatasetTable } from '../find_neuron_table.js';
 import { setLocalBool, getLocalBool, getDatasetTypePill } from "/static/core/js/utility.js"
