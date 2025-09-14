@@ -4,6 +4,8 @@ from connectome.models import Neuron, NeuronClass, Dataset, Synapse
 import json
 import os
 import time
+from core.utility import sha256
+
 def has_redundant_items(l):
   return len(l) != len(set(l))
 
@@ -19,6 +21,7 @@ PATH_DATSETS = ["connectome", "connectome_datasets.json"]
 PATH_NEURONS = ["connectome", "connectome_neurons.json"]
 PATH_CONNECTOME_DIR = ["connectome", "connectome"]
 PATH_NEURON_CLASS_SPLIT = ["config", "neuron_class_split.json"]
+PATH_CHECKSUM = ["config", "data_checksum.json"]
 
 def get_dataset_path(list_part):
     current_dir = os.getcwd()
@@ -262,12 +265,19 @@ class Command(BaseCommand):
             path_connectome_dir = get_dataset_path(PATH_CONNECTOME_DIR)
             json_files = [f for f in os.listdir(path_connectome_dir) if f.endswith('.json')]
 
+            # Checksum
+            path_checksumn = get_dataset_path(PATH_CHECKSUM)
+            with open(path_checksumn, 'r') as file:
+                dict_checksum = json.load(file)["connectome"]
+
             # Process each connectome dataset
             for json_name in json_files:
                 path_json = os.path.join(path_connectome_dir, json_name)
                 with open(path_json, 'r') as file:
                     json_data = json.load(file)
-                
+
+                assert sha256(path_json) == dict_checksum[json_name], "Checksum error for " + dataset_name
+
                 dataset_name = os.path.splitext(json_name)[0]
 
                 # Get synapse data
