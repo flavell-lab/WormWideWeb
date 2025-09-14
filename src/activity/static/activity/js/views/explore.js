@@ -1,4 +1,4 @@
-import Shepherd from 'https://cdn.jsdelivr.net/npm/shepherd.js@13.0.0/dist/esm/shepherd.mjs';
+import Shepherd from 'https://cdn.jsdelivr.net/npm/shepherd.js@14.5.1/dist/esm/shepherd.mjs';
 import { NeuronSelector } from "../plot_neuron_selector.js"
 import { BehaviorSelector } from "../plot_behavior_selector.js"
 import { DatasetSelector } from "../plot_dataset_selector.js"
