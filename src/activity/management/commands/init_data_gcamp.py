@@ -7,11 +7,13 @@ import time
 import json
 import math
 import os
+from core.utility import sha256
 
 PATH_CONFIG_GCAMP_NEURON_MAP = ["config", "gcamp_neuron_name_map_manual.json"]
 PATH_CONFIG_GCAMP_CLASS_MAP = ["config", "gcamp_neuron_class_name_map_manual.json"]
 PATH_PAPER = ["activity", "papers.json"]
 PATH_TYPE = ["activity", "dataset_types.json"]
+PATH_CHECKSUM = ["config", "data_checksum.json"]
 
 '''
 
@@ -216,7 +218,7 @@ def check_list_lengths(self, list_trace_array, list_trace_original, pumping, hea
 
     return expected_length
 
-def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neuron_name_map=None):
+def import_gcamp_data(self, path_json, checksum, paper_id, neuron_class_name_map=None, neuron_name_map=None):
     neuron_class_cache = {nc.name: nc for nc in NeuronClass.objects.all()}
 
     data = load_json(self, path_json)
@@ -327,7 +329,9 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
 
         events=data["events"] if "events" in data else {},
 
-        neuron_cor=cor_trace
+        neuron_cor=cor_trace,
+
+        dataset_sha256=checksum
     )
 
     # add dataset type
@@ -424,6 +428,10 @@ def import_all_gcamp(self):
     path_json = get_dataset_path(PATH_CONFIG_GCAMP_CLASS_MAP)
     neuron_class_name_map = load_json(self, path_json)
 
+    path_checksumn = get_dataset_path(PATH_CHECKSUM)
+    with open(path_checksumn, 'r') as file:
+        dict_checksum = json.load(file)
+
     n = 0
     for paper_ in papers:
         paper_id = paper_[0]
@@ -434,7 +442,10 @@ def import_all_gcamp(self):
         for filename in json_files:
             # try:
             filepath = get_dataset_path(["activity", "data", paper_id, filename])
-            import_gcamp_data(self, filepath, paper_id, neuron_class_name_map, neuron_name_map)
+            checksum = sha256(filepath)
+            assert checksum == dict_checksum[paper_id][filename], f"GCaMP checksum error for {paper_id} {filename}"
+
+            import_gcamp_data(self, filepath, checksum, paper_id, neuron_class_name_map, neuron_name_map)
             n = n + 1
             # except Exception as e:
             #     self.stdout.write(self.style.WARNING(f"Error importing GCaMP dataset: {filename} error: {e}"))

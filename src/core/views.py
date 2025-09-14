@@ -3,6 +3,8 @@ from django.views.decorators.cache import cache_page
 from django.http import HttpResponse
 from django.db import connection
 from django.views.decorators.http import require_GET
+from connectome.views import connectome_datasets
+import json
 
 @cache_page(60*60*24*30)
 def index(request):
@@ -12,7 +14,9 @@ def index(request):
 
 @cache_page(60*60*24*30)
 def about(request):
-    context = {}
+    context = {
+        "connectome_data": json.loads(connectome_datasets())
+    }
 
     return render(request, "core/about.html", context)
 

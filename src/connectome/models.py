@@ -58,6 +58,7 @@ class Dataset(models.Model):
         return self.dataset_id
     
     dataset_id = models.CharField(max_length=25, unique=True)
+    dataset_sha256 = models.CharField(max_length=64, unique=True, editable=False, blank=True)
     citation = models.CharField(max_length=500)
     name = models.CharField(max_length=50)
     dataset_type = models.CharField(max_length=10)

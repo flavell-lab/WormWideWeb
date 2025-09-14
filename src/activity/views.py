@@ -362,6 +362,7 @@ def plot_dataset(request, dataset_id):
     context = {
         "paper": dataset.paper,
         "dataset_id": dataset_id,
+        "dataset_sha256": dataset.dataset_sha256,
         "dataset_name": dataset.dataset_name,
         "data": json.dumps(data, cls=DjangoJSONEncoder),
         "datasets_json": datasets_json,

@@ -94,6 +94,7 @@ initial_data
     - gcamp_neuron_name_map_manual.json
     - neuron_class_split_manual.json
     - neuron_class_split.json
+    - data_checksum.json
 - connectome
     - connectome
         - white_1986_whole.json
@@ -146,4 +147,7 @@ Certain types such as NeuroPAL, which are common across multiple papers, should 
 Add the individual dataset files from the paper `paper_id` to the following location:  
 `initial_data/activity/data/${paper_id}/$file`  
 Make sure that `paper_id` matches the `paper_id` in `dataset_types.json` and `papers.json`.  
+
+#### 4. add the checksum data
+Compute the file's SHA256 checksum and add it to `config/data_checksum.json`.  
 
