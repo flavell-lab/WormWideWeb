@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 python manage.py migrate --noinput
 python manage.py collectstatic --no-input
 python manage.py init_data_connectome
