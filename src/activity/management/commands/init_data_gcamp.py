@@ -218,7 +218,7 @@ def check_list_lengths(self, list_trace_array, list_trace_original, pumping, hea
 
     return expected_length
 
-def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neuron_name_map=None):
+def import_gcamp_data(self, path_json, checksum, paper_id, neuron_class_name_map=None, neuron_name_map=None):
     neuron_class_cache = {nc.name: nc for nc in NeuronClass.objects.all()}
 
     data = load_json(self, path_json)
@@ -329,7 +329,9 @@ def import_gcamp_data(self, path_json, paper_id, neuron_class_name_map=None, neu
 
         events=data["events"] if "events" in data else {},
 
-        neuron_cor=cor_trace
+        neuron_cor=cor_trace,
+
+        dataset_sha256=checksum
     )
 
     # add dataset type
@@ -440,10 +442,10 @@ def import_all_gcamp(self):
         for filename in json_files:
             # try:
             filepath = get_dataset_path(["activity", "data", paper_id, filename])
+            checksum = sha256(filepath)
+            assert checksum == dict_checksum[paper_id][filename], f"GCaMP checksum error for {paper_id} {filename}"
 
-            assert sha256(filepath) == dict_checksum[paper_id][filename], f"GCaMP checksum error for {paper_id} {filename}"
-
-            import_gcamp_data(self, filepath, paper_id, neuron_class_name_map, neuron_name_map)
+            import_gcamp_data(self, filepath, checksum, paper_id, neuron_class_name_map, neuron_name_map)
             n = n + 1
             # except Exception as e:
             #     self.stdout.write(self.style.WARNING(f"Error importing GCaMP dataset: {filename} error: {e}"))

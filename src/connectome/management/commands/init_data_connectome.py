@@ -77,6 +77,10 @@ class Command(BaseCommand):
     # dataset
     def import_dataset(self):
         try:
+            path_checksumn = get_dataset_path(PATH_CHECKSUM)
+            with open(path_checksumn, 'r') as file:
+                dict_checksum = json.load(file)["connectome"]
+
             with transaction.atomic():
                 t1 = time.time_ns()
                 path_json = get_dataset_path(PATH_DATSETS)
@@ -88,7 +92,8 @@ class Command(BaseCommand):
                     new_datasets.append(
                         Dataset(dataset_id = dataset["id"], name = dataset["name"], dataset_type = dataset["type"],
                                 animal_time = dataset["time"], animal_visual_time = dataset["visualTime"],
-                                description = dataset["description"], citation="$".join(dataset["citation"]))
+                                description = dataset["description"], citation="$".join(dataset["citation"]),
+                                dataset_sha256 = dict_checksum[dataset["id"] + ".json"])
                     )
                 
                 if new_datasets:
