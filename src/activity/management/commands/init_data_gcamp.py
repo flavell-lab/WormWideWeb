@@ -7,11 +7,13 @@ import time
 import json
 import math
 import os
+from core.utility import sha256
 
 PATH_CONFIG_GCAMP_NEURON_MAP = ["config", "gcamp_neuron_name_map_manual.json"]
 PATH_CONFIG_GCAMP_CLASS_MAP = ["config", "gcamp_neuron_class_name_map_manual.json"]
 PATH_PAPER = ["activity", "papers.json"]
 PATH_TYPE = ["activity", "dataset_types.json"]
+PATH_CHECKSUM = ["config", "data_checksum.json"]
 
 '''
 
@@ -424,6 +426,10 @@ def import_all_gcamp(self):
     path_json = get_dataset_path(PATH_CONFIG_GCAMP_CLASS_MAP)
     neuron_class_name_map = load_json(self, path_json)
 
+    path_checksumn = get_dataset_path(PATH_CHECKSUM)
+    with open(path_checksumn, 'r') as file:
+        dict_checksum = json.load(file)
+
     n = 0
     for paper_ in papers:
         paper_id = paper_[0]
@@ -434,6 +440,9 @@ def import_all_gcamp(self):
         for filename in json_files:
             # try:
             filepath = get_dataset_path(["activity", "data", paper_id, filename])
+
+            assert sha256(filepath) == dict_checksum[paper_id][filename], f"GCaMP checksum error for {paper_id} {filename}"
+
             import_gcamp_data(self, filepath, paper_id, neuron_class_name_map, neuron_name_map)
             n = n + 1
             # except Exception as e:
