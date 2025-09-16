@@ -21,12 +21,15 @@ def get_dataset_path(list_part):
     return os.path.join(parent_dir, "initial_data", *list_part)
 
 def convert_split_str(str_):
-    if str_ == 1:
+    if str_ == "1":
         return True
-    elif str_ == -1:
+    elif str_ == "-1":
         return None
-    else:
+    elif str_ == "0":
         return False
+    else:
+        raise ValueError
+        
 
 class Command(BaseCommand):
     help = 'Import and initialize connectome data'
