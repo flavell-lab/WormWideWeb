@@ -64,7 +64,7 @@ Be careful not to print these or write into a file in the deployment image. On G
 For local testing and development, first set the following environmental variables:  
 - `DJ_DEBUG`: `1`  
 - `DJ_ALLOWED_HOSTS`: `localhost`  
-- `DJ_USE_REDIS`: `1`.  
+- `DJ_USE_REDIS`: `0`.  
 - `DJ_SECRET_KEY`: use a random secret key that's not your deployment key.
 
 Then run `src/populate_db.sh`. You only need to run this once for your local copy as long as you have the database file. On Apple M2, this takes about a minute.  
