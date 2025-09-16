@@ -285,10 +285,9 @@ export class PlotGraph {
             const nodeId = nodeData.id;
             const cellClass = nodeData.neuron_class;
             const cellType = nodeData.cell_type;
-            const ntType = nodeData.neurotransmitter_type
-        
+            const cellTypeDesc = nodeData.cell_type_desc;
+
             const cellTypeFullStr = cellType.split("").map((str, index) => cellTypeDict[str]).join(', ')
-            const ntTypeFullStr = ntType.split("").map((str, index) => ntTypeDict[str]).join(', ')
             
             const urlWWW = `/activity/find-neuron/?n=${nodeId}`
             const urlWormAtlas = `https://www.wormatlas.org/search_results.html?q=${cellClass}`
@@ -310,8 +309,8 @@ export class PlotGraph {
                         <span class="text-muted" id="cell-type">${cellTypeFullStr}</span>
                     </div>
                     <div class="info-row">
-                        <span class="fw-medium">Neurotransmitter</span>
-                        <span class="text-muted" id="nt-type">${ntTypeFullStr}</span>
+                        <span class="fw-medium">Description</span>
+                        <span class="text-muted" id="nt-type">${cellTypeDesc}</span>
                     </div>
                 </div>
             

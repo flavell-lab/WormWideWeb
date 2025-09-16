@@ -348,11 +348,8 @@ export function getNeuronClassProperty(neuron, localKey="neuron_data") {
     const constructNeuronProperties = (id, neuron_dict, node_type) => ({
         id,
         cell_type: neuron_dict.cell_type,
-        in_head: neuron_dict.in_head,
-        in_tail: neuron_dict.in_tail,
-        is_embryonic: neuron_dict.is_embryonic,
-        neurotransmitter_type: neuron_dict.neurotransmitter_type,
         type: node_type,
+        cell_type_desc: neuron_dict.cell_type_desc,
         neuron_class: neuron_dict.neuron_class,
     });
 
