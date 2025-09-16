@@ -70,6 +70,23 @@ For local testing and development, first set the following environmental variabl
 Then run `src/populate_db.sh`. You only need to run this once for your local copy as long as you have the database file. On Apple M2, this takes about a minute.  
 If the scripts finishes without any error, you can run `python manage.py runserver`. This is recommened for development as you can immediately preview the code you write.
 
+Example:  
+```bash
+export DJ_DEBUG=1
+export DJ_DB_BUILD=1
+export DJ_ALLOWED_HOSTS="localhost"
+export DJ_USE_REDIS=0
+export DJ_SECRET_KEY="random secret key string"
+export DJ_ADMIN=1
+
+rm db.sqlite3
+sh populate_db.sh
+
+python manage.py collectstatic --noinput
+python manage.py runserver
+```
+
+
 For deployment testing, building a docker image with the supplied `docker-compose.yml` is recommended. Run `docker compose build` and then `docker compose run -d`.  
 
 ## initial_data
