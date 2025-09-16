@@ -39,7 +39,7 @@ export class ConnectomeLegend {
                 { label: "Sensory neuron", color: this.colorScheme[2], shape: "circle" },
                 { label: "Interneuron", color: this.colorScheme[4], shape: "circle" },
                 { label: "Motor neuron", color: this.colorScheme[8], shape: "circle" },
-                { label: "Modulatory", color: this.colorScheme[5], shape: "circle" },
+                // { label: "Modulatory", color: this.colorScheme[5], shape: "circle" },
                 { label: "Muscle", color: "rgb(75,75,75)", shape: "square" },
                 { label: "Others", color: "rgb(210,210,210)", shape: "square" }
             ],
