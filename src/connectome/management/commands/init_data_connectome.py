@@ -133,6 +133,13 @@ class Command(BaseCommand):
             else:
                 return name
 
+        path_json = get_dataset_path(PATH_DATSETS)
+        with open(path_json, 'r') as file:
+            data_datasets = json.load(file)
+        skip_gap_junction = {}
+        for dataset in data_datasets:
+            skip_gap_junction[dataset["id"]] = "skip_gap_junction" in dataset
+
         with transaction.atomic():
             t1 = time.time_ns()
             # Neuron, NeuronClass, and Dataset cache
@@ -165,6 +172,10 @@ class Command(BaseCommand):
                     syn_type = "c" if syn["typ"] == 0 else "e" if syn["typ"] == 2 else None
                     assert syn_type is not None, f"Invalid synapse type: {syn['typ']}"
                     
+                    # skip creation if the config skips gap junction/electrical synapse
+                    if syn_type == "e" and skip_gap_junction[dataset_name]:
+                        continue
+
                     syn["pre"] = replace_name(syn["pre"])
                     syn["post"] = replace_name(syn["post"])
 
