@@ -50,9 +50,9 @@ export class DatasetTable {
         const $table = $(this.tableElementSelector);
         
         // 1. Apply the filter
-        $table.bootstrapTable("filterBy", {}, {
-            filterAlgorithm: (row) => {
-                return valuePaper.includes(row.paper_id) && (row.id in matchDict);
+        $table.bootstrapTable("filterBy", {paperId: valuePaper, matchDict: matchDict}, {
+            filterAlgorithm: (row, filters) => {
+                return filters.paperId.includes(row.paper_id) && (row.id in filters.matchDict);
             }
         });
     
