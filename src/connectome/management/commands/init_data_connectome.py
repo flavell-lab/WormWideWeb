@@ -138,7 +138,10 @@ class Command(BaseCommand):
             data_datasets = json.load(file)
         skip_gap_junction = {}
         for dataset in data_datasets:
-            skip_gap_junction[dataset["id"]] = "skip_gap_junction" in dataset
+            if "skip_gap_junction" in dataset:
+                skip_gap_junction[dataset["id"]] = dataset["skip_gap_junction"]
+            else:
+                skip_gap_junction[dataset["id"]] = False
 
         with transaction.atomic():
             t1 = time.time_ns()
