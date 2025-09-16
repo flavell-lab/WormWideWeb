@@ -69,7 +69,7 @@ def available_neurons(request):
             # Prepare querysets with only needed fields.
             neuron_qs = (
                 Neuron.objects
-                .only('name', 'cell_type', 'neurotransmitter_type', 'in_head', 'in_tail', 'is_embryonic', 'neuron_class__name')
+                .only('name', 'cell_type', 'neuron_class__name', 'cell_type_desc')
                 .select_related('neuron_class')
             )
             neuron_class_qs = (
@@ -101,10 +101,7 @@ def available_neurons(request):
                     'neuron_class': neuron.neuron_class.name if neuron.neuron_class else None,
                     'name': neuron.name,
                     'cell_type': neuron.cell_type,
-                    'neurotransmitter_type': neuron.neurotransmitter_type,
-                    'in_head': neuron.in_head,
-                    'in_tail': neuron.in_tail,
-                    'is_embryonic': neuron.is_embryonic
+                    'cell_type_desc': neuron.cell_type_desc
                 }
                 for neuron in neurons_set
             }

@@ -47,10 +47,8 @@ class Neuron(models.Model):
     lr = models.CharField(max_length=1, choices=LR_CHOICES, blank=True)
     dv = models.CharField(max_length=1, choices=DV_CHOICES, blank=True)
 
-    in_head = models.BooleanField()
-    in_tail = models.BooleanField()
-    is_embryonic = models.BooleanField()
-    neurotransmitter_type = models.CharField(max_length=5)
+    cell_category = models.CharField(max_length=30, blank=True)
+    cell_type_desc = models.CharField(max_length=30, blank=True)
     cell_type = models.CharField(max_length=5)
 
 class Dataset(models.Model):
