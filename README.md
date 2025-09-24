@@ -1,5 +1,5 @@
 # WormWideWeb
-
+Currently deployed on [wormwideweb.org](https://wormwideweb.org)
 ## General notes on the architecture
 ### Database: sqlite3
 - the data rarely changes (i.e. there's no need to dynamically update both the activity and the connectonme data).  
