@@ -1,0 +1,63 @@
+# boostrap icon
+bootstrap_icon_css:
+    url: "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    integrity: "sha512-dPXYcDub/aeb08c63jRq/k6GaKccl256JQy/AnOq7CAnEZ9FzSL9wSbcZkMp4R26vBsMLFYH4kQ67/bbV8XaCQ=="
+
+# bootstrap
+bootstrap_css:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css"
+    integrity: "sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA=="
+bootstrap_js:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js"
+    integrity: "sha512-HvOjJrdwNpDbkGJIG2ZNqDlVqMo77qbs4Me4cah0HoDrfhrbA+8SBlZn1KrvAQw7cILLPFJvdwIgphzQmMm+Pw=="
+
+# tom-select
+tom_select_js:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/js/tom-select.complete.js"
+    integrity: "sha512-cv8SyZZkoW3eB3rWs0JsM/wNxKZe59+tMN8ewVIu24I1EAeBOT6lqkdty/iMxo3OJGvrFRYIrrGwM5BJqAXsYw=="
+tom_select_css:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/css/tom-select.bootstrap5.min.css"
+    integrity: "sha512-gKMzEZw+6phm9jAZ9p9x0MdnT2I8U+cv68/UFA0y/RhG4zh2OKSCW4jkjGTzSXvS9oxxKzJD1Om9VD6xKf8y0A=="
+tom_select_css_default:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/css/tom-select.min.css"
+    integrity: "sha512-WBuHdUNR/QocxZ4cSMmXUrV142yazK51uQdknbg+RBTJsrQBbdXFxH8EPyjoU/rGV7FPR9HoWBul4nVbEWifzQ=="
+
+# jquery
+jquery:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+    integrity: "sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+
+# bootstrap_table
+bootstrap_table_js:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.2/bootstrap-table.min.js"
+    integrity: "sha512-GS/lQJ1AiKWEDCgf1yKepN4m/xewSX6jEVL06KQU6jdAZb3FprSXR2cdBL7FHmo6t5M2gcspMi8I6DqzfPGVew=="
+bootstrap_table_css:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.2/bootstrap-table.min.css"
+    integrity: "sha512-ThXPnGXIJOi9huerzcKWpEqyPCaCECA9/Z3Sn5P8T37S2cm57p8Zz8g5r7woyEg+F5u7n5sRYg/LW/pCmpZnDA=="
+bootstrap_table_mobile:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.2/extensions/mobile/bootstrap-table-mobile.min.js"
+    integrity: "sha512-5no9dDVV2Fw1ps16Qz2jOdnTkAR56P1i9s2ZtMry5PZt2tqpJ/qnZMgcGBXNYwfOR2y4EvdBfUrC2ZW2YVq2qQ=="
+bootstrap_table_ms:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.2/extensions/multiple-sort/bootstrap-table-multiple-sort.min.js"
+    integrity: "sha512-HjAkMw6R9UWCfnzzwP8dUE+FXe2YS37KgiJUvU9JZHM4ElGi8auF31/gIaDpm/flh0hdP8nYe176Xoq/4wsvkw=="
+
+# plotly
+plotly:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.0/plotly.min.js"
+    integrity: "sha512-iXeIWNSxrG0kro2hgWe7onPrTS2g9AeLbojfGJM89zhrunfCSEkHUux9ACjjpem5ob1J2uJ5cNxAn7gJOwygrQ=="
+
+# cytoscape
+cytoscape:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.33.1/cytoscape.min.js"
+    integrity: "sha512-kHAY8XzRfLVMcLuowdk91552RD+Nb2/1uHamfHMdLejNqlZnbEJLl1wYnsNnqIFCEZ++WaOcOlfokC6p9JWrLw=="
+dagre:
+    url: "https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"
+    integrity: "sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ=="
+cytoscape_dagre:
+    url: "https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"
+
+# shepard
+shepard_css:
+    url: "https://cdn.jsdelivr.net/npm/shepherd.js@14.5.1/dist/css/shepherd.css"
+shepard_js:
+    url: "https://cdn.jsdelivr.net/npm/shepherd.js@14.5.1/dist/esm/shepherd.mjs"

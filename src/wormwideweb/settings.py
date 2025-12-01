@@ -12,9 +12,14 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+import yaml
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# load import.json
+with open(BASE_DIR / "import_cdn.yaml") as f:
+    IMPORT_CDN = yaml.safe_load(f)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -75,6 +80,11 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+# context preprocessor for CDN context
+TEMPLATES[0]["OPTIONS"]["context_processors"] += [
+    "wormwideweb.context_processors.import_cdn",
 ]
 
 WSGI_APPLICATION = 'wormwideweb.wsgi.application'
