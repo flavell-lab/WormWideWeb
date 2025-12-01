@@ -1,4 +1,3 @@
-import Shepherd from 'https://cdn.jsdelivr.net/npm/shepherd.js@14.5.1/dist/esm/shepherd.mjs';
 import { SelectorDatasetNeuron, getNeuronClassProperty } from '/static/connectome/js/connectome_selector.js';
 import { ConnectomeGraph } from '/static/connectome/js/connectome_graph.js';
 import { EncodingFeatureManager } from '../encoding_feature_manager.js';

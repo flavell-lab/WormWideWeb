@@ -1,4 +1,3 @@
-// import cytoscape from 'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.3/cytoscape.esm.min.mjs';
 import { isNodeRectangle, sumArray, initSwitch, setLocalInt, getLocalInt, getLocalBool, initSlider, debounce, getCSRFToken } from '/static/core/js/utility.js'
 import { GraphLayoutManager, NodePositionManager } from './connectome_layout.js'
 import { NodeManager} from './connectome_node.js'

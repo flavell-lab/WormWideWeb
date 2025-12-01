@@ -2,14 +2,14 @@
 {% load static %}
 {% block title %}Neural Activity - Find Neuron{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/css/tom-select.bootstrap5.min.css"
-  integrity="sha512-gKMzEZw+6phm9jAZ9p9x0MdnT2I8U+cv68/UFA0y/RhG4zh2OKSCW4jkjGTzSXvS9oxxKzJD1Om9VD6xKf8y0A=="
+<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.2/bootstrap-table.min.css"
-    integrity="sha512-ThXPnGXIJOi9huerzcKWpEqyPCaCECA9/Z3Sn5P8T37S2cm57p8Zz8g5r7woyEg+F5u7n5sRYg/LW/pCmpZnDA=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{{ IMPORT_CDN.bootstrap_table_css.url }}"
+  integrity="{{ IMPORT_CDN.bootstrap_table_css.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer"/>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@14.5.1/dist/css/shepherd.css"/>  
+<link rel="stylesheet" href="{{ IMPORT_CDN.shepard_css.url }}"/>
 <link rel="stylesheet" href="{% static 'css/shepard_custom.css' %}"> 
 
 <link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
@@ -124,21 +124,23 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/js/tom-select.complete.js"
-  integrity="sha512-cv8SyZZkoW3eB3rWs0JsM/wNxKZe59+tMN8ewVIu24I1EAeBOT6lqkdty/iMxo3OJGvrFRYIrrGwM5BJqAXsYw=="
+<script src="{{ IMPORT_CDN.tom_select_js.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_js.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
-    integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+<script src="{{ IMPORT_CDN.jquery.url }}"
+    integrity="{{ IMPORT_CDN.jquery.integrity }}"
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.2/bootstrap-table.min.js"
-    integrity="sha512-GS/lQJ1AiKWEDCgf1yKepN4m/xewSX6jEVL06KQU6jdAZb3FprSXR2cdBL7FHmo6t5M2gcspMi8I6DqzfPGVew=="
+<script src="{{ IMPORT_CDN.bootstrap_table_js.url }}"
+    integrity="{{ IMPORT_CDN.bootstrap_table_js.integrity }}"
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  
+<script src="{{ IMPORT_CDN.bootstrap_table_mobile.url }}"
+    integrity="{{ IMPORT_CDN.bootstrap_table_mobile.integrity }}"
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.24.2/extensions/mobile/bootstrap-table-mobile.min.js"
-    integrity="sha512-5no9dDVV2Fw1ps16Qz2jOdnTkAR56P1i9s2ZtMry5PZt2tqpJ/qnZMgcGBXNYwfOR2y4EvdBfUrC2ZW2YVq2qQ=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script type="module">import Shepherd from "{{ IMPORT_CDN.shepard_js.url }}"; window.Shepherd = Shepherd;</script>
 
 <script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
 <script type="module" src="{% static 'activity/js/views/find_neuron.js' %}" defer></script>

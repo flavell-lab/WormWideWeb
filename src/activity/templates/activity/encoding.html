@@ -2,8 +2,8 @@
 {% load static %}
 {% block title %}Encoding - Summary Table{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/css/tom-select.bootstrap5.min.css"
-  integrity="sha512-gKMzEZw+6phm9jAZ9p9x0MdnT2I8U+cv68/UFA0y/RhG4zh2OKSCW4jkjGTzSXvS9oxxKzJD1Om9VD6xKf8y0A=="
+<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"/>
 
 <link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">

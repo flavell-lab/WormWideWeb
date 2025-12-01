@@ -2,12 +2,11 @@
 {% load static %}
 {% block title %}Neural Activity - Plot {{ dataset_id }}{% endblock %}
 {% block extra_css %}
-<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.1/css/tom-select.min.css" integrity="sha512-dV0cHrb/JTqn0t9UxaPyHhP4aBjgeEpBpUVULdDnuNsQq55DdKEP4nkiPffoLGVN6FXAEUCPZEZSnI3fxY64vg==" crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/css/tom-select.bootstrap5.min.css"
-  integrity="sha512-gKMzEZw+6phm9jAZ9p9x0MdnT2I8U+cv68/UFA0y/RhG4zh2OKSCW4jkjGTzSXvS9oxxKzJD1Om9VD6xKf8y0A=="
+<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"/>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@14.5.1/dist/css/shepherd.css" />
+<link rel="stylesheet" href="{{ IMPORT_CDN.shepard_css.url }}"/>
 <link rel="stylesheet" href="{% static 'css/shepard_custom.css' %}">
 
 <link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
@@ -472,25 +471,28 @@
 
 {% block extra_js %}
 <!-- plotly -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.0/plotly.min.js"
-  integrity="sha512-iXeIWNSxrG0kro2hgWe7onPrTS2g9AeLbojfGJM89zhrunfCSEkHUux9ACjjpem5ob1J2uJ5cNxAn7gJOwygrQ=="
+<script src="{{ IMPORT_CDN.plotly.url }}"
+  integrity="{{ IMPORT_CDN.plotly.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <!-- tomselect -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/js/tom-select.complete.js"
-  integrity="sha512-cv8SyZZkoW3eB3rWs0JsM/wNxKZe59+tMN8ewVIu24I1EAeBOT6lqkdty/iMxo3OJGvrFRYIrrGwM5BJqAXsYw=="
+<script src="{{ IMPORT_CDN.tom_select_js.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_js.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <!-- cytoscape -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.33.1/cytoscape.min.js"
-    integrity="sha512-kHAY8XzRfLVMcLuowdk91552RD+Nb2/1uHamfHMdLejNqlZnbEJLl1wYnsNnqIFCEZ++WaOcOlfokC6p9JWrLw=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape.url }}"
+  integrity="{{ IMPORT_CDN.cytoscape.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <!-- layout extensions -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"
-  integrity="sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ=="
+<script src="{{ IMPORT_CDN.dagre.url }}"
+  integrity="{{ IMPORT_CDN.dagre.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+<script src="{{ IMPORT_CDN.cytoscape_dagre.url }}"></script>
+
+<!-- shepard -->
+<script type="module">import Shepherd from "{{ IMPORT_CDN.shepard_js.url }}"; window.Shepherd = Shepherd;</script>
 
 <script>const data = JSON.parse('{{ data| safe }}');</script>
 <script>const datasets = JSON.parse('{{ datasets_json|safe }}');</script>

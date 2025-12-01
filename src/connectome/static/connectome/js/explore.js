@@ -1,4 +1,3 @@
-import Shepherd from 'https://cdn.jsdelivr.net/npm/shepherd.js@14.5.1/dist/esm/shepherd.mjs';
 import { SelectorDatasetNeuron } from './connectome_selector.js';
 import { ConnectomeGraph } from './connectome_graph.js';
 import { setLocalBool, getLocalBool, toggleFullscreen, handleFullscreenElement } from "/static/core/js/utility.js"

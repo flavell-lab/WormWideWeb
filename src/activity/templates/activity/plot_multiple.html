@@ -2,8 +2,8 @@
 {% load static %}
 {% block title %}Neural Activity-Multiple Plot{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/css/tom-select.bootstrap5.min.css"
-  integrity="sha512-gKMzEZw+6phm9jAZ9p9x0MdnT2I8U+cv68/UFA0y/RhG4zh2OKSCW4jkjGTzSXvS9oxxKzJD1Om9VD6xKf8y0A=="
+<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"/>
 <link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
 <style>
@@ -91,12 +91,12 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.4.3/js/tom-select.complete.js"
-  integrity="sha512-cv8SyZZkoW3eB3rWs0JsM/wNxKZe59+tMN8ewVIu24I1EAeBOT6lqkdty/iMxo3OJGvrFRYIrrGwM5BJqAXsYw=="
+<script src="{{ IMPORT_CDN.tom_select_js.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_js.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.0/plotly.min.js"
-  integrity="sha512-iXeIWNSxrG0kro2hgWe7onPrTS2g9AeLbojfGJM89zhrunfCSEkHUux9ACjjpem5ob1J2uJ5cNxAn7gJOwygrQ=="
+<script src="{{ IMPORT_CDN.plotly.url }}"
+  integrity="{{ IMPORT_CDN.plotly.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <!-- <script>const data = JSON.parse(document.getElementById('data-data').textContent);</script> -->
