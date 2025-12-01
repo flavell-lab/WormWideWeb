@@ -43,8 +43,8 @@ bootstrap_table_ms:
 
 # plotly
 plotly:
-    url: "https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.0/plotly.min.js"
-    integrity: "sha512-iXeIWNSxrG0kro2hgWe7onPrTS2g9AeLbojfGJM89zhrunfCSEkHUux9ACjjpem5ob1J2uJ5cNxAn7gJOwygrQ=="
+    url: "https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.1/plotly.min.js"
+    integrity: "sha512-QaIUFweb9pyRnQZEYIujSDTHndibSwqsTSb69aedsfAAUpJRUE5yyYfaNAJIbTDuNECyHR/Cc0N7lQJrp0IEpA=="
 
 # cytoscape
 cytoscape:
