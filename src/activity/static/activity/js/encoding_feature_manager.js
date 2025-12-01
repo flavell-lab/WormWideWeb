@@ -89,10 +89,9 @@ export class EncodingFeatureManager {
 
             if (id in this.matchData) {
                 const matchKey = this.matchData[id]
-                const value = this.encodingData[matchKey][featureKey]
-
-                const color = value ? getNodeColor(value, vmin, vmax, colormapName) : "rgb(255,255,255)"
-
+                const value = this.encodingData[matchKey]?.[featureKey] ?? null;
+                const color = value != null ? getNodeColor(value, vmin, vmax, colormapName) : "rgb(255,255,255)";
+                
                 if (["u", "b"].includes(cellType)) {
                     colorBackground[id] = color;
                 } else {
