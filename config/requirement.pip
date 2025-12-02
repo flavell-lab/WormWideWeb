@@ -1,9 +1,9 @@
 Django==5.2.8
 gunicorn==23.0.0
-whitenoise==6.10.0
-numpy==2.3.3
-scipy==1.16.2
-networkx==3.5.0
-redis==6.4.0
-hiredis==3.2.1
+whitenoise==6.11.0
+numpy==2.3.5
+scipy==1.16.3
+networkx==3.6
+redis==7.1.0
+hiredis==3.3.0
 PyYAML==6.0.3
