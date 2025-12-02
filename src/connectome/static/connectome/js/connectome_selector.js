@@ -56,7 +56,21 @@ export class SelectorDatasetNeuron {
                 "n_items": {}, "checkbox_options": {}, "dropdown_input": {},
                 "remove_button": { title: "Remove this neuron" },
             },
-            onItemAdd: (value, item) => this.selectorNeuronAdd(value, item),
+            onItemAdd: (value, item) => {
+                this.selectorNeuronAdd(value, item);
+                // Reset search box and results after a selection
+                this.selectorNeuron.setTextboxValue("");
+                this.selectorNeuron.lastQuery = null; // force TomSelect to treat it as a fresh search
+                this.selectorNeuron.refreshOptions(false);
+                const usedMouse = this.selectorNeuronWasMouseSelect;
+                this.selectorNeuronWasMouseSelect = false;
+                if (!usedMouse) {
+                    const firstOption = this.selectorNeuron.dropdown_content?.querySelector('.option');
+                    if (firstOption) {
+                        this.selectorNeuron.setActiveOption(firstOption);
+                    }
+                }
+            },
             onItemRemove: (value, item) => this.selectorNeuronRemove(value, item),
             // Optionally close the dataset selector (or both) on certain actions
             onClear: () => {
@@ -64,6 +78,12 @@ export class SelectorDatasetNeuron {
                 // this.selectorNeuron.close(); // if you want to close neuron as well
             },
         });
+
+        // Track pointer selections so we only auto-focus first option for keyboard interactions
+        this.selectorNeuronWasMouseSelect = false;
+        const dropdownEl = this.selectorNeuron.dropdown;
+        dropdownEl?.addEventListener("mousedown", () => { this.selectorNeuronWasMouseSelect = true; });
+        dropdownEl?.addEventListener("touchstart", () => { this.selectorNeuronWasMouseSelect = true; });
     }
 
     /**
