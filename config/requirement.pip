@@ -6,3 +6,4 @@ scipy==1.16.2
 networkx==3.5.0
 redis==6.4.0
 hiredis==3.2.1
+PyYAML==6.0.3
