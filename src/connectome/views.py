@@ -207,16 +207,24 @@ def get_edge_response_data(data):
 
         # Prepare a dictionary to collect results per value.
         result_mapping = {val: [] for val in values}
+        value_set = set(values)
         for syn in qs:
             pre_name, pre_class, post_name, post_class, syn_type, syn_count = syn
             if typ == "neuron":
-                for val in values:
-                    if pre_name == val or post_name == val:
-                        result_mapping[val].append(syn)
+                matches = []
+                if pre_name in value_set:
+                    matches.append(pre_name)
+                if post_name in value_set and post_name not in matches:
+                    matches.append(post_name)
             else:  # type "class"
-                for val in values:
-                    if pre_class == val or post_class == val:
-                        result_mapping[val].append(syn)
+                matches = []
+                if pre_class in value_set:
+                    matches.append(pre_class)
+                if post_class in value_set and post_class not in matches:
+                    matches.append(post_class)
+
+            for match in matches:
+                result_mapping[match].append(syn)
 
         # Cache each result and update all_synapses.
         for val, syn_list in result_mapping.items():
