@@ -2,8 +2,8 @@
 {% load static %}
 {% block title %}Connectome{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css_default.url }}"
-  integrity="{{ IMPORT_CDN.tom_select_css_default.integrity }}"
+<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"/>
 
 <link rel="stylesheet" href="{{ IMPORT_CDN.shepard_css.url }}"/>
@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
 <link rel="stylesheet" href="{% static 'connectome/css/explore.css' %}">
 <link rel="stylesheet" href="{% static 'connectome/css/connectome_common.css' %}">
-<link rel="stylesheet" href="{% static 'connectome/css/connectome_selector.css' %}">
+<!-- <link rel="stylesheet" href="{% static 'connectome/css/connectome_selector.css' %}"> -->
 {% endblock %}
 
 {% block main %}
@@ -23,7 +23,7 @@
 
   <!-- Menu Bar -->
   <div class="card card-body">
-    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+    <div class="d-flex flex-wrap align-items-center gap-2">
       <!-- First group of buttons -->
       <div class="btn-group btn-group-sm" role="group" aria-label="Dataset and layout options">
         <!-- Dataset button with tooltip -->
@@ -104,14 +104,22 @@
         </button>
       </div>
 
-      <div id="spinnerStatus" class="spinner-border spinner-border-sm" role="status" style="display:none">
-        <span class="visually-hidden">Loading...</span>
+      <div class="menu-spinner-slot">
+        <div id="spinnerStatus" class="spinner-border spinner-border-sm" role="status" style="display:none">
+          <span class="visually-hidden">Loading...</span>
+        </div>
       </div>
 
+      <div class="d-flex align-items-center menu-bar-right ms-auto">
+        <div class="tom-select-container menu-bar-select" id="selectNeuronContainer">
+          <input id="select-neuron" autocomplete="off" type="text"
+              class="form-control form-control-sm" placeholder="Select neuron(s) or neuron class(es)">
+        </div>
+      </div>
     </div>
-    <div id="selectNeuronContainer">
+    <!-- <div id="selectNeuronContainer">
       <input id="select-neuron" autocomplete="off" placeholder="Select neuron(s) or neuron class(es)">
-    </div>
+    </div> -->
   </div> <!-- menu bar -->
 
   <!-- collapse: dataset -->
@@ -122,7 +130,13 @@
         <a class="btn btn-light btn-sm ms-2" href="/about/#connectome_citation" data-bs-toggle="tooltip"
           data-bs-title="Info on datasets"><i class="bi bi-info-circle"></i></a>
       </h5>
-      <input id="select-dataset" autocomplete="off" placeholder="Select dataset(s)">
+      <!-- <input id="select-dataset" autocomplete="off" placeholder="Select dataset(s)"> -->
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <div class="tom-select-container menu-bar-select" id="selectDatasetContainer">
+          <input id="select-dataset" autocomplete="off" type="text"
+              class="form-control form-control-sm" placeholder="Select dataset(s)">
+        </div>
+      </div>
     </div>
   </div>
 
