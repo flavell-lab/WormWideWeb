@@ -2,9 +2,8 @@
 {% load static %}
 {% block title %}Encoding - Connectome{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}"
-  integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
-  crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}" integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 <link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
 <link rel="stylesheet" href="{% static 'activity/css/encoding_connectome.css' %}">
@@ -107,13 +106,15 @@
                 <div class="btn-group btn-group-sm" role="group" aria-label="Download and settings">
                     <!-- all neurons -->
                     <button id="buttonAllNeurons" class="btn btn-light btn-sm" type="button"
-                        aria-label="Add all neurons" data-bs-toggle="tooltip" title="Add all neurons with encoding data">
+                        aria-label="Add all neurons" data-bs-toggle="tooltip"
+                        title="Add all neurons with encoding data">
                         All Neurons
                     </button>
 
                     <!-- clear -->
                     <button id="clearNeurons" class="btn btn-light btn-sm" type="button"
-                    aria-label="Clear all selected neurons" data-bs-toggle="tooltip" title="Clear all selected neurons">
+                        aria-label="Clear all selected neurons" data-bs-toggle="tooltip"
+                        title="Clear all selected neurons">
                         Clear
                     </button>
 
@@ -140,16 +141,16 @@
 
                 <div class="menu-spinner-slot">
                     <div id="spinnerStatus" class="spinner-border spinner-border-sm" role="status" style="display:none">
-                      <span class="visually-hidden">Loading...</span>
+                        <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
 
                 <div class="d-flex align-items-center menu-bar-right ms-auto">
                     <div class="tom-select-container menu-bar-select" id="selectNeuronContainer">
-                      <input id="select-neuron" autocomplete="off" type="text"
-                          class="form-control form-control-sm" placeholder="Select neuron(s) or neuron class(es)">
+                        <input id="select-neuron" autocomplete="off" type="text" class="form-control form-control-sm"
+                            placeholder="Select neuron(s) or neuron class(es)">
                     </div>
-                </div>            
+                </div>
             </div>
         </div> <!-- menu bar -->
 
@@ -164,10 +165,10 @@
                 <!-- <input id="select-dataset" autocomplete="off" placeholder="Select dataset(s)"> -->
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <div class="tom-select-container menu-bar-select" id="selectDatasetContainer">
-                      <input id="select-dataset" autocomplete="off" type="text"
-                          class="form-control form-control-sm" placeholder="Select dataset(s)">
+                        <input id="select-dataset" autocomplete="off" type="text" class="form-control form-control-sm"
+                            placeholder="Select dataset(s)">
                     </div>
-                </div>            
+                </div>
             </div>
         </div>
 
@@ -254,18 +255,14 @@
                         </div>
 
                     </div>
-                    
+
                     <div class="d-flex justify-content-end mt-3">
-                        <button type="button"
-                                class="btn btn-secondary"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#collapseConfig"
-                                aria-expanded="true"
-                                aria-controls="collapseConfig"
-                                aria-label="Close">
-                          Close
+                        <button type="button" class="btn btn-secondary" data-bs-toggle="collapse"
+                            data-bs-target="#collapseConfig" aria-expanded="true" aria-controls="collapseConfig"
+                            aria-label="Close">
+                            Close
                         </button>
-                      </div>
+                    </div>
                 </div>
             </div>
         </div> <!-- collapseConfig -->
@@ -362,24 +359,20 @@
 
 {% block extra_js %}
 <!-- plotly -->
-<script src="{{ IMPORT_CDN.plotly.url }}"
-    integrity="{{ IMPORT_CDN.plotly.integrity }}"
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    
+<script src="{{ IMPORT_CDN.plotly.url }}" integrity="{{ IMPORT_CDN.plotly.integrity }}" crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+
 <!-- tom-select -->
-<script src="{{ IMPORT_CDN.tom_select_js.url }}"
-  integrity="{{ IMPORT_CDN.tom_select_js.integrity }}"
-  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.tom_select_js.url }}" integrity="{{ IMPORT_CDN.tom_select_js.integrity }}"
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <!-- cytoscape -->
-<script src="{{ IMPORT_CDN.cytoscape.url }}"
-    integrity="{{ IMPORT_CDN.cytoscape.integrity }}"
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape.url }}" integrity="{{ IMPORT_CDN.cytoscape.integrity }}" crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
 
 <!-- layout extensions -->
-<script src="{{ IMPORT_CDN.dagre.url }}"
-    integrity="{{ IMPORT_CDN.dagre.integrity }}"
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.dagre.url }}" integrity="{{ IMPORT_CDN.dagre.integrity }}" crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
 <script src="{{ IMPORT_CDN.cytoscape_dagre.url }}"></script>
 
 <script type="module">import Shepherd from "{{ IMPORT_CDN.shepard_js.url }}"; window.Shepherd = Shepherd;</script>
