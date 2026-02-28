@@ -2591,6 +2591,14 @@ document.addEventListener("DOMContentLoaded", () => {
         updateExploreLink();
         updateReplayUrlState({ includeFrame: true });
     });
+    document.getElementById("button-select-all-neurons").addEventListener("click", () => {
+        const allNeuronValues = Object.keys(neuronSelector.options || {}).filter((value) => Boolean(value));
+        if (allNeuronValues.length === 0) return;
+        neuronSelector.setValue(allNeuronValues);
+        selectedNodeIds.clear();
+        updateExploreLink();
+        updateReplayUrlState({ includeFrame: true });
+    });
     if (buttonToggleSettings) {
         buttonToggleSettings.addEventListener("click", () => {
             const isExpanded = buttonToggleSettings.getAttribute("aria-expanded") === "true";
