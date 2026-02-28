@@ -5,6 +5,8 @@
 <link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}"
   integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<link rel="stylesheet" href="{{ IMPORT_CDN.shepard_css.url }}"/>
+<link rel="stylesheet" href="{% static 'css/shepard_custom.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
 <link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
 <link rel="stylesheet" href="{% static 'activity/css/replay.css' %}">
@@ -366,6 +368,7 @@
   integrity="{{ IMPORT_CDN.dagre.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="{{ IMPORT_CDN.cytoscape_dagre.url }}"></script>
+<script type="module">import Shepherd from "{{ IMPORT_CDN.shepard_js.url }}"; window.Shepherd = Shepherd;</script>
 
 {{ activity_datasets|json_script:"activity-replay-datasets" }}
 {{ connectome_datasets|json_script:"connectome-replay-datasets" }}

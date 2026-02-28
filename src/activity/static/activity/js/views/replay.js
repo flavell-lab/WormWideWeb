@@ -1,8 +1,10 @@
 import {
     getLocalFloat,
+    getLocalBool,
     getLocalInt,
     getLocalStr,
     setLocalFloat,
+    setLocalBool,
     setLocalInt,
     setLocalStr,
 } from "/static/core/js/utility.js";
@@ -24,6 +26,7 @@ const STORAGE_EDGE_SCALE = "replay_edge_scale";
 const STORAGE_NODE_SIZE_MODE = "replay_node_size_mode";
 const STORAGE_NODE_COLOR_MODE = "replay_node_color_mode";
 const STORAGE_NODE_COLORMAP = "replay_node_colormap";
+const STORAGE_TOUR_REPLAY = "tour-activity-replay";
 
 const DEFAULTS = {
     minSynapseChemical: 3,
@@ -425,6 +428,184 @@ function setAdvancedSettingsVisible(isVisible) {
     }
     container.classList.toggle("show", isVisible);
     updateSettingsToggleButton(isVisible);
+}
+
+function waitMs(milliseconds) {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, milliseconds);
+    });
+}
+
+async function runReplayTour() {
+    if (!getLocalBool(STORAGE_TOUR_REPLAY, true)) return;
+    if (!window.Shepherd) return;
+
+    const settingsElement = document.getElementById("replay-advanced-settings");
+    const settingsInitiallyVisible = Boolean(settingsElement?.classList.contains("show"));
+
+    const ensureSettingsVisible = async () => {
+        if (!settingsElement) return;
+        if (settingsElement.classList.contains("show")) return;
+        setAdvancedSettingsVisible(true);
+        await waitMs(260);
+    };
+
+    const restoreSettingsState = () => {
+        if (settingsInitiallyVisible) return;
+        setAdvancedSettingsVisible(false);
+    };
+
+    const tour = new window.Shepherd.Tour({
+        useModalOverlay: true,
+        defaultStepOptions: {
+            classes: "shadow-md bg-white",
+            scrollTo: true,
+            cancelIcon: {
+                enabled: true,
+            },
+        },
+    });
+
+    tour.addStep({
+        id: "replay-tour-intro",
+        text: '<strong>Quick tour</strong><br>Click the "X" icon to skip anytime.',
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+    });
+
+    tour.addStep({
+        id: "replay-tour-activity-dataset",
+        text: "Choose the NeuroPAL activity dataset used for replay.",
+        attachTo: {
+            element: "#select-activity-dataset",
+            on: "bottom",
+        },
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+    });
+
+    tour.addStep({
+        id: "replay-tour-connectome-dataset",
+        text: "Pick the connectome dataset to pair with activity.",
+        attachTo: {
+            element: "#select-connectome-dataset",
+            on: "bottom",
+        },
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+    });
+
+    tour.addStep({
+        id: "replay-tour-neurons",
+        text: "Filter neurons here. Clear resets the neuron selection quickly.",
+        attachTo: {
+            element: ".replay-neuron-controls",
+            on: "bottom",
+        },
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+    });
+
+    tour.addStep({
+        id: "replay-tour-settings",
+        text: "Open advanced settings for layout, edge/node encodings, and color ranges.",
+        attachTo: {
+            element: "#button-toggle-settings",
+            on: "left",
+        },
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+        beforeShowPromise: ensureSettingsVisible,
+    });
+
+    tour.addStep({
+        id: "replay-tour-advanced-controls",
+        text: "These controls define edge type thresholds, visual mappings, colormaps, and vmin/vmax ranges.",
+        attachTo: {
+            element: "#replay-advanced-settings",
+            on: "top",
+        },
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+        beforeShowPromise: ensureSettingsVisible,
+    });
+
+    tour.addStep({
+        id: "replay-tour-load-replay",
+        text: "Press Load Replay after changing config so graph layout, filters, and ranges are applied.",
+        attachTo: {
+            element: "#button-load-replay",
+            on: "top",
+        },
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+    });
+
+    tour.addStep({
+        id: "replay-tour-graph",
+        text: "Connectome Dynamics: click a node to inspect its trace, Cmd/Ctrl-click to multi-select, and click edges for mode-specific values.",
+        attachTo: {
+            element: "#replay-graph",
+            on: "top",
+        },
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+    });
+
+    tour.addStep({
+        id: "replay-tour-behavior",
+        text: "Behavior traces stay synchronized with replay time; select one or more behaviors from the selector.",
+        attachTo: {
+            element: "#replay-behavior-plot",
+            on: "top",
+        },
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+    });
+
+    tour.addStep({
+        id: "replay-tour-timeline",
+        text: "Use playback controls and the timeline slider to step through frames.",
+        attachTo: {
+            element: ".replay-timeline-row",
+            on: "top",
+        },
+        buttons: [
+            { text: "Next", action: tour.next },
+        ],
+    });
+
+    tour.addStep({
+        id: "replay-tour-open-explore",
+        text: "Open the current selection in Activity Plot for deeper trace/behavior inspection.",
+        attachTo: {
+            element: "#button-open-explore",
+            on: "top",
+        },
+        buttons: [
+            { text: "Complete", action: tour.complete },
+        ],
+    });
+
+    const markTourDone = () => {
+        setLocalBool(STORAGE_TOUR_REPLAY, false);
+        restoreSettingsState();
+        window.scrollTo(0, 0);
+    };
+
+    tour.on("complete", markTourDone);
+    tour.on("cancel", markTourDone);
+
+    tour.start();
 }
 
 function escapeHtml(str) {
@@ -2515,5 +2696,7 @@ document.addEventListener("DOMContentLoaded", () => {
     edgeVMaxInput.addEventListener("change", updateEdgeColorRangeFromInput);
 
     updateExploreLink();
-    loadReplayData();
+    loadReplayData().finally(() => {
+        runReplayTour();
+    });
 });
