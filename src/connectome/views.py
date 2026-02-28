@@ -1,5 +1,4 @@
 import json
-from itertools import islice
 import networkx as nx
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
@@ -13,12 +12,6 @@ from collections import defaultdict
 import connectome.graph_data 
 
 CONNECTOME_CACHE_TTL = 60 * 60 * 24 * 30
-MAX_EDGE_PAYLOAD_ITEMS = 5000
-MAX_EDGE_DATASETS = 20
-MAX_EDGE_SELECTION = 5000
-MAX_EDGE_BODY_BYTES = 100_000
-MAX_RETURNED_SHORTEST_PATHS = 100
-MAX_NODE_LABEL_LENGTH = 30
 
 
 def _edge_cache_key(dataset_id, neuron_or_class):
@@ -48,8 +41,6 @@ def _validate_get_edges_payload(data):
     for field in list_fields:
         if not isinstance(data[field], list):
             return None, f"Field '{field}' must be a list."
-        if len(data[field]) > MAX_EDGE_PAYLOAD_ITEMS:
-            return None, f"Field '{field}' exceeds the maximum length of {MAX_EDGE_PAYLOAD_ITEMS}."
         if not all(isinstance(item, str) and item for item in data[field]):
             return None, f"Field '{field}' must contain non-empty strings."
 
@@ -63,12 +54,8 @@ def _validate_get_edges_payload(data):
     classes = _dedupe_string_list(data["classes"])
     if not datasets:
         return None, "At least one dataset must be provided."
-    if len(datasets) > MAX_EDGE_DATASETS:
-        return None, f"At most {MAX_EDGE_DATASETS} datasets can be queried at once."
     if not neurons and not classes:
         return None, "At least one neuron or class must be provided."
-    if len(neurons) + len(classes) > MAX_EDGE_SELECTION:
-        return None, f"At most {MAX_EDGE_SELECTION} total neurons/classes can be queried at once."
 
     normalized = {
         "datasets": datasets,
@@ -126,8 +113,6 @@ def available_neurons(request):
     
     # Get the list of dataset IDs from the request.
     dataset_ids = _dedupe_string_list(datasets_str.split(','))
-    if len(dataset_ids) > MAX_EDGE_DATASETS:
-        return HttpResponse(f"Error: too many datasets. max={MAX_EDGE_DATASETS}", status=400)
     
     # Final union dictionaries.
     final_neurons = {}
@@ -391,9 +376,6 @@ def get_edge_response_data(data):
 
 @require_POST
 def get_edges(request):
-    if len(request.body) > MAX_EDGE_BODY_BYTES:
-        return JsonResponse({'status': 'error', 'message': 'Request payload too large.'}, status=413)
-
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -424,8 +406,6 @@ def find_paths(request):
     end_neuron = request.GET.get('end')
     if not dataset or not start_neuron or not end_neuron:
         return JsonResponse({'error': 'dataset, start, and end query params are required'}, status=400)
-    if len(start_neuron) > MAX_NODE_LABEL_LENGTH or len(end_neuron) > MAX_NODE_LABEL_LENGTH:
-        return JsonResponse({'error': 'start or end neuron identifier is too long'}, status=400)
 
     def parse_bool(value, default):
         if value is None:
@@ -453,24 +433,13 @@ def find_paths(request):
 
     # find all shortest paths
     try:
-        shortest_paths_iter = nx.all_shortest_paths(
+        paths = list(nx.all_shortest_paths(
             graph,
             source=start_neuron,
             target=end_neuron,
             method="dijkstra",
             weight=(lambda u, v, data: 1 / data['weight']) if weighted else None,
-        )
-        paths = list(islice(shortest_paths_iter, MAX_RETURNED_SHORTEST_PATHS + 1))
-        if len(paths) > MAX_RETURNED_SHORTEST_PATHS:
-            return JsonResponse(
-                {
-                    'error': (
-                        f'Too many shortest paths (> {MAX_RETURNED_SHORTEST_PATHS}). '
-                        'Please narrow the query.'
-                    )
-                },
-                status=413,
-            )
+        ))
     except nx.NetworkXNoPath:
         return JsonResponse({'paths': [], 'message': 'No path found'})
     except nx.NodeNotFound:
