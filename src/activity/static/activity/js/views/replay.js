@@ -27,6 +27,11 @@ const STORAGE_NODE_SIZE_MODE = "replay_node_size_mode";
 const STORAGE_NODE_COLOR_MODE = "replay_node_color_mode";
 const STORAGE_NODE_COLORMAP = "replay_node_colormap";
 const STORAGE_TOUR_REPLAY = "tour-activity-replay";
+const EDGE_SCALE_MIN = 0.1;
+const EDGE_SCALE_MAX = 3.0;
+const EDGE_WIDTH_FACTOR_MIN = 0.45;
+const EDGE_WIDTH_FACTOR_MAX = 1.65;
+const EDGE_WIDTH_MIN_PX = 0.5;
 
 const DEFAULTS = {
     minSynapseChemical: 3,
@@ -39,7 +44,7 @@ const DEFAULTS = {
     speed: 1,
     fps: 10,
     spacing: 1.15,
-    edgeScale: 1.25,
+    edgeScale: 1.5,
     nodeSizeMode: "degree_total",
     nodeColorMode: "activity",
     nodeColormap: "RdBu",
@@ -831,6 +836,13 @@ function normalizeEdgeMode(mode) {
     return "weighted_source";
 }
 
+function getEdgeBaseWidth(weight, scaleFactor) {
+    const numericWeight = Number.isFinite(Number(weight)) ? Number(weight) : 0;
+    const numericScale = Number.isFinite(Number(scaleFactor)) ? Number(scaleFactor) : 1;
+    // Match other connectome viewers: log(count + 1) * edge scaling factor.
+    return Math.log(numericWeight + 1) * clamp(numericScale, EDGE_SCALE_MIN, EDGE_SCALE_MAX);
+}
+
 function computeEdgeAutoRanges(payload) {
     const edges = payload?.edges || [];
     const nodes = payload?.nodes || [];
@@ -864,22 +876,25 @@ function computeEdgeAutoRanges(payload) {
         });
     });
 
+    const buildEdgeRange = (values, fallback) => {
+        const range = normalizeRange(
+            getPercentile(values, 0.05, fallback.vmin),
+            getPercentile(values, 0.95, fallback.vmax),
+            fallback
+        );
+        return {
+            ...range,
+            abs95: Math.max(
+                getPercentile(values.map((value) => Math.abs(value)), 0.95, Math.max(Math.abs(fallback.vmin), Math.abs(fallback.vmax), 1)),
+                1e-6
+            ),
+        };
+    };
+
     edgeAutoRanges = {
-        count: normalizeRange(
-            getPercentile(countValues, 0.05, 0),
-            getPercentile(countValues, 0.95, 1),
-            { vmin: 0, vmax: 1 }
-        ),
-        source_only: normalizeRange(
-            getPercentile(sourceOnlyValues, 0.05, -1),
-            getPercentile(sourceOnlyValues, 0.95, 1),
-            { vmin: -1, vmax: 1 }
-        ),
-        weighted_source: normalizeRange(
-            getPercentile(weightedSourceValues, 0.05, -1),
-            getPercentile(weightedSourceValues, 0.95, 1),
-            { vmin: -1, vmax: 1 }
-        ),
+        count: buildEdgeRange(countValues, { vmin: 0, vmax: 1 }),
+        source_only: buildEdgeRange(sourceOnlyValues, { vmin: -1, vmax: 1 }),
+        weighted_source: buildEdgeRange(weightedSourceValues, { vmin: -1, vmax: 1 }),
     };
 }
 
@@ -908,6 +923,36 @@ function getEdgeColorSettings() {
         vmin,
         vmax,
     };
+}
+
+function getEdgeSizeNormalization(mode) {
+    const modeKey = normalizeEdgeMode(mode);
+    const fallback = modeKey === "count"
+        ? { vmin: 0, vmax: 1, abs95: 1 }
+        : { vmin: -1, vmax: 1, abs95: 1 };
+    const range = edgeAutoRanges[modeKey] || fallback;
+    if (modeKey === "count") {
+        return {
+            byAbs: false,
+            min: range.vmin,
+            max: range.vmax,
+        };
+    }
+    return {
+        byAbs: true,
+        max: Math.max(range.abs95, 1e-6),
+    };
+}
+
+function normalizeEdgeSizeValue(value, normalization) {
+    const numericValue = Number.isFinite(value) ? value : 0;
+    if (normalization.byAbs) {
+        return clamp(Math.abs(numericValue) / Math.max(normalization.max, 1e-6), 0, 1);
+    }
+    const minValue = Number.isFinite(normalization.min) ? normalization.min : 0;
+    const maxValue = Number.isFinite(normalization.max) ? normalization.max : 1;
+    const denom = Math.max(maxValue - minValue, 1e-6);
+    return clamp((numericValue - minValue) / denom, 0, 1);
 }
 
 function valueToEdgeColor(value, settings) {
@@ -1540,7 +1585,7 @@ function initGraph(payload) {
     });
 
     payload.edges.forEach((edge, idx) => {
-        const baseWidth = (1 + Math.log1p(edge.weight) * 1.2) * appliedEdgeScale;
+        const baseWidth = getEdgeBaseWidth(edge.weight, appliedEdgeScale);
         elements.push({
             group: "edges",
             data: {
@@ -1975,6 +2020,7 @@ function updateFrame(frame) {
     const nodeSizeMode = document.getElementById("select-node-size-mode").value;
     const colorSettings = getNodeColorSettings();
     const edgeColorSettings = getEdgeColorSettings();
+    const edgeSizeNormalization = getEdgeSizeNormalization(edgeSizeMode);
     const sizeNormalization = getNodeSizeNormalization(nodeSizeMode);
 
     cy.startBatch();
@@ -2012,26 +2058,14 @@ function updateFrame(frame) {
             weighted_source: sourceActivity * weight,
         };
 
-        let frameSignal = weightNorm;
-        let frameWidth = baseWidth;
-        let frameOpacity = 0.2;
-
-        if (edgeSizeMode === "weighted_source") {
-            frameSignal = Math.abs(sourceActivity) * weightNorm;
-            frameWidth = baseWidth * (0.45 + 1.3 * frameSignal);
-            frameOpacity = 0.05 + 0.9 * clamp(frameSignal, 0, 1);
-        } else if (edgeSizeMode === "source_only") {
-            frameSignal = Math.abs(sourceActivity);
-            frameWidth = baseWidth * (0.4 + 1.2 * frameSignal);
-            frameOpacity = 0.05 + 0.9 * clamp(frameSignal, 0, 1);
-        } else {
-            frameSignal = weightNorm;
-            frameWidth = baseWidth * (0.9 + 0.6 * weightNorm);
-            frameOpacity = 0.15 + 0.75 * clamp(weightNorm, 0, 1);
-        }
-
         const frameSizeValue = modeValues[edgeSizeMode];
+        const normalizedSize = normalizeEdgeSizeValue(frameSizeValue, edgeSizeNormalization);
+        const widthFactor = EDGE_WIDTH_FACTOR_MIN
+            + normalizedSize * (EDGE_WIDTH_FACTOR_MAX - EDGE_WIDTH_FACTOR_MIN);
+        const frameWidth = Math.max(EDGE_WIDTH_MIN_PX, baseWidth * widthFactor);
+        const frameOpacity = 0.08 + 0.82 * normalizedSize;
         const frameColorValue = modeValues[edgeColorMode];
+        const frameSignal = normalizedSize;
         const lineColor = valueToEdgeColor(frameColorValue, edgeColorSettings);
 
         edge.data("frame_width", frameWidth);
@@ -2165,8 +2199,8 @@ async function loadReplayData() {
         renderError("Spacing must be a number between 0.25 and 1.5.");
         return;
     }
-    if (!Number.isFinite(edgeScaleValue) || edgeScaleValue < 0.1 || edgeScaleValue > 3.0) {
-        renderError("Scale must be a number between 0.1 and 3.0.");
+    if (!Number.isFinite(edgeScaleValue) || edgeScaleValue < EDGE_SCALE_MIN || edgeScaleValue > EDGE_SCALE_MAX) {
+        renderError(`Scale must be a number between ${EDGE_SCALE_MIN} and ${EDGE_SCALE_MAX}.`);
         return;
     }
 
@@ -2433,7 +2467,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ? clamp(urlState.spacing, 0.25, 1.5)
         : localSpacing;
     const edgeScaleValue = Number.isFinite(urlState.edgeScale)
-        ? clamp(urlState.edgeScale, 0.1, 3.0)
+        ? clamp(urlState.edgeScale, EDGE_SCALE_MIN, EDGE_SCALE_MAX)
         : localEdgeScale;
     sliderSpacing.value = String(spacingValue);
     sliderEdgeScale.value = String(edgeScaleValue);
