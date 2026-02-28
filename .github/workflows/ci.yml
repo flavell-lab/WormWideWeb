@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DJ_DEBUG: "1"
+      DJ_DB_BUILD: "1"
+      DJ_USE_REDIS: "0"
+      DJ_ALLOWED_HOSTS: "localhost 127.0.0.1 testserver"
+      DJ_SECRET_KEY: "ci-test-secret-key"
+    defaults:
+      run:
+        working-directory: src
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: config/requirement.pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r ../config/requirement.pip
+
+      - name: Run tests
+        run: python manage.py test
