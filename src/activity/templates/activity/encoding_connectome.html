@@ -377,8 +377,10 @@
 
 <script type="module">import Shepherd from "{{ IMPORT_CDN.shepard_js.url }}"; window.Shepherd = Shepherd;</script>
 
-<script>const datasets = JSON.parse('{{ datasets_json|safe }}');</script>
-<script>const matchData = JSON.parse('{{ match_data|safe }}');</script>
+{{ datasets_json|json_script:"activity-encoding-connectome-datasets" }}
+{{ match_data|json_script:"activity-encoding-connectome-match-data" }}
+<script>const datasets = JSON.parse(JSON.parse(document.getElementById('activity-encoding-connectome-datasets').textContent));</script>
+<script>const matchData = JSON.parse(JSON.parse(document.getElementById('activity-encoding-connectome-match-data').textContent));</script>
 <script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
 <script type="module" src="{% static 'activity/js/views/encoding_connectome.js' %}" defer></script>
 {% endblock %}

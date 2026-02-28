@@ -9,13 +9,43 @@ from django.http import JsonResponse, HttpResponseBadRequest, Http404
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.cache import cache_page, cache_control
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from connectome.views import connectome_datasets
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from connectome.models import Dataset
 from core.models import JSONCache
+
+
+def _dedupe_int_list(values):
+    seen = set()
+    output = []
+    for value in values:
+        if value not in seen:
+            seen.add(value)
+            output.append(value)
+    return output
+
+
+def _validate_plot_multiple_payload(data):
+    if not isinstance(data, dict):
+        return None, 'Data must be a JSON object.'
+    if not data:
+        return None, 'Data must contain at least one dataset.'
+
+    normalized = {}
+    for dataset_id, neuron_ids in data.items():
+        if not isinstance(dataset_id, str) or not dataset_id:
+            return None, f'Invalid dataset_id: {dataset_id}'
+        if not isinstance(neuron_ids, list):
+            return None, f'Invalid neuron_ids for dataset_id {dataset_id}.'
+        if not all(isinstance(n, int) and n > 0 for n in neuron_ids):
+            return None, f'Invalid neuron_ids for dataset_id {dataset_id}.'
+
+        normalized[dataset_id] = _dedupe_int_list(neuron_ids)
+
+    return normalized, None
+
 
 @cache_page(60*60*24*30)
 def index(request):
@@ -488,7 +518,6 @@ def plot_multiple(request):
 
 
 @require_POST
-@csrf_exempt
 def plot_multiple_data(request):
     """
     Accept a POST request with JSON data mapping dataset_id -> list of neuron indices.
@@ -497,20 +526,14 @@ def plot_multiple_data(request):
     """
     try:
         data = json.loads(request.body)
-        if not isinstance(data, dict):
-            return JsonResponse({'status': 'error', 'message': 'Data must be a JSON object.'}, status=400)
-
-        # Validate the structure of the data.
-        for dataset_id, neuron_ids in data.items():
-            if not isinstance(dataset_id, str):
-                return JsonResponse({'status': 'error', 'message': f'Invalid dataset_id: {dataset_id}'}, status=400)
-            if not isinstance(neuron_ids, list) or not all(isinstance(n, int) for n in neuron_ids):
-                return JsonResponse({'status': 'error', 'message': f'Invalid neuron_ids for dataset_id {dataset_id}.'}, status=400)
+        normalized_data, validation_error = _validate_plot_multiple_payload(data)
+        if validation_error:
+            return JsonResponse({'status': 'error', 'message': validation_error}, status=400)
 
         # Generate a unique token and store the data in the cache.
         token = uuid.uuid4().hex
         cache_key = "plot_multiple_data:" + token
-        cache.set(cache_key, data, timeout=600)  # Store for 10 minutes (adjust as needed).
+        cache.set(cache_key, normalized_data, timeout=600)  # Store for 10 minutes (adjust as needed).
 
         # Build the redirect URL with the token as a GET parameter.
         url = reverse("activity-plot_multiple") + f"?token={token}"
@@ -518,6 +541,6 @@ def plot_multiple_data(request):
 
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON.'}, status=400)
-    except Exception as e:
+    except Exception:
         # Optionally log the exception.
         return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred.'}, status=500)

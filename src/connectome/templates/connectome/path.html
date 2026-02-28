@@ -164,6 +164,7 @@
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="{{ IMPORT_CDN.cytoscape_dagre.url }}"></script>
 
-<script>const datasets = JSON.parse('{{ datasets_json|safe }}');</script>
+{{ datasets_json|json_script:"connectome-path-datasets" }}
+<script>const datasets = JSON.parse(JSON.parse(document.getElementById('connectome-path-datasets').textContent));</script>
 <script type="module" src="{% static 'connectome/js/path.js' %}" defer></script>
 {% endblock %}

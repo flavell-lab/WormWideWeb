@@ -279,7 +279,8 @@
 
 <script type="module">import Shepherd from "{{ IMPORT_CDN.shepard_js.url }}"; window.Shepherd = Shepherd;</script>
 
-<script>const datasets = JSON.parse('{{ datasets_json|safe }}');</script>
+{{ datasets_json|json_script:"connectome-explore-datasets" }}
+<script>const datasets = JSON.parse(JSON.parse(document.getElementById('connectome-explore-datasets').textContent));</script>
 <script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
 <script type="module" src="{% static 'connectome/js/explore.js' %}" defer></script>
 {% endblock %}

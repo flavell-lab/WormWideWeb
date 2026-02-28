@@ -494,8 +494,10 @@
 <!-- shepard -->
 <script type="module">import Shepherd from "{{ IMPORT_CDN.shepard_js.url }}"; window.Shepherd = Shepherd;</script>
 
-<script>const data = JSON.parse('{{ data| safe }}');</script>
-<script>const datasets = JSON.parse('{{ datasets_json|safe }}');</script>
+{{ data|json_script:"activity-explore-data" }}
+{{ datasets_json|json_script:"activity-explore-datasets" }}
+<script>const data = JSON.parse(JSON.parse(document.getElementById('activity-explore-data').textContent));</script>
+<script>const datasets = JSON.parse(JSON.parse(document.getElementById('activity-explore-datasets').textContent));</script>
 
 <script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
 <script type="module" src="{% static 'activity/js/views/explore.js' %}" defer></script>

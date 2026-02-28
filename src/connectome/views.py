@@ -5,11 +5,65 @@ from django.http import JsonResponse, HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page, cache_control
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Q, Prefetch
 from .models import Neuron, NeuronClass, Dataset, Synapse
 from collections import defaultdict
 import connectome.graph_data 
+
+MAX_EDGE_PAYLOAD_ITEMS = 300
+
+
+def _dedupe_string_list(values):
+    seen = set()
+    output = []
+    for value in values:
+        if value not in seen:
+            seen.add(value)
+            output.append(value)
+    return output
+
+
+def _validate_get_edges_payload(data):
+    if not isinstance(data, dict):
+        return None, "Payload must be a JSON object."
+
+    required = ["datasets", "neurons", "classes", "show_individual_neuron", "show_connected_neuron"]
+    missing = [key for key in required if key not in data]
+    if missing:
+        return None, f"Missing required field(s): {', '.join(missing)}."
+
+    list_fields = ["datasets", "neurons", "classes"]
+    for field in list_fields:
+        if not isinstance(data[field], list):
+            return None, f"Field '{field}' must be a list."
+        if len(data[field]) > MAX_EDGE_PAYLOAD_ITEMS:
+            return None, f"Field '{field}' exceeds the maximum length of {MAX_EDGE_PAYLOAD_ITEMS}."
+        if not all(isinstance(item, str) and item for item in data[field]):
+            return None, f"Field '{field}' must contain non-empty strings."
+
+    if not isinstance(data["show_individual_neuron"], bool):
+        return None, "Field 'show_individual_neuron' must be a boolean."
+    if not isinstance(data["show_connected_neuron"], bool):
+        return None, "Field 'show_connected_neuron' must be a boolean."
+
+    datasets = _dedupe_string_list(data["datasets"])
+    neurons = _dedupe_string_list(data["neurons"])
+    classes = _dedupe_string_list(data["classes"])
+    if not datasets:
+        return None, "At least one dataset must be provided."
+    if not neurons and not classes:
+        return None, "At least one neuron or class must be provided."
+
+    normalized = {
+        "datasets": datasets,
+        "neurons": neurons,
+        "classes": classes,
+        "show_individual_neuron": data["show_individual_neuron"],
+        "show_connected_neuron": data["show_connected_neuron"],
+    }
+    return normalized, None
+
 
 def connectome_datasets(cache_key="connectome_datasets_json"):
     datasets_json = cache.get(cache_key)
@@ -317,18 +371,21 @@ def get_edge_response_data(data):
     return return_dict
 
 
-@csrf_exempt
+@require_POST
 def get_edges(request):
-    if request.method == "POST":
-        try:
-            # Parse the JSON data
-            data = json.loads(request.body)
-            return JsonResponse(get_edge_response_data(data))
-        except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+
+    normalized_data, validation_error = _validate_get_edges_payload(data)
+    if validation_error:
+        return JsonResponse({'status': 'error', 'message': validation_error}, status=400)
+
+    return JsonResponse(get_edge_response_data(normalized_data))
 
 
+@require_GET
 def find_paths(request):
     """
     Find paths between two neurons within a dataset. 

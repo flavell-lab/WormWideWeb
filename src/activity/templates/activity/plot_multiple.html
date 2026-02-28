@@ -100,6 +100,7 @@
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <!-- <script>const data = JSON.parse(document.getElementById('data-data').textContent);</script> -->
-<script>const data = JSON.parse('{{ plots|safe }}');</script>
+{{ plots|json_script:"activity-plot-multiple-data" }}
+<script>const data = JSON.parse(JSON.parse(document.getElementById('activity-plot-multiple-data').textContent));</script>
 <script type="module" src="{% static 'activity/js/views/plot_multiple.js' %}" defer></script>
 {% endblock %}
