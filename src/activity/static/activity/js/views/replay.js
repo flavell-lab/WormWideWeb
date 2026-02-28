@@ -7,6 +7,7 @@ import {
     setLocalBool,
     setLocalInt,
     setLocalStr,
+    debounce,
     updateCitation,
 } from "/static/core/js/utility.js";
 import { getCycleColor } from "/static/activity/js/plot_data.js";
@@ -52,6 +53,7 @@ const DEFAULTS = {
 };
 const REPLAY_REQUEST_CACHE_MAX_ENTRIES = 8;
 const NODE_BEHAVIOR_MODE_PREFIX = "behavior_corr__";
+const NEURON_FILTER_DEBOUNCE_MS = 500;
 const STATIC_NODE_MODE_OPTIONS = [
     { value: "activity", label: "Neural activity" },
     { value: "degree_total", label: "Degree total" },
@@ -91,6 +93,10 @@ let edgeAutoRanges = {
     weighted_source: { vmin: -1, vmax: 1 },
 };
 let pendingInitialNodeModes = null;
+let debouncedNeuronFilterApply = null;
+let isReplayLoading = false;
+let isNeuronFilterPending = false;
+let isNeuronFilterApplying = false;
 let pendingUrlState = {
     active: false,
     neuronIds: [],
@@ -972,12 +978,62 @@ function formatReplayTimeLabel(minutesValue, frameIndex) {
     return `${mm}:${ss} (t=${frameIndex})`;
 }
 
-function setLoading(isLoading) {
+function syncLoadingUi() {
     const spinner = document.getElementById("replay-spinner");
+    const isBusy = isReplayLoading || isNeuronFilterPending || isNeuronFilterApplying;
     if (spinner) {
-        spinner.style.visibility = isLoading ? "visible" : "hidden";
+        spinner.style.visibility = isBusy ? "visible" : "hidden";
     }
-    document.getElementById("button-load-replay").disabled = isLoading;
+    const loadButton = document.getElementById("button-load-replay");
+    if (loadButton) {
+        loadButton.disabled = isReplayLoading;
+    }
+}
+
+function setLoading(isLoading) {
+    isReplayLoading = Boolean(isLoading);
+    syncLoadingUi();
+}
+
+function setNeuronFilterPending(isPending) {
+    isNeuronFilterPending = Boolean(isPending);
+    syncLoadingUi();
+}
+
+function setNeuronFilterApplying(isApplying) {
+    isNeuronFilterApplying = Boolean(isApplying);
+    syncLoadingUi();
+}
+
+function getDebouncedNeuronFilterApply() {
+    if (!debouncedNeuronFilterApply) {
+        debouncedNeuronFilterApply = debounce(() => {
+            setNeuronFilterPending(false);
+            if (isReplayLoading || !rawReplayPayload) return;
+
+            setNeuronFilterApplying(true);
+            const runFilter = () => {
+                try {
+                    applyNeuronFilter();
+                } finally {
+                    setNeuronFilterApplying(false);
+                }
+            };
+            if (typeof window.requestAnimationFrame === "function") {
+                window.requestAnimationFrame(runFilter);
+            } else {
+                runFilter();
+            }
+        }, NEURON_FILTER_DEBOUNCE_MS);
+    }
+    return debouncedNeuronFilterApply;
+}
+
+function queueNeuronFilterApply() {
+    if (isReplayLoading || !rawReplayPayload) return;
+    stopPlayback();
+    setNeuronFilterPending(true);
+    getDebouncedNeuronFilterApply()();
 }
 
 function renderError(message) {
@@ -1360,8 +1416,7 @@ function buildNeuronAndBehaviorSelectors() {
         searchField: ["name"],
         sortField: [{ field: "name" }],
         onChange: () => {
-            stopPlayback();
-            applyNeuronFilter();
+            queueNeuronFilterApply();
         },
     });
 
@@ -2259,6 +2314,8 @@ async function loadReplayData() {
     });
 
     stopPlayback();
+    setNeuronFilterPending(false);
+    setNeuronFilterApplying(false);
     setLoading(true);
     renderError(null);
     renderWarnings([]);
