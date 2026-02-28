@@ -1,5 +1,6 @@
 import networkx as nx
 import time
+from pathlib import Path
 from .models import Dataset, Synapse
 from django.db.models import Prefetch
 import pickle
@@ -75,8 +76,15 @@ def initialize_graphs():
     return dataset_graphs
 
 def load_precomputed_graphs(file_path="connectome_graphs.pkl"):
+    graph_path = Path(file_path)
+    if not graph_path.exists():
+        raise FileNotFoundError(
+            f"Precomputed graph file not found: {graph_path}. "
+            "Generate it with `python manage.py init_data_graph_precompute`."
+        )
+
     t1 = time.time_ns()
-    with open(file_path, "rb") as f:
+    with open(graph_path, "rb") as f:
         dataset_graphs = pickle.load(f)
     t2 = time.time_ns()
     print(f"graph loading done. elapsed: {(t2-t1)/1e9} seconds")

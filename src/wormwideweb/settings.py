@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 import yaml
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,16 +25,33 @@ with open(BASE_DIR / "import_cdn.yaml") as f:
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
+def _require_env(name):
+    value = os.environ.get(name)
+    if value is None or not value.strip():
+        raise ImproperlyConfigured(
+            f"Environment variable {name} is required but missing. "
+            f"Please set {name} in your runtime environment."
+        )
+    return value
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJ_SECRET_KEY")
-SECRET_KEY_FALLBACKS = [
-    os.environ.get("DJ_SECRET_KEY_BACKUP"),
-]
+SECRET_KEY = _require_env("DJ_SECRET_KEY")
+SECRET_KEY_FALLBACKS = []
+secret_key_backup = os.environ.get("DJ_SECRET_KEY_BACKUP")
+if secret_key_backup:
+    SECRET_KEY_FALLBACKS.append(secret_key_backup)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.environ.get("DJ_DEBUG", 0)))
 
-ALLOWED_HOSTS = os.environ.get("DJ_ALLOWED_HOSTS").split()
+allowed_hosts_raw = _require_env("DJ_ALLOWED_HOSTS")
+ALLOWED_HOSTS = allowed_hosts_raw.split()
+if not ALLOWED_HOSTS:
+    raise ImproperlyConfigured(
+        "DJ_ALLOWED_HOSTS must contain at least one host. "
+        "Example: 'localhost 127.0.0.1'."
+    )
 
 # Application definition
 USE_ADMIN = bool(int(os.environ.get("DJ_ADMIN", 0)))
@@ -90,10 +108,11 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [
 WSGI_APPLICATION = 'wormwideweb.wsgi.application'
 
 if bool(int(os.environ.get("DJ_USE_REDIS", 0))):
+    redis_uri = _require_env("DJ_REDIS_URI")
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
-            "LOCATION": os.environ.get("DJ_REDIS_URI"),
+            "LOCATION": redis_uri,
         }
     }
 else:
