@@ -5,6 +5,8 @@ urlpatterns = [
     path('', views.index, name="activity-index"),
     path('find-neuron/', views.find_neuron, name="activity-find-neuron"),
     path('dataset/', views.dataset, name="activity-dataset"),
+    path('replay/', views.signal_propagation_replay, name="activity-replay"),
+    path('analysis/replay/', views.signal_propagation_replay),
     
     path('encoding/', views.index_encoding, name="encoding-index"),
     path('encoding/table/', views.encoding_table, name="encoding-table"),
@@ -20,4 +22,5 @@ urlpatterns = [
     path('api/data/atanas_kim_2023_encoding/', views.get_all_dataset_encoding, name="activity-get_all_dataset_encoding"),
     path('api/data/datasets/', views.get_all_dataset, name="activity-datasets"),
     path('api/data/find_neuron/', views.get_find_neuron_data, name="activity-get_find_neuron_data"),
+    path('api/data/replay/', views.get_signal_replay_data, name="activity-get_signal_replay_data"),
 ]

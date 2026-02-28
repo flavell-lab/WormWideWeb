@@ -1,0 +1,378 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Neural Activity - Circuit Dynamics Replay{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
+<link rel="stylesheet" href="{% static 'activity/css/activity_common.css' %}">
+<link rel="stylesheet" href="{% static 'activity/css/replay.css' %}">
+{% endblock %}
+
+{% block main %}
+<div class="container-xxxl py-3">
+  <div class="mb-3">
+    <h4 class="mb-1">Circuit Dynamics Replay</h4>
+    <p class="mb-0">Replay neural activity over connectome structure, synchronized in time.</p>
+  </div>
+
+  <div class="card card-body mb-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-lg-4">
+        <label for="select-activity-dataset" class="form-label">Activity dataset (NeuroPAL only)</label>
+        <input id="select-activity-dataset" autocomplete="off" type="text"
+          class="form-control form-control-sm" placeholder="Select activity dataset">
+      </div>
+      <div class="col-12 col-lg-4">
+        <label for="select-connectome-dataset" class="form-label">Connectome dataset</label>
+        <input id="select-connectome-dataset" autocomplete="off" type="text"
+          class="form-control form-control-sm" placeholder="Select connectome dataset">
+      </div>
+      <div class="col-12 col-lg-4">
+        <label for="select-neurons" class="form-label">Neurons</label>
+        <div class="d-flex align-items-start gap-2 replay-neuron-controls">
+          <div class="tom-select-container flex-grow-1">
+            <input id="select-neurons" autocomplete="off" type="text"
+              class="form-control form-control-sm" placeholder="Select neurons">
+          </div>
+          <button id="button-clear-neurons" type="button" class="btn btn-light btn-sm">Clear</button>
+          <button id="button-toggle-settings" type="button"
+            class="btn btn-outline-secondary btn-sm replay-settings-button replay-icon-button"
+            aria-controls="replay-advanced-settings" aria-expanded="false"
+            aria-label="Show settings" title="Show settings">
+            <i class="bi bi-gear" aria-hidden="true"></i>
+            <span class="visually-hidden">Show settings</span>
+          </button>
+          <button id="button-info-metrics" type="button"
+            class="btn btn-outline-secondary btn-sm replay-info-button replay-icon-button"
+            data-bs-toggle="modal" data-bs-target="#replay-methods-modal"
+            aria-label="Open method info" title="Open method info">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <span class="visually-hidden">Open method info</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="replay-advanced-settings" class="replay-advanced-settings collapse">
+      <hr class="my-3">
+
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="select-layout" class="form-label">Connectome layout</label>
+          <select id="select-layout" class="form-select form-select-sm">
+            <option value="grid">Grid</option>
+            <option value="circle">Circle</option>
+            <option value="concentric" selected>Concentric</option>
+            <option value="breadthfirst">Hierarchy (BFS)</option>
+            <option value="dagre">Hierarchy (Dagre)</option>
+            <option value="cose">Compound Spring Embedder</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="select-edge-type" class="form-label">Edge type</label>
+          <select id="select-edge-type" class="form-select form-select-sm">
+            <option value="all" selected>All</option>
+            <option value="chemical">Chemical only</option>
+            <option value="electrical">Electrical only</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-3 col-lg-1">
+          <label for="input-min-synapse-c" class="form-label">Min chemical</label>
+          <input id="input-min-synapse-c" class="form-control form-control-sm" type="number" min="1" max="5000" value="3">
+        </div>
+        <div class="col-6 col-md-3 col-lg-1">
+          <label for="input-min-synapse-e" class="form-label">Min electrical</label>
+          <input id="input-min-synapse-e" class="form-control form-control-sm" type="number" min="1" max="5000" value="2">
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+          <label for="slider-spacing" class="form-label">Spacing</label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range replay-range" min="0.25" max="1.5" step="0.05"
+              id="slider-spacing" value="1.15">
+            <span id="label-spacing" class="small text-muted replay-range-label">1.15</span>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+          <label for="slider-edge-scale" class="form-label">Scale</label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range replay-range" min="0.1" max="3.0" step="0.05"
+              id="slider-edge-scale" value="1.25">
+            <span id="label-edge-scale" class="small text-muted replay-range-label">1.25</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 align-items-end mt-1">
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="select-edge-size-mode" class="form-label">Edge size</label>
+          <select id="select-edge-size-mode" class="form-select form-select-sm">
+            <option value="count">Connectome counts</option>
+            <option value="weighted_source" selected>Outgoing source activity x synapse</option>
+            <option value="source_only">Outgoing source activity only</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="select-edge-color-mode" class="form-label">Edge color</label>
+          <select id="select-edge-color-mode" class="form-select form-select-sm">
+            <option value="count" selected>Connectome counts</option>
+            <option value="weighted_source">Outgoing source activity x synapse</option>
+            <option value="source_only">Outgoing source activity only</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="select-edge-colormap" class="form-label">Edge colormap</label>
+          <select id="select-edge-colormap" class="form-select form-select-sm">
+            <option value="PiYG">PiYG</option>
+            <option value="PRGn">PRGn</option>
+            <option value="PuOr">PuOr</option>
+            <option value="RdYlGn">RdYlGn</option>
+            <option value="RdBu">RdBu</option>
+            <option value="Bluered">Bluered</option>
+            <option value="Viridis">Viridis</option>
+            <option value="Cividis">Cividis</option>
+            <option value="YlGnBu" selected>YlGnBu</option>
+            <option value="Greens">Greens</option>
+            <option value="YlOrRd">YlOrRd</option>
+            <option value="Reds">Reds</option>
+            <option value="Blues">Blues</option>
+            <option value="Picnic">Picnic</option>
+            <option value="Rainbow">Rainbow</option>
+            <option value="Portland">Portland</option>
+            <option value="Jet">Jet</option>
+            <option value="Hot">Hot</option>
+            <option value="Blackbody">Blackbody</option>
+            <option value="Earth">Earth</option>
+            <option value="Electric">Electric</option>
+            <option value="Greys">Greys</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="input-edge-vmin" class="form-label">Edge vmin</label>
+          <input id="input-edge-vmin" class="form-control form-control-sm" type="number" step="0.01">
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="input-edge-vmax" class="form-label">Edge vmax</label>
+          <input id="input-edge-vmax" class="form-control form-control-sm" type="number" step="0.01">
+        </div>
+      </div>
+
+      <div class="row g-3 align-items-end mt-1">
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="select-node-size-mode" class="form-label">Node size</label>
+          <select id="select-node-size-mode" class="form-select form-select-sm">
+            <option value="activity">Neural activity</option>
+            <option value="degree_total" selected>Degree total</option>
+            <option value="degree_in">Degree in</option>
+            <option value="degree_out">Degree out</option>
+            <option value="pagerank">PageRank centrality</option>
+            <option value="eigenvector">Eigenvector centrality</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="select-node-color-mode" class="form-label">Node color</label>
+          <select id="select-node-color-mode" class="form-select form-select-sm">
+            <option value="activity" selected>Neural activity</option>
+            <option value="degree_total">Degree total</option>
+            <option value="degree_in">Degree in</option>
+            <option value="degree_out">Degree out</option>
+            <option value="pagerank">PageRank centrality</option>
+            <option value="eigenvector">Eigenvector centrality</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="select-node-colormap" class="form-label">Colormap</label>
+          <select id="select-node-colormap" class="form-select form-select-sm">
+            <option value="PiYG">PiYG</option>
+            <option value="PRGn">PRGn</option>
+            <option value="PuOr">PuOr</option>
+            <option value="RdYlGn">RdYlGn</option>
+            <option value="RdBu" selected>RdBu</option>
+            <option value="Bluered">Bluered</option>
+            <option value="Viridis">Viridis</option>
+            <option value="Cividis">Cividis</option>
+            <option value="YlGnBu">YlGnBu</option>
+            <option value="Greens">Greens</option>
+            <option value="YlOrRd">YlOrRd</option>
+            <option value="Reds">Reds</option>
+            <option value="Blues">Blues</option>
+            <option value="Picnic">Picnic</option>
+            <option value="Rainbow">Rainbow</option>
+            <option value="Portland">Portland</option>
+            <option value="Jet">Jet</option>
+            <option value="Hot">Hot</option>
+            <option value="Blackbody">Blackbody</option>
+            <option value="Earth">Earth</option>
+            <option value="Electric">Electric</option>
+            <option value="Greys">Greys</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="input-node-vmin" class="form-label">Color vmin</label>
+          <input id="input-node-vmin" class="form-control form-control-sm" type="number" step="0.01">
+        </div>
+        <div class="col-12 col-md-6 col-lg-2">
+          <label for="input-node-vmax" class="form-label">Color vmax</label>
+          <input id="input-node-vmax" class="form-control form-control-sm" type="number" step="0.01">
+        </div>
+      </div>
+
+      <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+        <button id="button-load-replay" type="button" class="btn btn-primary btn-sm">Load Replay</button>
+        <button id="button-reset-replay" type="button" class="btn btn-light btn-sm">Reset Defaults</button>
+        <a id="button-open-explore" href="#" class="btn btn-outline-primary btn-sm disabled" aria-disabled="true">Open In Activity Plot</a>
+        <div id="replay-spinner" class="spinner-border spinner-border-sm text-secondary" role="status" style="display: none;">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <span id="replay-meta" class="small text-muted ms-1"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="replay-error" class="alert alert-danger mb-3" role="alert" style="display: none;"></div>
+  <div id="replay-warnings" class="alert alert-warning mb-3" role="alert" style="display: none;"></div>
+
+  <div class="modal fade" id="replay-methods-modal" tabindex="-1" aria-labelledby="replay-methods-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="replay-methods-modal-label">Circuit Replay Methods</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body small">
+          <h6 class="mb-1">Data scope and caching</h6>
+          <ul>
+            <li>Graph metrics are computed on the full connectome graph for each connectome dataset, not only visible neurons.</li>
+            <li>Metrics are cached server-side and reused across replay calls.</li>
+            <li>Behavior correlations are computed per activity dataset and cached by dataset.</li>
+          </ul>
+
+          <h6 class="mb-1">Degree metrics</h6>
+          <ul>
+            <li><strong>degree_in_full:</strong> sum of incoming synapse counts over the full connectome.</li>
+            <li><strong>degree_out_full:</strong> sum of outgoing synapse counts over the full connectome.</li>
+            <li><strong>degree_total_full:</strong> degree_in_full + degree_out_full.</li>
+            <li>Electrical synapses are treated as bidirectional for replay flow and degree calculations.</li>
+          </ul>
+
+          <h6 class="mb-1">PageRank centrality</h6>
+          <ul>
+            <li>Computed on a weighted directed graph using synapse counts as edge weights.</li>
+            <li>Higher values indicate nodes that receive influence from important upstream nodes.</li>
+          </ul>
+
+          <h6 class="mb-1">Eigenvector centrality</h6>
+          <ul>
+            <li>Computed on a weighted undirected projection of the full connectome.</li>
+            <li>Higher values indicate nodes connected to other highly central nodes.</li>
+          </ul>
+
+          <h6 class="mb-1">Behavior correlation</h6>
+          <ul>
+            <li>For each behavior trace, correlation is Pearson correlation between normalized neuron activity and behavior over overlapping time points.</li>
+            <li>A separate node feature is available for each behavior key in the dataset.</li>
+            <li>Positive values indicate aligned trends; negative values indicate anti-aligned trends.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-body mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-2 replay-timeline-row">
+      <div class="btn-group btn-group-sm replay-timeline-buttons">
+        <button id="button-step-back" type="button" class="btn btn-light"><i class="bi bi-skip-backward-fill"></i></button>
+        <button id="button-play-pause" type="button" class="btn btn-light"><i class="bi bi-play-fill"></i> Play</button>
+        <button id="button-step-forward" type="button" class="btn btn-light"><i class="bi bi-skip-forward-fill"></i></button>
+      </div>
+      <div class="replay-timeline-slider flex-grow-1">
+        <input id="replay-slider" type="range" class="form-range mb-0" min="0" max="1" step="1" value="0">
+      </div>
+      <div class="d-flex align-items-center gap-1 replay-timeline-speed">
+        <label for="select-speed" class="form-label mb-0 small">Speed</label>
+        <select id="select-speed" class="form-select form-select-sm">
+          <option value="0.5">0.5x</option>
+          <option value="1" selected>1x</option>
+          <option value="2">2x</option>
+          <option value="4">4x</option>
+        </select>
+      </div>
+      <span id="replay-time-label" class="replay-time replay-timeline-time">00:00 (t=0)</span>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12 col-xl-8">
+      <div class="card card-body">
+        <h5 class="mb-2">Connectome Dynamics</h5>
+        <p class="plot-description mb-1">
+          Node color/size indicates activity at current frame. Cmd/Ctrl-click nodes to multi-select and lock highlights.
+        </p>
+        <div class="replay-colorbars mb-2">
+          <div class="replay-colorbar-group">
+            <div class="replay-colorbar-title">Node color</div>
+            <div id="replay-node-colorbar" class="replay-colorbar"></div>
+            <div class="replay-colorbar-labels">
+              <span id="replay-node-colorbar-min">0.00</span>
+              <span id="replay-node-colorbar-max">1.00</span>
+            </div>
+          </div>
+          <div class="replay-colorbar-group">
+            <div class="replay-colorbar-title">Edge color</div>
+            <div id="replay-edge-colorbar" class="replay-colorbar"></div>
+            <div class="replay-colorbar-labels">
+              <span id="replay-edge-colorbar-min">0.00</span>
+              <span id="replay-edge-colorbar-max">1.00</span>
+            </div>
+          </div>
+        </div>
+        <p id="replay-edge-info" class="plot-description mb-2">
+          Click an edge to inspect mode-specific values.
+        </p>
+        <div id="replay-graph"></div>
+      </div>
+    </div>
+    <div class="col-12 col-xl-4">
+      <div class="card card-body mb-3">
+        <div class="d-flex align-items-end justify-content-between gap-2 mb-2">
+          <h5 class="mb-0">Behavior</h5>
+          <div class="behavior-selector-wrap tom-select-container" id="select-behavior-container">
+            <input id="select-behavior" autocomplete="off" type="text"
+              class="form-control form-control-sm" placeholder="Select behavior(s)">
+          </div>
+        </div>
+        <div id="replay-behavior-plot" class="signal-plot behavior-plot"></div>
+      </div>
+      <div class="card card-body">
+        <h5 id="signal-plot-title" class="mb-2">Global Activity</h5>
+        <div id="replay-signal-plot" class="signal-plot neuro-plot"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ IMPORT_CDN.plotly.url }}"
+  integrity="{{ IMPORT_CDN.plotly.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.tom_select_js.url }}"
+  integrity="{{ IMPORT_CDN.tom_select_js.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape.url }}"
+  integrity="{{ IMPORT_CDN.cytoscape.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.dagre.url }}"
+  integrity="{{ IMPORT_CDN.dagre.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape_dagre.url }}"></script>
+
+{{ activity_datasets|json_script:"activity-replay-datasets" }}
+{{ connectome_datasets|json_script:"connectome-replay-datasets" }}
+<script>const replayActivityDatasets = JSON.parse(JSON.parse(document.getElementById('activity-replay-datasets').textContent));</script>
+<script>const replayConnectomeDatasets = JSON.parse(JSON.parse(document.getElementById('connectome-replay-datasets').textContent));</script>
+
+<script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
+<script type="module" src="{% static 'activity/js/views/replay.js' %}" defer></script>
+{% endblock %}

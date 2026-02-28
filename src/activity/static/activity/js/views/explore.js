@@ -105,6 +105,69 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const buttonToggleConnectome = document.getElementById("buttonToggleConnectome")
+    const buttonCircuitReplay = document.getElementById("buttonCircuitReplay")
+
+    const buildCircuitReplayUrl = () => {
+        const activityDataset = data.dataset_id;
+        if (!activityDataset) return null;
+
+        const params = new URLSearchParams();
+        params.set("activity_dataset", activityDataset);
+
+        const selectedConnectomeDataset = datasetSelector?.selectorDataset?.items?.[0]
+            || (localStorage.getItem("activity_connectome_selected_dataset_str") || "")
+                .split(",")
+                .map((item) => item.trim())
+                .filter((item) => item)[0];
+        if (selectedConnectomeDataset) {
+            params.set("connectome_dataset", selectedConnectomeDataset);
+        }
+
+        const selectedIndices = neuronSelector.selector.items || [];
+        const dedupedNeuronIndices = Array.from(
+            new Set(
+                selectedIndices
+                    .map((idx) => Number.parseInt(idx, 10))
+                    .filter((idx) => Number.isInteger(idx) && idx >= 1)
+            )
+        ).sort((a, b) => a - b);
+        if (dedupedNeuronIndices.length > 0) {
+            params.set("n", dedupedNeuronIndices.join("-"));
+        }
+
+        const selectedBehaviors = behaviorSelector.selector.items || [];
+        if (selectedBehaviors.length > 0) {
+            params.set("behaviors", selectedBehaviors.join(","));
+        }
+
+        return `/activity/replay/?${params.toString()}`;
+    };
+
+    const updateCircuitReplayButton = () => {
+        if (!buttonCircuitReplay) return;
+        const href = buildCircuitReplayUrl();
+        if (!href) {
+            buttonCircuitReplay.href = "#";
+            buttonCircuitReplay.classList.add("disabled");
+            buttonCircuitReplay.setAttribute("aria-disabled", "true");
+            return;
+        }
+        buttonCircuitReplay.href = href;
+        buttonCircuitReplay.classList.remove("disabled");
+        buttonCircuitReplay.setAttribute("aria-disabled", "false");
+    };
+
+    if (buttonCircuitReplay) {
+        buttonCircuitReplay.addEventListener("click", (event) => {
+            const href = buildCircuitReplayUrl();
+            if (!href || buttonCircuitReplay.classList.contains("disabled")) {
+                event.preventDefault();
+                return;
+            }
+            event.preventDefault();
+            window.location.assign(href);
+        });
+    }
 
     /*
         Fullscreen logic
@@ -129,11 +192,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         buttonConnectomeFullscreen.addEventListener("click", () => {
             toggleFullscreen(colConnectome);
         });
+        if (datasetSelector?.selectorDataset) {
+            datasetSelector.selectorDataset.on("change", updateCircuitReplayButton);
+        }
     } else {
         // If not NeuroPAL, remove the connectome column entirely, making the plot column full width
         colPlot.classList.remove("col-lg-6");
         colPlot.classList.add("col-lg-12");
+        if (buttonCircuitReplay) {
+            buttonCircuitReplay.classList.add("disabled");
+            buttonCircuitReplay.setAttribute("aria-disabled", "true");
+            buttonCircuitReplay.href = "#";
+        }
     }
+
+    neuronSelector.selector.on("change", updateCircuitReplayButton);
+    behaviorSelector.selector.on("change", updateCircuitReplayButton);
 
     const fullscreenMap = {
         "col-plot": {
@@ -259,6 +333,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('No valid neurons found in URL parameter "n"');
         }
     }
+    updateCircuitReplayButton();
 
     /*
         Encoding table

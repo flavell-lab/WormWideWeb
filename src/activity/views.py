@@ -2,6 +2,8 @@ import json
 import uuid
 from collections import defaultdict
 
+import networkx as nx
+import numpy as np
 from django.core.cache import cache
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Prefetch
@@ -9,15 +11,20 @@ from django.http import JsonResponse, HttpResponseBadRequest, Http404
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.cache import cache_page, cache_control
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from connectome.views import connectome_datasets
+from connectome.models import Dataset as ConnectomeDataset, Synapse
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from core.models import JSONCache
 
 ACTIVITY_CACHE_TTL_LONG = 60 * 60 * 24 * 30
 ACTIVITY_CACHE_TTL_MEDIUM = 60 * 60 * 24 * 14
 ACTIVITY_CACHE_TTL_SHORT = 60 * 60 * 24 * 7
+ACTIVITY_REPLAY_CACHE_TTL = 60 * 60 * 24
+ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY = "activity_replay_connectome_degree_index:v2"
+ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX = "activity_replay_behavior_corr:v1:"
+ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX = "activity_replay:v2:"
 
 
 def _dedupe_int_list(values):
@@ -176,6 +183,664 @@ def find_neuron(request):
     context = {}
 
     return render(request, "activity/find_neuron.html", context)
+
+
+@cache_page(60 * 60 * 24)
+def signal_propagation_replay(request):
+    activity_datasets = [
+        {
+            "dataset_id": dataset.dataset_id,
+            "dataset_name": dataset.dataset_name,
+            "paper_title": dataset.paper.title_short if dataset.paper else "",
+        }
+        for dataset in (
+            GCaMPDataset.objects
+            .filter(dataset_type__type_id__icontains="neuropal")
+            .distinct()
+            .select_related("paper")
+            .only("dataset_id", "dataset_name", "paper__title_short")
+            .order_by("dataset_name")
+        )
+    ]
+
+    context = {
+        "activity_datasets": json.dumps(activity_datasets, cls=DjangoJSONEncoder),
+        "connectome_datasets": connectome_datasets(
+            cache_key="activity_replay_connectome_datasets_json"
+        ),
+    }
+    return render(request, "activity/replay.html", context)
+
+
+def _parse_bool_query(value, default):
+    if value is None:
+        return default
+
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"Invalid boolean value: {value}")
+
+
+def _parse_int_query(value, default, field_name, min_value=None, max_value=None):
+    if value in {None, ""}:
+        parsed = default
+    else:
+        try:
+            parsed = int(value)
+        except ValueError as error:
+            raise ValueError(
+                f"Invalid integer for '{field_name}': {value}"
+            ) from error
+
+    if min_value is not None and parsed < min_value:
+        raise ValueError(f"'{field_name}' must be >= {min_value}.")
+    if max_value is not None and parsed > max_value:
+        raise ValueError(f"'{field_name}' must be <= {max_value}.")
+    return parsed
+
+
+def _is_valid_named_neuron(name):
+    if not name:
+        return False
+    clean_name = name.strip()
+    if not clean_name:
+        return False
+    if "?" in clean_name:
+        return False
+    return True
+
+
+def _aggregate_replay_traces(dataset):
+    traces_by_name = defaultdict(list)
+    idx_by_name = defaultdict(list)
+    neurons = (
+        GCaMPNeuron.objects
+        .filter(dataset=dataset)
+        .only("neuron_name", "trace", "idx_neuron")
+    )
+
+    for neuron in neurons:
+        if not _is_valid_named_neuron(neuron.neuron_name):
+            continue
+
+        trace = np.asarray(neuron.trace, dtype=float)
+        if trace.ndim != 1 or trace.size < 3:
+            continue
+        clean_name = neuron.neuron_name.strip()
+        traces_by_name[clean_name].append(trace)
+        idx_by_name[clean_name].append(int(neuron.idx_neuron))
+
+    aggregated = {}
+    for neuron_name, traces in traces_by_name.items():
+        min_len = min(trace.size for trace in traces)
+        if min_len < 3:
+            continue
+
+        aligned = np.vstack([trace[:min_len] for trace in traces])
+        mean_trace = np.nanmean(aligned, axis=0)
+        if np.isnan(mean_trace).all():
+            continue
+
+        representative_idx = min(idx_by_name[neuron_name]) if idx_by_name[neuron_name] else None
+        aggregated[neuron_name] = {
+            "trace": np.nan_to_num(
+                mean_trace,
+                nan=0.0,
+                posinf=0.0,
+                neginf=0.0,
+            ),
+            "representative_idx_neuron": representative_idx,
+        }
+
+    return aggregated
+
+
+def _normalize_trace(trace):
+    mean = float(np.mean(trace))
+    std = float(np.std(trace))
+    if std == 0.0:
+        std = 1.0
+    normalized = (trace - mean) / std
+    normalized = np.clip(normalized, -3.0, 3.0) / 3.0
+    return normalized
+
+
+def _extract_behavior_traces(dataset, trace_length):
+    truncated_behavior = dataset.truncated_behavior
+    if not isinstance(truncated_behavior, dict):
+        return {"traces": {}, "default_behavior": None}
+
+    traces = truncated_behavior.get("traces")
+    if not isinstance(traces, dict):
+        return {"traces": {}, "default_behavior": None}
+
+    output = {}
+    for behavior_key, behavior_dict in traces.items():
+        if not isinstance(behavior_dict, dict):
+            continue
+        raw_data = behavior_dict.get("data")
+        if not isinstance(raw_data, list):
+            continue
+
+        arr = np.asarray(raw_data, dtype=float)
+        if arr.ndim != 1 or arr.size < trace_length:
+            continue
+
+        color_index = behavior_dict.get("i")
+        try:
+            color_index = int(color_index)
+        except (TypeError, ValueError):
+            color_index = None
+
+        output_entry = {
+            "name": str(behavior_dict.get("name", behavior_key)),
+            "unit": str(behavior_dict.get("unit", "")),
+            "data": np.nan_to_num(
+                arr[:trace_length],
+                nan=0.0,
+                posinf=0.0,
+                neginf=0.0,
+            ).tolist(),
+        }
+        if color_index is not None:
+            output_entry["i"] = color_index
+
+        output[behavior_key] = output_entry
+
+    default_behavior = "v" if "v" in output else (next(iter(output), None))
+    return {"traces": output, "default_behavior": default_behavior}
+
+
+def _extract_behavior_arrays(dataset):
+    truncated_behavior = dataset.truncated_behavior
+    if not isinstance(truncated_behavior, dict):
+        return {}
+
+    traces = truncated_behavior.get("traces")
+    if not isinstance(traces, dict):
+        return {}
+
+    output = {}
+    for behavior_key, behavior_dict in traces.items():
+        if not isinstance(behavior_dict, dict):
+            continue
+        raw_data = behavior_dict.get("data")
+        if not isinstance(raw_data, list):
+            continue
+        arr = np.asarray(raw_data, dtype=float)
+        if arr.ndim != 1 or arr.size < 3:
+            continue
+        output[behavior_key] = np.nan_to_num(
+            arr,
+            nan=0.0,
+            posinf=0.0,
+            neginf=0.0,
+        )
+    return output
+
+
+def _safe_pearson_corr(x, y):
+    if x.size < 3 or y.size < 3:
+        return 0.0
+
+    x_centered = x - float(np.mean(x))
+    y_centered = y - float(np.mean(y))
+    denom = float(np.linalg.norm(x_centered) * np.linalg.norm(y_centered))
+    if denom <= 1e-12:
+        return 0.0
+
+    corr = float(np.dot(x_centered, y_centered) / denom)
+    return float(np.clip(corr, -1.0, 1.0))
+
+
+def _compute_activity_behavior_correlation_index(activity_dataset, traces_by_name=None):
+    if traces_by_name is None:
+        traces_by_name = _aggregate_replay_traces(activity_dataset)
+    if not traces_by_name:
+        return {}
+
+    behavior_arrays = _extract_behavior_arrays(activity_dataset)
+    if not behavior_arrays:
+        return {}
+
+    by_neuron = {}
+    for neuron_name, neuron_data in traces_by_name.items():
+        trace = np.asarray(neuron_data.get("trace", []), dtype=float)
+        if trace.ndim != 1 or trace.size < 3:
+            continue
+
+        normalized_trace = _normalize_trace(trace)
+        neuron_corr = {}
+        for behavior_key, behavior_arr in behavior_arrays.items():
+            overlap = min(normalized_trace.size, behavior_arr.size)
+            if overlap < 3:
+                continue
+            neuron_corr[behavior_key] = _safe_pearson_corr(
+                normalized_trace[:overlap],
+                behavior_arr[:overlap],
+            )
+        by_neuron[neuron_name] = neuron_corr
+
+    return by_neuron
+
+
+def _get_activity_behavior_correlation_index(activity_dataset, traces_by_name=None):
+    cache_key = (
+        f"{ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX}"
+        f"{activity_dataset.dataset_id}"
+    )
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    index = _compute_activity_behavior_correlation_index(
+        activity_dataset,
+        traces_by_name=traces_by_name,
+    )
+    cache.set(cache_key, index, timeout=ACTIVITY_CACHE_TTL_LONG)
+    return index
+
+
+def _add_weighted_edge(graph, source, target, weight):
+    if graph.has_edge(source, target):
+        graph[source][target]["weight"] += weight
+    else:
+        graph.add_edge(source, target, weight=weight)
+
+
+def _compute_connectome_full_degree_index():
+    """
+    Build full-graph node metrics for every node in every connectome dataset.
+
+    This index is independent of replay visualization filtering (selected neurons,
+    activity/connectome overlap, and per-request edge thresholds), and can be reused
+    across replay requests.
+    """
+    metric_index = defaultdict(
+        lambda: defaultdict(
+            lambda: {
+                "degree_in_full": 0.0,
+                "degree_out_full": 0.0,
+                "degree_total_full": 0.0,
+                "pagerank_centrality": 0.0,
+                "eigenvector_centrality": 0.0,
+            }
+        )
+    )
+    directed_graph_by_dataset = {}
+    undirected_graph_by_dataset = {}
+
+    # Ensure all dataset-neuron pairs exist in the index (including isolated neurons).
+    for dataset_id, neuron_name in ConnectomeDataset.objects.values_list(
+        "dataset_id",
+        "available_neurons__name",
+    ):
+        if not dataset_id:
+            continue
+        directed_graph = directed_graph_by_dataset.setdefault(dataset_id, nx.DiGraph())
+        undirected_graph = undirected_graph_by_dataset.setdefault(dataset_id, nx.Graph())
+        if neuron_name:
+            directed_graph.add_node(neuron_name)
+            undirected_graph.add_node(neuron_name)
+            _ = metric_index[dataset_id][neuron_name]
+        else:
+            _ = metric_index[dataset_id]
+
+    for dataset_id, pre_name, post_name, synapse_type, synapse_count in Synapse.objects.values_list(
+        "dataset__dataset_id",
+        "pre__name",
+        "post__name",
+        "synapse_type",
+        "synapse_count",
+    ):
+        if not dataset_id or not pre_name or not post_name:
+            continue
+
+        directed_graph = directed_graph_by_dataset.setdefault(dataset_id, nx.DiGraph())
+        undirected_graph = undirected_graph_by_dataset.setdefault(dataset_id, nx.Graph())
+        if not directed_graph.has_node(pre_name):
+            directed_graph.add_node(pre_name)
+            undirected_graph.add_node(pre_name)
+            _ = metric_index[dataset_id][pre_name]
+        if not directed_graph.has_node(post_name):
+            directed_graph.add_node(post_name)
+            undirected_graph.add_node(post_name)
+            _ = metric_index[dataset_id][post_name]
+
+        weight = float(synapse_count)
+        pre_metrics = metric_index[dataset_id][pre_name]
+        post_metrics = metric_index[dataset_id][post_name]
+
+        pre_metrics["degree_out_full"] += weight
+        post_metrics["degree_in_full"] += weight
+        _add_weighted_edge(directed_graph, pre_name, post_name, weight)
+        _add_weighted_edge(undirected_graph, pre_name, post_name, weight)
+
+        # Gap junctions are effectively bidirectional.
+        if synapse_type == "e":
+            post_metrics["degree_out_full"] += weight
+            pre_metrics["degree_in_full"] += weight
+            _add_weighted_edge(directed_graph, post_name, pre_name, weight)
+
+    output = {}
+    for dataset_id, node_map in metric_index.items():
+        directed_graph = directed_graph_by_dataset.get(dataset_id, nx.DiGraph())
+        undirected_graph = undirected_graph_by_dataset.get(dataset_id, nx.Graph())
+
+        pagerank = {node: 0.0 for node in directed_graph.nodes}
+        if directed_graph.number_of_nodes() > 0 and directed_graph.number_of_edges() > 0:
+            try:
+                pagerank = nx.pagerank(directed_graph, weight="weight")
+            except Exception:
+                pass
+
+        eigenvector = {node: 0.0 for node in undirected_graph.nodes}
+        if undirected_graph.number_of_nodes() > 0 and undirected_graph.number_of_edges() > 0:
+            try:
+                eigenvector = nx.eigenvector_centrality(
+                    undirected_graph,
+                    weight="weight",
+                    max_iter=1000,
+                    tol=1.0e-6,
+                )
+            except Exception:
+                try:
+                    eigenvector = nx.eigenvector_centrality_numpy(
+                        undirected_graph,
+                        weight="weight",
+                    )
+                except Exception:
+                    pass
+
+        output[dataset_id] = {}
+        for neuron_name, metrics in node_map.items():
+            degree_in = float(metrics["degree_in_full"])
+            degree_out = float(metrics["degree_out_full"])
+            output[dataset_id][neuron_name] = {
+                "degree_in_full": degree_in,
+                "degree_out_full": degree_out,
+                "degree_total_full": degree_in + degree_out,
+                "pagerank_centrality": float(pagerank.get(neuron_name, 0.0)),
+                "eigenvector_centrality": float(eigenvector.get(neuron_name, 0.0)),
+            }
+
+    return output
+
+
+def _get_connectome_full_degree_index():
+    cached = cache.get(ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY)
+    if cached is not None:
+        return cached
+
+    index = _compute_connectome_full_degree_index()
+    cache.set(
+        ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY,
+        index,
+        timeout=ACTIVITY_CACHE_TTL_LONG,
+    )
+    return index
+
+
+def _build_signal_replay_payload(
+    activity_dataset_id,
+    connectome_dataset_id,
+    include_electrical,
+    min_synapse_chemical,
+    min_synapse_electrical,
+):
+    activity_dataset = get_object_or_404(
+        GCaMPDataset.objects.only(
+            "dataset_id",
+            "dataset_name",
+            "avg_timestep",
+            "truncated_behavior",
+        ),
+        dataset_id=activity_dataset_id,
+    )
+    connectome_dataset = get_object_or_404(
+        ConnectomeDataset.objects.only("dataset_id", "name"),
+        dataset_id=connectome_dataset_id,
+    )
+
+    traces_by_name = _aggregate_replay_traces(activity_dataset)
+    if not traces_by_name:
+        raise ValueError(
+            "No valid named neuron traces found in the selected activity dataset."
+        )
+
+    connectome_names = set(
+        connectome_dataset.available_neurons.values_list("name", flat=True)
+    )
+    matched_names = sorted(set(traces_by_name.keys()) & connectome_names)
+    if len(matched_names) < 3:
+        raise ValueError(
+            "Insufficient overlap between activity and connectome neurons "
+            "(need at least 3 named neurons)."
+        )
+
+    warnings = []
+
+    trace_arrays = [traces_by_name[name]["trace"] for name in matched_names]
+    min_len = min(trace.size for trace in trace_arrays)
+    if min_len < 3:
+        raise ValueError("Neuron traces are too short for replay.")
+
+    normalized_traces = {}
+    for name in matched_names:
+        normalized_traces[name] = _normalize_trace(
+            np.asarray(traces_by_name[name]["trace"][:min_len], dtype=float)
+        )
+
+    activity_matrix = np.vstack([normalized_traces[name] for name in matched_names])
+    global_signal = np.mean(np.abs(activity_matrix), axis=0)
+    time_minutes = (
+        np.arange(min_len, dtype=float) * float(activity_dataset.avg_timestep)
+    ).tolist()
+
+    node_degree_in = defaultdict(float)
+    node_degree_out = defaultdict(float)
+    edges = []
+    max_edge_weight = 0.0
+    connectome_metric_map = _get_connectome_full_degree_index().get(
+        connectome_dataset.dataset_id,
+        {},
+    )
+    behavior_corr_by_neuron = _get_activity_behavior_correlation_index(
+        activity_dataset,
+        traces_by_name=traces_by_name,
+    )
+
+    matched_set = set(matched_names)
+
+    synapses_qs = Synapse.objects.filter(
+        dataset=connectome_dataset,
+        pre__name__in=matched_set,
+        post__name__in=matched_set,
+    )
+
+    for pre_name, post_name, synapse_type, synapse_count in synapses_qs.values_list(
+        "pre__name",
+        "post__name",
+        "synapse_type",
+        "synapse_count",
+    ):
+        if synapse_type == "c":
+            if synapse_count < min_synapse_chemical:
+                continue
+        elif synapse_type == "e":
+            if not include_electrical:
+                continue
+            if synapse_count < min_synapse_electrical:
+                continue
+        else:
+            continue
+
+        weight = float(synapse_count)
+        max_edge_weight = max(max_edge_weight, weight)
+
+        edge_type = "electrical" if synapse_type == "e" else "chemical"
+        edges.append(
+            {
+                "source": pre_name,
+                "target": post_name,
+                "weight": weight,
+                "edge_type": edge_type,
+            }
+        )
+        node_degree_out[pre_name] += weight
+        node_degree_in[post_name] += weight
+
+        # Gap junctions are effectively bidirectional for replay flow.
+        if synapse_type == "e":
+            edges.append(
+                {
+                    "source": post_name,
+                    "target": pre_name,
+                    "weight": weight,
+                    "edge_type": edge_type,
+                }
+            )
+            node_degree_out[post_name] += weight
+            node_degree_in[pre_name] += weight
+
+    if not edges:
+        warnings.append(
+            "No connectome edges matched the selected filters in this neuron overlap."
+        )
+
+    behavior = _extract_behavior_traces(activity_dataset, min_len)
+    behavior_keys = list(behavior.get("traces", {}).keys())
+
+    nodes = []
+    for name in matched_names:
+        trace = normalized_traces[name]
+        full_metrics = connectome_metric_map.get(name, {})
+        node_behavior_corr = behavior_corr_by_neuron.get(name, {})
+        filtered_behavior_corr = {
+            behavior_key: float(node_behavior_corr.get(behavior_key, 0.0))
+            for behavior_key in behavior_keys
+        }
+        degree_in_full = float(full_metrics.get("degree_in_full", 0.0))
+        degree_out_full = float(full_metrics.get("degree_out_full", 0.0))
+        degree_total_full = float(
+            full_metrics.get("degree_total_full", degree_in_full + degree_out_full)
+        )
+        nodes.append(
+            {
+                "id": name,
+                "trace": trace.tolist(),
+                "variance": float(np.var(trace)),
+                "mean_abs_activity": float(np.mean(np.abs(trace))),
+                "degree_in": float(node_degree_in[name]),
+                "degree_out": float(node_degree_out[name]),
+                "degree_in_full": degree_in_full,
+                "degree_out_full": degree_out_full,
+                "degree_total_full": degree_total_full,
+                "pagerank_centrality": float(full_metrics.get("pagerank_centrality", 0.0)),
+                "eigenvector_centrality": float(
+                    full_metrics.get("eigenvector_centrality", 0.0)
+                ),
+                "behavior_correlations": filtered_behavior_corr,
+                "representative_idx_neuron": traces_by_name[name]["representative_idx_neuron"],
+            }
+        )
+
+    return {
+        "status": "ok",
+        "meta": {
+            "activity_dataset_id": activity_dataset.dataset_id,
+            "activity_dataset_name": activity_dataset.dataset_name,
+            "connectome_dataset_id": connectome_dataset.dataset_id,
+            "connectome_dataset_name": connectome_dataset.name,
+            "include_electrical": include_electrical,
+            "min_synapse_chemical": min_synapse_chemical,
+            "min_synapse_electrical": min_synapse_electrical,
+            "trace_length": int(min_len),
+            "avg_timestep": float(activity_dataset.avg_timestep),
+            "n_nodes": len(nodes),
+            "n_edges": len(edges),
+            "max_edge_weight": float(max_edge_weight),
+        },
+        "warnings": warnings,
+        "nodes": nodes,
+        "edges": edges,
+        "timeline": {
+            "time_minutes": time_minutes,
+            "global_signal": global_signal.tolist(),
+        },
+        "behavior": behavior,
+    }
+
+
+@require_GET
+@cache_control(public=True, max_age=ACTIVITY_REPLAY_CACHE_TTL)
+def get_signal_replay_data(request):
+    activity_dataset_id = request.GET.get("activity_dataset")
+    connectome_dataset_id = request.GET.get("connectome_dataset")
+    if not activity_dataset_id or not connectome_dataset_id:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": (
+                    "Query params 'activity_dataset' and "
+                    "'connectome_dataset' are required."
+                ),
+            },
+            status=400,
+        )
+
+    try:
+        include_electrical = _parse_bool_query(
+            request.GET.get("include_electrical"),
+            default=True,
+        )
+        min_synapse_chemical = _parse_int_query(
+            request.GET.get("min_synapse_chemical"),
+            default=1,
+            field_name="min_synapse_chemical",
+            min_value=1,
+            max_value=5000,
+        )
+        min_synapse_electrical = _parse_int_query(
+            request.GET.get("min_synapse_electrical"),
+            default=1,
+            field_name="min_synapse_electrical",
+            min_value=1,
+            max_value=5000,
+        )
+    except ValueError as error:
+        return JsonResponse({"status": "error", "message": str(error)}, status=400)
+
+    cache_key = (
+        f"{ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX}"
+        f"{activity_dataset_id}|{connectome_dataset_id}|"
+        f"{int(include_electrical)}|{min_synapse_chemical}|{min_synapse_electrical}"
+    )
+    cached_payload = cache.get(cache_key)
+    if cached_payload is not None:
+        return JsonResponse(cached_payload)
+
+    try:
+        payload = _build_signal_replay_payload(
+            activity_dataset_id=activity_dataset_id,
+            connectome_dataset_id=connectome_dataset_id,
+            include_electrical=include_electrical,
+            min_synapse_chemical=min_synapse_chemical,
+            min_synapse_electrical=min_synapse_electrical,
+        )
+    except Http404:
+        return JsonResponse(
+            {"status": "error", "message": "Dataset not found."},
+            status=404,
+        )
+    except ValueError as error:
+        return JsonResponse({"status": "error", "message": str(error)}, status=400)
+
+    cache.set(cache_key, payload, timeout=ACTIVITY_REPLAY_CACHE_TTL)
+    return JsonResponse(payload)
 
 
 def get_neural_trace_data(dataset_id, idx_neuron):
