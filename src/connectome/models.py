@@ -3,7 +3,7 @@ from django.db import models
 class NeuronClass(models.Model):
     def __str__(self) -> str:
         return "Class: " + self.name
-    name = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=50, unique=True)
     split_lr = models.BooleanField(
         null=True,
         default=None,
@@ -33,7 +33,7 @@ class Neuron(models.Model):
     def __str__(self):
         return self.name
     
-    name = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=50, unique=True)
     neuron_class = models.ForeignKey(NeuronClass, on_delete=models.CASCADE,
                                      related_name="neurons")
     LR_CHOICES = (
