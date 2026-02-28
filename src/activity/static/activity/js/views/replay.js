@@ -1414,7 +1414,7 @@ function buildNeuronAndBehaviorSelectors() {
         valueField: "value",
         labelField: "name",
         searchField: ["name"],
-        sortField: [{ field: "name" }],
+        sortField: [{ field: "idx" }, { field: "name" }],
         onChange: () => {
             queueNeuronFilterApply();
         },
