@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.http import require_GET, require_POST
 
-from connectome.views import connectome_datasets
+from connectome.views import connectome_datasets, get_edge_response_data
 from connectome.models import Dataset as ConnectomeDataset, Synapse
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from core.models import JSONCache
@@ -256,22 +256,71 @@ def _is_valid_named_neuron(name):
 def _aggregate_replay_traces(dataset):
     traces_by_name = defaultdict(list)
     idx_by_name = defaultdict(list)
-    neurons = (
-        GCaMPNeuron.objects
-        .filter(dataset=dataset)
-        .only("neuron_name", "trace", "idx_neuron")
-    )
+    neuron_data = get_dataset_neuron_data(dataset)
+    if not neuron_data:
+        return {}
 
-    for neuron in neurons:
-        if not _is_valid_named_neuron(neuron.neuron_name):
+    idx_values = []
+    for idx_raw in neuron_data.keys():
+        try:
+            idx_values.append(int(idx_raw))
+        except (TypeError, ValueError):
+            continue
+    idx_values = _dedupe_int_list(idx_values)
+
+    trace_cache_key_map = {
+        f"{dataset.dataset_id}_{idx_neuron}": idx_neuron for idx_neuron in idx_values
+    }
+    cached_traces = cache.get_many(list(trace_cache_key_map.keys()))
+    trace_by_idx = {}
+    missing_indices = []
+    for cache_key, idx_neuron in trace_cache_key_map.items():
+        trace_entry = cached_traces.get(cache_key)
+        if trace_entry is not None:
+            trace_by_idx[idx_neuron] = trace_entry
+        else:
+            missing_indices.append(idx_neuron)
+
+    if missing_indices:
+        missing_neurons = (
+            GCaMPNeuron.objects
+            .filter(dataset=dataset, idx_neuron__in=missing_indices)
+            .only("idx_neuron", "trace")
+        )
+        new_cache_entries = {}
+        for neuron in missing_neurons:
+            trace_entry = {
+                "trace": neuron.trace,
+                "idx_neuron": neuron.idx_neuron,
+                "dataset_id": dataset.dataset_id,
+            }
+            trace_by_idx[neuron.idx_neuron] = trace_entry
+            new_cache_entries[f"{dataset.dataset_id}_{neuron.idx_neuron}"] = trace_entry
+        if new_cache_entries:
+            cache.set_many(new_cache_entries, timeout=ACTIVITY_CACHE_TTL_MEDIUM)
+
+    for idx_neuron, neuron_info in neuron_data.items():
+        try:
+            idx_neuron = int(idx_neuron)
+        except (TypeError, ValueError):
             continue
 
-        trace = np.asarray(neuron.trace, dtype=float)
+        neuron_name = ""
+        if isinstance(neuron_info, dict):
+            neuron_name = str(neuron_info.get("label", "")).strip()
+        if not _is_valid_named_neuron(neuron_name):
+            continue
+
+        trace_entry = trace_by_idx.get(idx_neuron)
+        if trace_entry is None:
+            continue
+
+        trace = np.asarray(trace_entry.get("trace", []), dtype=float)
         if trace.ndim != 1 or trace.size < 3:
             continue
-        clean_name = neuron.neuron_name.strip()
+        clean_name = neuron_name
         traces_by_name[clean_name].append(trace)
-        idx_by_name[clean_name].append(int(neuron.idx_neuron))
+        idx_by_name[clean_name].append(idx_neuron)
 
     aggregated = {}
     for neuron_name, traces in traces_by_name.items():
@@ -309,7 +358,8 @@ def _normalize_trace(trace):
 
 
 def _extract_behavior_traces(dataset, trace_length):
-    truncated_behavior = dataset.truncated_behavior
+    behavior_data = get_behavior_data(dataset.dataset_id)
+    truncated_behavior = behavior_data.get("data", {}).get("behavior", {})
     if not isinstance(truncated_behavior, dict):
         return {"traces": {}, "default_behavior": None}
 
@@ -355,7 +405,8 @@ def _extract_behavior_traces(dataset, trace_length):
 
 
 def _extract_behavior_arrays(dataset):
-    truncated_behavior = dataset.truncated_behavior
+    behavior_data = get_behavior_data(dataset.dataset_id)
+    truncated_behavior = behavior_data.get("data", {}).get("behavior", {})
     if not isinstance(truncated_behavior, dict):
         return {}
 
@@ -596,7 +647,6 @@ def _build_signal_replay_payload(
             "dataset_id",
             "dataset_name",
             "avg_timestep",
-            "truncated_behavior",
         ),
         dataset_id=activity_dataset_id,
     )
@@ -655,18 +705,28 @@ def _build_signal_replay_payload(
 
     matched_set = set(matched_names)
 
-    synapses_qs = Synapse.objects.filter(
-        dataset=connectome_dataset,
-        pre__name__in=matched_set,
-        post__name__in=matched_set,
+    edge_response = get_edge_response_data(
+        {
+            "datasets": [connectome_dataset.dataset_id],
+            "neurons": matched_names,
+            "classes": [],
+            "show_individual_neuron": True,
+            "show_connected_neuron": False,
+        }
     )
 
-    for pre_name, post_name, synapse_type, synapse_count in synapses_qs.values_list(
-        "pre__name",
-        "post__name",
-        "synapse_type",
-        "synapse_count",
-    ):
+    for synapse in edge_response.get("synapses", []):
+        pre_name = synapse.get("pre")
+        post_name = synapse.get("post")
+        synapse_type = synapse.get("type")
+        synapse_count = synapse.get("count")
+        if pre_name not in matched_set or post_name not in matched_set:
+            continue
+        try:
+            synapse_count = float(synapse_count)
+        except (TypeError, ValueError):
+            continue
+
         if synapse_type == "c":
             if synapse_count < min_synapse_chemical:
                 continue
