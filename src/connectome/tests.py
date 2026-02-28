@@ -2,7 +2,7 @@ import json
 from unittest.mock import patch
 
 import networkx as nx
-from django.test import RequestFactory, SimpleTestCase
+from django.test import Client, RequestFactory, SimpleTestCase, override_settings
 
 import connectome.graph_data
 from connectome.views import find_paths, get_edges
@@ -60,6 +60,30 @@ class GetEdgesViewTests(SimpleTestCase):
                 "show_connected_neuron": False,
             }
         )
+
+
+@override_settings(ALLOWED_HOSTS=["testserver", "wormwideweb.org"])
+class GetEdgesCSRFSecureProxyTests(SimpleTestCase):
+    def setUp(self):
+        self.client = Client(enforce_csrf_checks=True)
+
+    def test_get_edges_accepts_csrf_for_forwarded_https_origin(self):
+        self.client.get("/", HTTP_HOST="wormwideweb.org")
+        csrf_token = self.client.cookies["csrftoken"].value
+
+        payload = {"datasets": [], "neurons": [], "classes": []}
+        response = self.client.post(
+            "/connectome/api/get-edges/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_HOST="wormwideweb.org",
+            HTTP_ORIGIN="https://wormwideweb.org",
+            HTTP_X_FORWARDED_PROTO="https",
+            HTTP_X_CSRFTOKEN=csrf_token,
+        )
+
+        # CSRF passes; payload is intentionally invalid so the view returns 400.
+        self.assertEqual(response.status_code, 400)
 
 
 class FindPathsViewTests(SimpleTestCase):

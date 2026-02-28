@@ -35,6 +35,39 @@ def _require_env(name):
     return value
 
 
+def _split_env_list(value):
+    return [item.strip() for item in value.split() if item.strip()]
+
+
+def _dedupe_preserve_order(values):
+    seen = set()
+    output = []
+    for value in values:
+        if value not in seen:
+            seen.add(value)
+            output.append(value)
+    return output
+
+
+def _build_csrf_trusted_origins(allowed_hosts, allow_http=False):
+    origins = []
+    for host in allowed_hosts:
+        if host == "*":
+            continue
+
+        is_wildcard = host.startswith(".")
+        clean_host = host[1:] if is_wildcard else host
+        if not clean_host:
+            continue
+
+        origin_host = f"*.{clean_host}" if is_wildcard else clean_host
+        origins.append(f"https://{origin_host}")
+        if allow_http:
+            origins.append(f"http://{origin_host}")
+
+    return _dedupe_preserve_order(origins)
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = _require_env("DJ_SECRET_KEY")
 SECRET_KEY_FALLBACKS = []
@@ -46,12 +79,21 @@ if secret_key_backup:
 DEBUG = bool(int(os.environ.get("DJ_DEBUG", 0)))
 
 allowed_hosts_raw = _require_env("DJ_ALLOWED_HOSTS")
-ALLOWED_HOSTS = allowed_hosts_raw.split()
+ALLOWED_HOSTS = _split_env_list(allowed_hosts_raw)
 if not ALLOWED_HOSTS:
     raise ImproperlyConfigured(
         "DJ_ALLOWED_HOSTS must contain at least one host. "
         "Example: 'localhost 127.0.0.1'."
     )
+
+# Cloud Run / reverse proxy support: trust forwarded HTTPS scheme for CSRF origin checks.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+csrf_trusted_origins_raw = os.environ.get("DJ_CSRF_TRUSTED_ORIGINS", "").strip()
+if csrf_trusted_origins_raw:
+    CSRF_TRUSTED_ORIGINS = _split_env_list(csrf_trusted_origins_raw)
+else:
+    CSRF_TRUSTED_ORIGINS = _build_csrf_trusted_origins(ALLOWED_HOSTS, allow_http=DEBUG)
 
 # Application definition
 USE_ADMIN = bool(int(os.environ.get("DJ_ADMIN", 0)))

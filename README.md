@@ -52,6 +52,7 @@ Note: if the database doesn't contain the connectome-related models/data, it is 
 Env variables: 
 - `DJ_DEBUG`: `0` or `1`. Must be set to `0` for deployment.  
 - `DJ_ALLOWED_HOSTS`: `localhost` should be included for local development. space separated. e.g. `127.0.0.1 .run.app wormwideweb.org`
+- `DJ_CSRF_TRUSTED_ORIGINS` (optional): space separated full origins (with scheme), e.g. `https://wormwideweb.org https://*.run.app`. If unset, it is derived from `DJ_ALLOWED_HOSTS`.
 - `DJ_USE_REDIS`: `0` or `1`. Set it to `0` for local development (fallback to local memory caching).  
 - `DJ_REDIS_URI`: Redis instance URI e.g. `redis://x.x.x.x:6379`
 
@@ -167,4 +168,3 @@ Make sure that `paper_id` matches the `paper_id` in `dataset_types.json` and `pa
 
 #### 4. add the checksum data
 Compute the file's SHA256 checksum and add it to `config/data_checksum.json`.  
-
