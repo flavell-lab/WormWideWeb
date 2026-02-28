@@ -1,4 +1,6 @@
 import json
+import os
+from itertools import islice
 import networkx as nx
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
@@ -11,7 +13,44 @@ from .models import Neuron, NeuronClass, Dataset, Synapse
 from collections import defaultdict
 import connectome.graph_data 
 
+CONNECTOME_CACHE_VERSION = os.environ.get("CONNECTOME_CACHE_VERSION", "v1")
+CONNECTOME_CACHE_TTL = 60 * 60 * 24 * 30
+CONNECTOME_RATE_LIMIT_WINDOW = 60
+GET_EDGES_RATE_LIMIT_PER_WINDOW = 60
+FIND_PATHS_RATE_LIMIT_PER_WINDOW = 45
 MAX_EDGE_PAYLOAD_ITEMS = 300
+MAX_EDGE_DATASETS = 20
+MAX_EDGE_SELECTION = 400
+MAX_EDGE_BODY_BYTES = 100_000
+MAX_RETURNED_SHORTEST_PATHS = 100
+MAX_NODE_LABEL_LENGTH = 30
+
+
+def _cache_key(*parts):
+    return ":".join(["connectome", CONNECTOME_CACHE_VERSION, *[str(part) for part in parts]])
+
+
+def _edge_cache_key(dataset_id, neuron_or_class):
+    return _cache_key("edges", dataset_id, neuron_or_class)
+
+
+def _client_identifier(request):
+    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "unknown")
+
+
+def _is_rate_limited(request, scope, limit):
+    rate_key = _cache_key("ratelimit", scope, _client_identifier(request))
+    if cache.add(rate_key, 1, timeout=CONNECTOME_RATE_LIMIT_WINDOW):
+        return False
+    try:
+        current = cache.incr(rate_key)
+    except ValueError:
+        cache.set(rate_key, 1, timeout=CONNECTOME_RATE_LIMIT_WINDOW)
+        return False
+    return current > limit
 
 
 def _dedupe_string_list(values):
@@ -52,8 +91,12 @@ def _validate_get_edges_payload(data):
     classes = _dedupe_string_list(data["classes"])
     if not datasets:
         return None, "At least one dataset must be provided."
+    if len(datasets) > MAX_EDGE_DATASETS:
+        return None, f"At most {MAX_EDGE_DATASETS} datasets can be queried at once."
     if not neurons and not classes:
         return None, "At least one neuron or class must be provided."
+    if len(neurons) + len(classes) > MAX_EDGE_SELECTION:
+        return None, f"At most {MAX_EDGE_SELECTION} total neurons/classes can be queried at once."
 
     normalized = {
         "datasets": datasets,
@@ -65,13 +108,14 @@ def _validate_get_edges_payload(data):
     return normalized, None
 
 
-def connectome_datasets(cache_key="connectome_datasets_json"):
+def connectome_datasets(cache_key=None):
+    cache_key = cache_key or _cache_key("datasets_json")
     datasets_json = cache.get(cache_key)
     if datasets_json is None:
         datasets = Dataset.objects.all()
         datasets_json = json.dumps(list(datasets.values(
             'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time','citation','dataset_sha256')), cls=DjangoJSONEncoder)
-        cache.set(cache_key, datasets_json, timeout=None)
+        cache.set(cache_key, datasets_json, timeout=CONNECTOME_CACHE_TTL)
 
     return datasets_json
 
@@ -109,7 +153,9 @@ def available_neurons(request):
         return HttpResponse("Error: datasets parameter not found", status=400)
     
     # Get the list of dataset IDs from the request.
-    dataset_ids = datasets_str.split(',')
+    dataset_ids = _dedupe_string_list(datasets_str.split(','))
+    if len(dataset_ids) > MAX_EDGE_DATASETS:
+        return HttpResponse(f"Error: too many datasets. max={MAX_EDGE_DATASETS}", status=400)
     
     # Final union dictionaries.
     final_neurons = {}
@@ -117,7 +163,7 @@ def available_neurons(request):
 
     # For each dataset, try to get its available neurons from cache; if not, query and cache.
     for dataset_id in dataset_ids:
-        cache_key = f"available_neurons_{dataset_id}"
+        cache_key = _cache_key("available_neurons", dataset_id)
         dataset_result = cache.get(cache_key)
         if dataset_result is None:
             # Prepare querysets with only needed fields.
@@ -170,7 +216,7 @@ def available_neurons(request):
                 'neuron_classes': neuron_classes_data
             }
             # Cache the serialized result for this dataset.
-            cache.set(cache_key, dataset_result, timeout=None)
+            cache.set(cache_key, dataset_result, timeout=CONNECTOME_CACHE_TTL)
         
         # Combine the dataset result into the final union.
         for neuron_name, neuron_info in dataset_result.get('neurons', {}).items():
@@ -211,11 +257,11 @@ def get_edge_response_data(data):
     key_mapping = {}  # key -> (dataset, type, neuron_or_class)
     for dataset in datasets:
         for n in neurons_input:
-            key = f"{dataset}!{n}"
+            key = _edge_cache_key(dataset, n)
             keys_needed.append(key)
             key_mapping[key] = (dataset, "neuron", n)
         for c in classes_input:
-            key = f"{dataset}!{c}"
+            key = _edge_cache_key(dataset, c)
             keys_needed.append(key)
             key_mapping[key] = (dataset, "class", c)
 
@@ -282,8 +328,8 @@ def get_edge_response_data(data):
 
         # Cache each result and update all_synapses.
         for val, syn_list in result_mapping.items():
-            key = f"{dataset}!{val}"
-            cache.set(key, syn_list, timeout=None)
+            key = _edge_cache_key(dataset, val)
+            cache.set(key, syn_list, timeout=CONNECTOME_CACHE_TTL)
             all_synapses[dataset][val] = syn_list
 
     # Helper functions.
@@ -373,6 +419,11 @@ def get_edge_response_data(data):
 
 @require_POST
 def get_edges(request):
+    if _is_rate_limited(request, "get_edges", GET_EDGES_RATE_LIMIT_PER_WINDOW):
+        return JsonResponse({'status': 'error', 'message': 'Rate limit exceeded. Please retry shortly.'}, status=429)
+    if len(request.body) > MAX_EDGE_BODY_BYTES:
+        return JsonResponse({'status': 'error', 'message': 'Request payload too large.'}, status=413)
+
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -395,17 +446,35 @@ def find_paths(request):
     if connectome.graph_data.GRAPH_OBJECTS is None:
         # Handle the case where initialization failed
         return JsonResponse({'error': 'Graph precompute data is not available'}, status=400)
+    if _is_rate_limited(request, "find_paths", FIND_PATHS_RATE_LIMIT_PER_WINDOW):
+        return JsonResponse({'error': 'Rate limit exceeded. Please retry shortly.'}, status=429)
 
     dataset_graphs = connectome.graph_data.GRAPH_OBJECTS
 
-    # try:
-    # parse query parameters
     dataset = request.GET.get('dataset')
     start_neuron = request.GET.get('start')
     end_neuron = request.GET.get('end')
-    weighted = request.GET.get('weighted', 'true').lower() == 'true'
-    gap_junction = request.GET.get('gap_junction', 'true').lower() == 'true'
-    use_class = request.GET.get('class', 'false').lower() == 'true'
+    if not dataset or not start_neuron or not end_neuron:
+        return JsonResponse({'error': 'dataset, start, and end query params are required'}, status=400)
+    if len(start_neuron) > MAX_NODE_LABEL_LENGTH or len(end_neuron) > MAX_NODE_LABEL_LENGTH:
+        return JsonResponse({'error': 'start or end neuron identifier is too long'}, status=400)
+
+    def parse_bool(value, default):
+        if value is None:
+            return default
+        value = value.lower()
+        if value in {"1", "true"}:
+            return True
+        if value in {"0", "false"}:
+            return False
+        raise ValueError
+
+    try:
+        weighted = parse_bool(request.GET.get('weighted'), True)
+        gap_junction = parse_bool(request.GET.get('gap_junction'), True)
+        use_class = parse_bool(request.GET.get('class'), False)
+    except ValueError:
+        return JsonResponse({'error': 'Boolean query params must be true/false or 1/0'}, status=400)
 
     # validate dataset
     if dataset not in dataset_graphs:
@@ -416,7 +485,24 @@ def find_paths(request):
 
     # find all shortest paths
     try:
-        paths = list(nx.all_shortest_paths(graph, source=start_neuron, target=end_neuron, method="dijkstra", weight=(lambda u, v, data: 1 / data['weight']) if weighted else None))
+        shortest_paths_iter = nx.all_shortest_paths(
+            graph,
+            source=start_neuron,
+            target=end_neuron,
+            method="dijkstra",
+            weight=(lambda u, v, data: 1 / data['weight']) if weighted else None,
+        )
+        paths = list(islice(shortest_paths_iter, MAX_RETURNED_SHORTEST_PATHS + 1))
+        if len(paths) > MAX_RETURNED_SHORTEST_PATHS:
+            return JsonResponse(
+                {
+                    'error': (
+                        f'Too many shortest paths (> {MAX_RETURNED_SHORTEST_PATHS}). '
+                        'Please narrow the query.'
+                    )
+                },
+                status=413,
+            )
     except nx.NetworkXNoPath:
         return JsonResponse({'paths': [], 'message': 'No path found'})
     except nx.NodeNotFound:

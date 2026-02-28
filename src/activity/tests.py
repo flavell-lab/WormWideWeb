@@ -4,7 +4,7 @@ from unittest.mock import patch
 from django.http import Http404
 from django.test import RequestFactory, SimpleTestCase
 
-from activity.views import get_neural_trace, plot_multiple_data
+from activity.views import _cache_key, get_neural_trace, plot_multiple_data
 
 
 class PlotMultipleDataTests(SimpleTestCase):
@@ -52,7 +52,7 @@ class PlotMultipleDataTests(SimpleTestCase):
         self.assertEqual(body["status"], "success")
         self.assertTrue(body["redirect"].endswith("token=abc123"))
         mock_cache_set.assert_called_once_with(
-            "plot_multiple_data:abc123",
+            _cache_key("plot_multiple_data", "abc123"),
             {"dataset-a": [3, 2, 1]},
             timeout=600,
         )
