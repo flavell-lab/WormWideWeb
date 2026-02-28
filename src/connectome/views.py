@@ -13,9 +13,6 @@ from collections import defaultdict
 import connectome.graph_data 
 
 CONNECTOME_CACHE_TTL = 60 * 60 * 24 * 30
-CONNECTOME_RATE_LIMIT_WINDOW = 60
-GET_EDGES_RATE_LIMIT_PER_WINDOW = 60
-FIND_PATHS_RATE_LIMIT_PER_WINDOW = 45
 MAX_EDGE_PAYLOAD_ITEMS = 5000
 MAX_EDGE_DATASETS = 20
 MAX_EDGE_SELECTION = 5000
@@ -26,25 +23,6 @@ MAX_NODE_LABEL_LENGTH = 30
 
 def _edge_cache_key(dataset_id, neuron_or_class):
     return f"{dataset_id}!{neuron_or_class}"
-
-
-def _client_identifier(request):
-    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if forwarded_for:
-        return forwarded_for.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "unknown")
-
-
-def _is_rate_limited(request, scope, limit):
-    rate_key = f"connectome_ratelimit:{scope}:{_client_identifier(request)}"
-    if cache.add(rate_key, 1, timeout=CONNECTOME_RATE_LIMIT_WINDOW):
-        return False
-    try:
-        current = cache.incr(rate_key)
-    except ValueError:
-        cache.set(rate_key, 1, timeout=CONNECTOME_RATE_LIMIT_WINDOW)
-        return False
-    return current > limit
 
 
 def _dedupe_string_list(values):
@@ -413,8 +391,6 @@ def get_edge_response_data(data):
 
 @require_POST
 def get_edges(request):
-    if _is_rate_limited(request, "get_edges", GET_EDGES_RATE_LIMIT_PER_WINDOW):
-        return JsonResponse({'status': 'error', 'message': 'Rate limit exceeded. Please retry shortly.'}, status=429)
     if len(request.body) > MAX_EDGE_BODY_BYTES:
         return JsonResponse({'status': 'error', 'message': 'Request payload too large.'}, status=413)
 
@@ -440,8 +416,6 @@ def find_paths(request):
     if connectome.graph_data.GRAPH_OBJECTS is None:
         # Handle the case where initialization failed
         return JsonResponse({'error': 'Graph precompute data is not available'}, status=400)
-    if _is_rate_limited(request, "find_paths", FIND_PATHS_RATE_LIMIT_PER_WINDOW):
-        return JsonResponse({'error': 'Rate limit exceeded. Please retry shortly.'}, status=429)
 
     dataset_graphs = connectome.graph_data.GRAPH_OBJECTS
 
