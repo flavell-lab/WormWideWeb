@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from activity.models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
+from activity.models import GCaMPDataset, GCaMPNeuron
 from core.models import JSONCache
 from collections import defaultdict
 import json

@@ -2,7 +2,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from connectome.models import Neuron, NeuronClass, Dataset, Synapse
 import json
-import csv
 import os
 import time
 from core.utility import sha256, load_csv

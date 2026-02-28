@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from activity.views import get_dataset_encoding, get_neural_trace_data, get_behavior_data, get_encoding_data
+from activity.views import get_neural_trace_data, get_behavior_data, get_encoding_data
 from activity.models import GCaMPDataset
 import time
 
@@ -10,7 +10,6 @@ def cache_datasets(self):
     for dataset in datasets:
         dataset_id = dataset.dataset_id
         n_neuron = dataset.n_neuron
-        n_labeled = dataset.n_labeled
         
         # behavior
         get_behavior_data(dataset_id)

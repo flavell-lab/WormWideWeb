@@ -123,13 +123,13 @@ def calculate_cor_behavior(list_trace_array, data):
         for variable_name in keys:
             if variable_name in data:
                 variable_data = data[variable_name]
+                key_save = key_conversion[variable_name]
                 if np.sum(variable_data) == 0.:
                     result[i][key_save] = 0.
                 else:
                     # Ensure lengths match by taking the minimum length
                     min_length = min(len(trace), len(variable_data))
                     correlation, _ = pearsonr(trace[:min_length], variable_data[:min_length])
-                    key_save = key_conversion[variable_name]
                     result[i][key_save] = np.around(correlation, 6)
 
     return result

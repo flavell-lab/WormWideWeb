@@ -14,7 +14,6 @@ from django.views.decorators.http import require_POST
 
 from connectome.views import connectome_datasets
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
-from connectome.models import Dataset
 from core.models import JSONCache
 
 ACTIVITY_CACHE_VERSION = os.environ.get("ACTIVITY_CACHE_VERSION", "v1")
@@ -199,7 +198,8 @@ def get_neural_trace_data(dataset_id, idx_neuron):
             .values("trace", "idx_neuron")
             .first()
         )
-        if neuron is None: return None
+        if neuron is None:
+            return None
         neuron["dataset_id"] = dataset_id
         cache.set(cache_key, neuron, timeout=ACTIVITY_CACHE_TTL_MEDIUM)
 
@@ -298,7 +298,7 @@ def get_dataset_neuron_data(dataset):
                 "name": f"{neuron.idx_neuron} ({neuron.neuron_name})" if neuron.neuron_name else str(neuron.idx_neuron),
                 "label": neuron.neuron_name,
                 "class": neuron.neuron_class.name if neuron.neuron_class else "",
-                "idx_neruon": neuron.idx_neuron
+                "idx_neuron": neuron.idx_neuron
             }
             for neuron in qs
         }

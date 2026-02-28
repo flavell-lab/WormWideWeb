@@ -1,5 +1,5 @@
 from django.db import models
-from connectome.models import Neuron, NeuronClass
+from connectome.models import NeuronClass
 
 def empty_json():
     return {}

@@ -24,7 +24,7 @@ def is_healthy(request):
     try:
         connection.ensure_connection()
         return HttpResponse("OK", status=200)
-    except Exception as e:
+    except Exception:
         return HttpResponse("ERROR", status=500) # failure
     
 @require_GET

@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from connectome.models import Neuron, NeuronClass
-from activity.views import get_dataset_encoding, get_dataset_neuron_data
 from core.models import JSONCache
 import json
 import os

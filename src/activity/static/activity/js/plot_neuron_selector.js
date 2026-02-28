@@ -24,10 +24,10 @@ export class NeuronSelector {
             return;
         }
 
-        // Create options using Object.values for cleaner code and fix the typo in "idx_neuron"
+        // Create options for TomSelect.
         const options = []
         Object.keys(neuronData).forEach((key) => {
-            options.push({"idx_neuron": neuronData[key].idx_neruon, "name": neuronData[key]["name"],
+            options.push({"idx_neuron": neuronData[key].idx_neuron, "name": neuronData[key]["name"],
                 "label": neuronData[key]["label"], "class": neuronData[key]["class"]})
         });        
         
