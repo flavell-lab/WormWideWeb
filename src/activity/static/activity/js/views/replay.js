@@ -7,6 +7,7 @@ import {
     setLocalBool,
     setLocalInt,
     setLocalStr,
+    updateCitation,
 } from "/static/core/js/utility.js";
 import { getCycleColor } from "/static/activity/js/plot_data.js";
 import { getNodeColor, PLOTLY_COLOR_SCALES } from "/static/core/js/colorscale.js";
@@ -972,7 +973,10 @@ function formatReplayTimeLabel(minutesValue, frameIndex) {
 }
 
 function setLoading(isLoading) {
-    document.getElementById("replay-spinner").style.display = isLoading ? "inline-block" : "none";
+    const spinner = document.getElementById("replay-spinner");
+    if (spinner) {
+        spinner.style.visibility = isLoading ? "visible" : "hidden";
+    }
     document.getElementById("button-load-replay").disabled = isLoading;
 }
 
@@ -1006,6 +1010,19 @@ function renderMeta() {
     }
 
     element.textContent = `Filtered ${replayPayload.meta.n_nodes} neurons / ${replayPayload.meta.n_edges} edges (matched ${rawReplayPayload.meta.n_nodes} neurons)`;
+}
+
+function updateReplayConnectomeCitation() {
+    const citationElement = document.getElementById("replay-connectome-citation");
+    if (!citationElement) return;
+
+    const datasetId = selectors.connectomeSelector?.getValue?.() || "";
+    const options = selectors.connectomeSelector?.options || {};
+    if (!datasetId || !options[datasetId]) {
+        citationElement.textContent = "N/A";
+        return;
+    }
+    updateCitation([datasetId], "replay-connectome-citation", options);
 }
 
 function updateElectricalInputState() {
@@ -2521,6 +2538,7 @@ document.addEventListener("DOMContentLoaded", () => {
     appliedEdgeType = edgeTypeSelect.value;
 
     const reloadAfterDatasetChange = () => {
+        updateReplayConnectomeCitation();
         if (activitySelector.getValue() && connectomeSelector.getValue()) {
             loadReplayData();
         }
@@ -2529,6 +2547,8 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     activitySelector.on("change", reloadAfterDatasetChange);
     connectomeSelector.on("change", reloadAfterDatasetChange);
+
+    updateReplayConnectomeCitation();
 
     sliderSpacing.addEventListener("input", (event) => {
         updateRangeLabel("label-spacing", event.target.value);
