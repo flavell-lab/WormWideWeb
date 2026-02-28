@@ -1,5 +1,4 @@
 import json
-import os
 from itertools import islice
 import networkx as nx
 from django.shortcuts import render
@@ -13,25 +12,20 @@ from .models import Neuron, NeuronClass, Dataset, Synapse
 from collections import defaultdict
 import connectome.graph_data 
 
-CONNECTOME_CACHE_VERSION = os.environ.get("CONNECTOME_CACHE_VERSION", "v1")
 CONNECTOME_CACHE_TTL = 60 * 60 * 24 * 30
 CONNECTOME_RATE_LIMIT_WINDOW = 60
 GET_EDGES_RATE_LIMIT_PER_WINDOW = 60
 FIND_PATHS_RATE_LIMIT_PER_WINDOW = 45
-MAX_EDGE_PAYLOAD_ITEMS = 300
+MAX_EDGE_PAYLOAD_ITEMS = 5000
 MAX_EDGE_DATASETS = 20
-MAX_EDGE_SELECTION = 400
+MAX_EDGE_SELECTION = 5000
 MAX_EDGE_BODY_BYTES = 100_000
 MAX_RETURNED_SHORTEST_PATHS = 100
 MAX_NODE_LABEL_LENGTH = 30
 
 
-def _cache_key(*parts):
-    return ":".join(["connectome", CONNECTOME_CACHE_VERSION, *[str(part) for part in parts]])
-
-
 def _edge_cache_key(dataset_id, neuron_or_class):
-    return _cache_key("edges", dataset_id, neuron_or_class)
+    return f"{dataset_id}!{neuron_or_class}"
 
 
 def _client_identifier(request):
@@ -42,7 +36,7 @@ def _client_identifier(request):
 
 
 def _is_rate_limited(request, scope, limit):
-    rate_key = _cache_key("ratelimit", scope, _client_identifier(request))
+    rate_key = f"connectome_ratelimit:{scope}:{_client_identifier(request)}"
     if cache.add(rate_key, 1, timeout=CONNECTOME_RATE_LIMIT_WINDOW):
         return False
     try:
@@ -109,7 +103,7 @@ def _validate_get_edges_payload(data):
 
 
 def connectome_datasets(cache_key=None):
-    cache_key = cache_key or _cache_key("datasets_json")
+    cache_key = cache_key or "connectome_datasets_json"
     datasets_json = cache.get(cache_key)
     if datasets_json is None:
         datasets = Dataset.objects.all()
@@ -163,7 +157,7 @@ def available_neurons(request):
 
     # For each dataset, try to get its available neurons from cache; if not, query and cache.
     for dataset_id in dataset_ids:
-        cache_key = _cache_key("available_neurons", dataset_id)
+        cache_key = f"available_neurons_{dataset_id}"
         dataset_result = cache.get(cache_key)
         if dataset_result is None:
             # Prepare querysets with only needed fields.

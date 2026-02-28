@@ -1,5 +1,4 @@
 import json
-import os
 import uuid
 from collections import defaultdict
 
@@ -16,18 +15,9 @@ from connectome.views import connectome_datasets
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from core.models import JSONCache
 
-ACTIVITY_CACHE_VERSION = os.environ.get("ACTIVITY_CACHE_VERSION", "v1")
 ACTIVITY_CACHE_TTL_LONG = 60 * 60 * 24 * 30
 ACTIVITY_CACHE_TTL_MEDIUM = 60 * 60 * 24 * 14
 ACTIVITY_CACHE_TTL_SHORT = 60 * 60 * 24 * 7
-
-
-def _cache_key(*parts):
-    return ":".join(["activity", ACTIVITY_CACHE_VERSION, *[str(part) for part in parts]])
-
-
-def _trace_cache_key(dataset_id, idx_neuron):
-    return _cache_key("trace", dataset_id, idx_neuron)
 
 
 def _dedupe_int_list(values):
@@ -86,7 +76,7 @@ def encoding_connectome(request):
     Render the encoding connectome page using cached connectome dataset data.
     If the data is not in cache, fetch it and store it.
     """
-    cache_key = _cache_key("encoding_connectome_data")
+    cache_key = "encoding_connectome_data"
     encoding_data = cache.get(cache_key)
     if encoding_data is None:
         datasets_json = connectome_datasets()
@@ -105,7 +95,7 @@ def dataset(request):
     Optimizes queries by fetching papers and dataset types in bulk,
     and caches the resulting JSON structures.
     """
-    cache_key = _cache_key("dataset_data")
+    cache_key = "dataset_data"
     context = cache.get(cache_key)
     if context is None:
         # Build list of datasets with required fields.
@@ -189,7 +179,7 @@ def find_neuron(request):
 
 
 def get_neural_trace_data(dataset_id, idx_neuron):
-    cache_key = _trace_cache_key(dataset_id, idx_neuron)
+    cache_key = f"{dataset_id}_{idx_neuron}"
     neuron = cache.get(cache_key)
     if neuron is None:
         neuron = (
@@ -243,7 +233,7 @@ def get_dataset_encoding(dataset):
 
 
 def get_encoding_data(dataset_id):
-    cache_key = _cache_key("encoding", dataset_id)
+    cache_key = f"{dataset_id}_encoding"
     encoding = cache.get(cache_key)
     if encoding is None:
         dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
@@ -261,7 +251,7 @@ def get_encoding(request, dataset_id):
     return JsonResponse(get_encoding_data(dataset_id))
 
 def get_behavior_data(dataset_id):
-    cache_key = _cache_key("behavior", dataset_id)
+    cache_key = f"{dataset_id}_behavior"
     data = cache.get(cache_key)
     if data is None:
         dataset = get_object_or_404(
@@ -289,7 +279,7 @@ def get_behavior(request, dataset_id):
 
 
 def get_dataset_neuron_data(dataset):
-    cache_key = _cache_key("dataset_neuron_data", dataset.dataset_id)
+    cache_key = f"{dataset.dataset_id}_dataset_neuron_data"
     neuron_data = cache.get(cache_key)
     if neuron_data is None:
         qs = dataset.neurons.select_related("neuron_class").all()
@@ -338,7 +328,7 @@ def plot_dataset(request, dataset_id):
             return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
 
         # Map each neuron index to its cache key.
-        cache_key_map = {_trace_cache_key(dataset_id, idx): idx for idx in list_idx_neuron}
+        cache_key_map = {f"{dataset_id}_{idx}": idx for idx in list_idx_neuron}
         
         # Retrieve cached traces.
         cached_traces = cache.get_many(list(cache_key_map.keys()))
@@ -370,7 +360,7 @@ def plot_dataset(request, dataset_id):
             }
             # Cache the new traces in bulk.
             cache.set_many({
-                _trace_cache_key(dataset_id, neuron.idx_neuron): trace_data for neuron_idx,
+                f"{dataset_id}_{neuron.idx_neuron}": trace_data for neuron_idx,
                 trace_data in new_traces.items() for neuron in neurons if neuron.idx_neuron == neuron_idx
             }, timeout=ACTIVITY_CACHE_TTL_MEDIUM)
 
@@ -438,7 +428,7 @@ def plot_multiple(request):
         return render(request, "activity/plot_multiple.html", {"list_dataset_meta": [], "plots": "{}"})
     
     # Retrieve the input data from cache using the token.
-    cache_key = _cache_key("plot_multiple_data", token)
+    cache_key = "plot_multiple_data:" + token
     data = cache.get(cache_key)
     if not data:
         # Token not found or expired.
@@ -552,7 +542,7 @@ def plot_multiple_data(request):
 
         # Generate a unique token and store the data in the cache.
         token = uuid.uuid4().hex
-        cache_key = _cache_key("plot_multiple_data", token)
+        cache_key = "plot_multiple_data:" + token
         cache.set(cache_key, normalized_data, timeout=600)  # Store for 10 minutes (adjust as needed).
 
         # Build the redirect URL with the token as a GET parameter.
