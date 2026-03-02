@@ -1736,14 +1736,13 @@ function resetNeuronSelectorOptions(nodes, preferredSelection = [], preferredIsA
     selector.clearOptions();
     selector.clearCache();
 
-    const options = nodes
+    const selectableNodes = nodes.filter((node) => Boolean(node.has_activity));
+    const options = selectableNodes
         .map((node) => {
             const idx = Number.isInteger(node.representative_idx_neuron)
                 ? node.representative_idx_neuron
                 : null;
-            const baseLabel = idx !== null ? `${idx} (${node.id})` : node.id;
-            const hasActivity = Boolean(node.has_activity);
-            const label = hasActivity ? baseLabel : `${baseLabel} (no activity)`;
+            const label = idx !== null ? `${idx} (${node.id})` : node.id;
             return {
                 value: node.id,
                 name: label,
