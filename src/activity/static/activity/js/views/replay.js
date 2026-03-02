@@ -1109,9 +1109,15 @@ function buildFrameVisualConfigKey({
 
 function formatReplayTimeLabel(minutesValue, frameIndex) {
     const minutes = Number.isFinite(minutesValue) ? minutesValue : 0;
-    const totalSeconds = Math.max(0, Math.round(minutes * 60));
-    const mm = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-    const ss = String(totalSeconds % 60).padStart(2, "0");
+    const totalSeconds = Math.max(0, minutes * 60);
+    let mmValue = Math.floor(totalSeconds / 60);
+    let ssValue = Number((totalSeconds - mmValue * 60).toFixed(1));
+    if (ssValue >= 60) {
+        mmValue += 1;
+        ssValue = 0;
+    }
+    const mm = String(mmValue).padStart(2, "0");
+    const ss = ssValue.toFixed(1).padStart(4, "0");
     return `${mm}:${ss} (t=${frameIndex + 1})`;
 }
 
