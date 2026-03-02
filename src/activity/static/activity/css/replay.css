@@ -62,6 +62,10 @@
     width: 210px;
 }
 
+.replay-behavior-controls {
+    flex: 0 0 auto;
+}
+
 .signal-plot {
     min-height: 240px;
 }
@@ -223,6 +227,10 @@
     .behavior-selector-wrap {
         width: 100%;
         min-width: 0;
+    }
+
+    .replay-behavior-controls {
+        width: 100%;
     }
 
     .replay-timeline-row {

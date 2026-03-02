@@ -24,7 +24,7 @@ ACTIVITY_CACHE_TTL_SHORT = 60 * 60 * 24 * 7
 ACTIVITY_REPLAY_CACHE_TTL = 60 * 60 * 24
 ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY = "activity_replay_connectome_degree_index:v2"
 ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX = "activity_replay_behavior_corr:v1:"
-ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX = "activity_replay:v2:"
+ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX = "activity_replay:v3:"
 
 
 def _dedupe_int_list(values):
@@ -361,11 +361,21 @@ def _extract_behavior_traces(dataset, trace_length):
     behavior_data = get_behavior_data(dataset.dataset_id)
     truncated_behavior = behavior_data.get("data", {}).get("behavior", {})
     if not isinstance(truncated_behavior, dict):
-        return {"traces": {}, "default_behavior": None}
+        return {
+            "traces": {},
+            "default_behavior": None,
+            "reversal_events": [],
+            "events": {},
+        }
 
     traces = truncated_behavior.get("traces")
     if not isinstance(traces, dict):
-        return {"traces": {}, "default_behavior": None}
+        return {
+            "traces": {},
+            "default_behavior": None,
+            "reversal_events": [],
+            "events": {},
+        }
 
     output = {}
     for behavior_key, behavior_dict in traces.items():
@@ -400,8 +410,49 @@ def _extract_behavior_traces(dataset, trace_length):
 
         output[behavior_key] = output_entry
 
+    reversal_events = []
+    raw_reversals = truncated_behavior.get("reversal_events")
+    if isinstance(raw_reversals, list):
+        for reversal in raw_reversals:
+            if not isinstance(reversal, (list, tuple)) or len(reversal) < 2:
+                continue
+            try:
+                start_idx = int(reversal[0])
+                end_idx = int(reversal[1])
+            except (TypeError, ValueError):
+                continue
+            start_idx = max(1, start_idx)
+            end_idx = min(trace_length, end_idx)
+            if end_idx < start_idx:
+                continue
+            reversal_events.append([start_idx, end_idx])
+
+    events_output = {}
+    raw_events = behavior_data.get("data", {}).get("events", {})
+    if isinstance(raw_events, dict):
+        for event_key, event_indices in raw_events.items():
+            if not isinstance(event_indices, list):
+                continue
+            sanitized_indices = []
+            for index in event_indices:
+                try:
+                    idx = int(index)
+                except (TypeError, ValueError):
+                    continue
+                # Keep indices compatible with both 0-based and 1-based inputs.
+                if idx < 0 or idx > trace_length:
+                    continue
+                sanitized_indices.append(idx)
+            if sanitized_indices:
+                events_output[str(event_key)] = sanitized_indices
+
     default_behavior = "v" if "v" in output else (next(iter(output), None))
-    return {"traces": output, "default_behavior": default_behavior}
+    return {
+        "traces": output,
+        "default_behavior": default_behavior,
+        "reversal_events": reversal_events,
+        "events": events_output,
+    }
 
 
 def _extract_behavior_arrays(dataset):

@@ -301,6 +301,30 @@
     </div>
   </div>
 
+  <div class="modal fade" id="replay-behavior-options-modal" tabindex="-1" aria-labelledby="replay-behavior-options-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="replay-behavior-options-modal-label">Behavior Plot Options</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" role="switch" id="switch-replay-show-reversal">
+            <label class="form-check-label" for="switch-replay-show-reversal">Show reversal</label>
+          </div>
+          <div id="replay-event-option-group" class="form-check form-switch mb-1">
+            <input class="form-check-input" type="checkbox" role="switch" id="switch-replay-show-event">
+            <label class="form-check-label" for="switch-replay-show-event">Show event</label>
+          </div>
+          <div id="replay-event-option-note" class="form-text d-none">
+            Event overlay is unavailable for this dataset.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card card-body mb-3">
     <div class="d-flex flex-wrap align-items-center gap-2 replay-timeline-row">
       <div class="btn-group btn-group-sm replay-timeline-buttons">
@@ -327,7 +351,9 @@
   <div class="row g-3">
     <div class="col-12 col-xl-8">
       <div class="card card-body">
-        <h5 class="mb-2">Connectome Dynamics</h5>
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+          <h5 class="mb-0">Connectome Dynamics</h5>
+        </div>
         <p class="plot-description mb-1">
           Node color/size indicates activity at current time point. Cmd/Ctrl-click nodes to multi-select and lock highlights.
         </p>
@@ -379,15 +405,29 @@
       <div class="card card-body mb-3">
         <div class="d-flex align-items-end justify-content-between gap-2 mb-2">
           <h5 class="mb-0">Behavior</h5>
-          <div class="behavior-selector-wrap tom-select-container" id="select-behavior-container">
-            <input id="select-behavior" autocomplete="off" type="text"
-              class="form-control form-control-sm" placeholder="Select behavior(s)">
+          <div class="d-flex align-items-center gap-2 replay-behavior-controls">
+            <div class="behavior-selector-wrap tom-select-container" id="select-behavior-container">
+              <input id="select-behavior" autocomplete="off" type="text"
+                class="form-control form-control-sm" placeholder="Select behavior(s)">
+            </div>
+            <button id="button-behavior-options" type="button"
+              class="btn btn-outline-secondary btn-sm replay-icon-button"
+              data-bs-toggle="modal" data-bs-target="#replay-behavior-options-modal"
+              aria-label="Behavior plot options" title="Behavior plot options">
+              <i class="bi bi-gear" aria-hidden="true"></i>
+              <span class="visually-hidden">Behavior plot options</span>
+            </button>
           </div>
         </div>
         <div id="replay-behavior-plot" class="signal-plot behavior-plot"></div>
       </div>
       <div class="card card-body">
-        <h5 id="signal-plot-title" class="mb-2">Global Activity</h5>
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+          <h5 id="signal-plot-title" class="mb-0">Global Activity</h5>
+          <a id="button-open-explore-top" href="#"
+            class="btn btn-outline-primary btn-sm disabled"
+            aria-disabled="true">Activity Plot</a>
+        </div>
         <div id="replay-signal-plot" class="signal-plot neuro-plot"></div>
       </div>
     </div>

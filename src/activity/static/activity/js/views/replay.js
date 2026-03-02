@@ -28,6 +28,8 @@ const STORAGE_EDGE_SCALE = "replay_edge_scale";
 const STORAGE_NODE_SIZE_MODE = "replay_node_size_mode";
 const STORAGE_NODE_COLOR_MODE = "replay_node_color_mode";
 const STORAGE_NODE_COLORMAP = "replay_node_colormap";
+const STORAGE_BEHAVIOR_SHOW_REVERSAL = "replay_behavior_show_reversal";
+const STORAGE_BEHAVIOR_SHOW_EVENT = "replay_behavior_show_event";
 const STORAGE_TOUR_REPLAY = "tour-activity-replay";
 const EDGE_SCALE_MIN = 0.1;
 const EDGE_SCALE_MAX = 3.0;
@@ -50,6 +52,8 @@ const DEFAULTS = {
     nodeSizeMode: "degree_total",
     nodeColorMode: "activity",
     nodeColormap: "RdBu",
+    showReversal: true,
+    showEvent: false,
 };
 const REPLAY_REQUEST_CACHE_MAX_ENTRIES = 8;
 const NODE_BEHAVIOR_MODE_PREFIX = "behavior_corr__";
@@ -62,6 +66,11 @@ const STATIC_NODE_MODE_OPTIONS = [
     { value: "pagerank", label: "PageRank centrality" },
     { value: "eigenvector", label: "Eigenvector centrality" },
 ];
+const BEHAVIOR_REVERSAL_FILL_COLOR = "rgba(255, 0, 0, 0.15)";
+const BEHAVIOR_EVENT_STYLE_BY_KEY = {
+    heat: { color: "rgba(255, 0, 0, 1)", width: 2 },
+    patchEncounter: { color: "rgba(255, 0, 0, 1)", width: 2 },
+};
 
 let selectors = {};
 let rawReplayPayload = null;
@@ -76,6 +85,9 @@ let timerId = null;
 let signalYMax = 1;
 let behaviorYMin = -1;
 let behaviorYMax = 1;
+let showBehaviorReversal = getLocalBool(STORAGE_BEHAVIOR_SHOW_REVERSAL, DEFAULTS.showReversal);
+let showBehaviorEvent = getLocalBool(STORAGE_BEHAVIOR_SHOW_EVENT, DEFAULTS.showEvent);
+let behaviorEventAvailable = false;
 let selectedEdgeId = null;
 let selectedNodeInfoId = null;
 let appliedSpacing = DEFAULTS.spacing;
@@ -168,6 +180,14 @@ function parseFloatParam(value) {
     return Number.isFinite(parsed) ? parsed : null;
 }
 
+function parseBoolParam(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const normalized = String(value).trim().toLowerCase();
+    if (["1", "true", "yes", "on"].includes(normalized)) return true;
+    if (["0", "false", "no", "off"].includes(normalized)) return false;
+    return null;
+}
+
 function parseReplayStateFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const nParam = params.get("n");
@@ -198,6 +218,8 @@ function parseReplayStateFromUrl() {
         nodeVMin: parseFloatParam(params.get("node_vmin")),
         nodeVMax: parseFloatParam(params.get("node_vmax")),
         speed: parseFloatParam(params.get("speed")),
+        showReversal: parseBoolParam(params.get("show_reversal")),
+        showEvent: parseBoolParam(params.get("show_event")),
     };
 }
 
@@ -1210,20 +1232,27 @@ function buildExploreUrl() {
 }
 
 function updateExploreLink() {
-    const button = document.getElementById("button-open-explore");
-    if (!button) return;
+    const buttons = [
+        document.getElementById("button-open-explore"),
+        document.getElementById("button-open-explore-top"),
+    ].filter((button) => Boolean(button));
+    if (buttons.length === 0) return;
 
     const href = buildExploreUrl();
     if (!href) {
-        button.href = "#";
-        button.classList.add("disabled");
-        button.setAttribute("aria-disabled", "true");
+        buttons.forEach((button) => {
+            button.href = "#";
+            button.classList.add("disabled");
+            button.setAttribute("aria-disabled", "true");
+        });
         return;
     }
 
-    button.href = href;
-    button.classList.remove("disabled");
-    button.setAttribute("aria-disabled", "false");
+    buttons.forEach((button) => {
+        button.href = href;
+        button.classList.remove("disabled");
+        button.setAttribute("aria-disabled", "false");
+    });
 }
 
 function updateReplayUrlState(options = {}) {
@@ -1287,6 +1316,8 @@ function updateReplayUrlState(options = {}) {
     setUrlParam(params, "node_vmin", document.getElementById("input-node-vmin")?.value);
     setUrlParam(params, "node_vmax", document.getElementById("input-node-vmax")?.value);
     setUrlParam(params, "speed", document.getElementById("select-speed")?.value || DEFAULTS.speed);
+    setUrlParam(params, "show_reversal", showBehaviorReversal ? 1 : 0);
+    setUrlParam(params, "show_event", showBehaviorEvent ? 1 : 0);
 
     const neuronItems = selectors.neuronSelector?.items?.slice() || [];
     const neuronOptionCount = selectors.neuronSelector
@@ -2109,6 +2140,126 @@ function applySelectionStyles() {
     cy.endBatch();
 }
 
+function getReplayAverageTimestep() {
+    const avgTimestep = Number.parseFloat(replayPayload?.meta?.avg_timestep);
+    return Number.isFinite(avgTimestep) && avgTimestep > 0 ? avgTimestep : 0;
+}
+
+function hasReplayEventData(behaviorData) {
+    const events = behaviorData?.events;
+    if (!events || typeof events !== "object") return false;
+    return Object.values(events).some((values) => (
+        Array.isArray(values) && values.length > 0
+    ));
+}
+
+function syncBehaviorOptionsUI(behaviorData = replayPayload?.behavior) {
+    const reversalSwitch = document.getElementById("switch-replay-show-reversal");
+    const eventSwitch = document.getElementById("switch-replay-show-event");
+    const eventOptionGroup = document.getElementById("replay-event-option-group");
+    const eventOptionNote = document.getElementById("replay-event-option-note");
+
+    behaviorEventAvailable = hasReplayEventData(behaviorData);
+    if (!behaviorEventAvailable) {
+        showBehaviorEvent = false;
+        setLocalBool(STORAGE_BEHAVIOR_SHOW_EVENT, false);
+    }
+    if (reversalSwitch) {
+        reversalSwitch.checked = Boolean(showBehaviorReversal);
+    }
+
+    if (eventSwitch) {
+        eventSwitch.disabled = !behaviorEventAvailable;
+        eventSwitch.checked = behaviorEventAvailable && Boolean(showBehaviorEvent);
+    }
+    if (eventOptionGroup) {
+        eventOptionGroup.classList.toggle("text-muted", !behaviorEventAvailable);
+    }
+    if (eventOptionNote) {
+        eventOptionNote.classList.toggle("d-none", behaviorEventAvailable);
+    }
+}
+
+function getBehaviorEventLineStyle(eventKey, fallbackIndex) {
+    if (BEHAVIOR_EVENT_STYLE_BY_KEY[eventKey]) {
+        return BEHAVIOR_EVENT_STYLE_BY_KEY[eventKey];
+    }
+    return {
+        color: getCycleColor(fallbackIndex, ["C"]),
+        width: 1.8,
+    };
+}
+
+function buildBehaviorShapes(xValues, yMin, yMax) {
+    const shapes = [];
+    const avgTimestep = getReplayAverageTimestep();
+    const behaviorData = replayPayload?.behavior || {};
+
+    if (showBehaviorReversal) {
+        const reversals = Array.isArray(behaviorData.reversal_events)
+            ? behaviorData.reversal_events
+            : [];
+        reversals.forEach((reversal, index) => {
+            if (!Array.isArray(reversal) || reversal.length < 2) return;
+            const startFrame = Number.parseFloat(reversal[0]);
+            const endFrame = Number.parseFloat(reversal[1]);
+            if (!Number.isFinite(startFrame) || !Number.isFinite(endFrame) || avgTimestep <= 0) return;
+            const x0 = Math.max(0, (startFrame - 1) * avgTimestep);
+            const x1 = Math.max(x0, (endFrame - 1) * avgTimestep);
+            shapes.push({
+                type: "rect",
+                x0: x0,
+                x1: x1,
+                y0: yMin,
+                y1: yMax,
+                line: { width: 0 },
+                fillcolor: BEHAVIOR_REVERSAL_FILL_COLOR,
+                opacity: 1,
+                name: `rev_${index}`,
+            });
+        });
+    }
+
+    if (showBehaviorEvent && behaviorEventAvailable) {
+        const events = behaviorData.events || {};
+        Object.entries(events).forEach(([eventKey, eventFrames], eventTypeIndex) => {
+            if (!Array.isArray(eventFrames)) return;
+            const style = getBehaviorEventLineStyle(eventKey, eventTypeIndex);
+            eventFrames.forEach((eventFrame, eventIndex) => {
+                const frameIndex = Number.parseFloat(eventFrame);
+                if (!Number.isFinite(frameIndex) || avgTimestep <= 0) return;
+                const xPos = Math.max(0, frameIndex * avgTimestep);
+                shapes.push({
+                    type: "line",
+                    x0: xPos,
+                    x1: xPos,
+                    y0: yMin,
+                    y1: yMax,
+                    line: {
+                        color: style.color,
+                        width: style.width,
+                    },
+                    name: `event_${eventKey}_${eventIndex}`,
+                });
+            });
+        });
+    }
+
+    const cursorX = xValues[currentFrame] ?? xValues[0];
+    if (Number.isFinite(cursorX)) {
+        shapes.push({
+            type: "line",
+            x0: cursorX,
+            x1: cursorX,
+            y0: yMin,
+            y1: yMax,
+            line: { color: "#ef4444", width: 2, dash: "dot" },
+            name: "cursor",
+        });
+    }
+    return shapes;
+}
+
 function renderBehaviorPlot() {
     const traces = replayPayload?.behavior?.traces || {};
     const x = replayPayload?.timeline?.time_minutes || [];
@@ -2132,6 +2283,7 @@ function renderBehaviorPlot() {
                 }],
                 xaxis: { title: { text: "Time (min)" }, color: "#000000" },
                 yaxis: { title: { text: "Behavior" }, color: "#000000" },
+                shapes: buildBehaviorShapes(x, -1, 1),
                 height: 380,
             },
             { responsive: true, displaylogo: false }
@@ -2193,16 +2345,7 @@ function renderBehaviorPlot() {
                 color: "#000000",
                 range: [behaviorYMin, behaviorYMax],
             },
-            shapes: [
-                {
-                    type: "line",
-                    x0: x[currentFrame] || x[0],
-                    x1: x[currentFrame] || x[0],
-                    y0: behaviorYMin,
-                    y1: behaviorYMax,
-                    line: { color: "#ef4444", width: 2, dash: "dot" },
-                },
-            ],
+            shapes: buildBehaviorShapes(x, behaviorYMin, behaviorYMax),
             showlegend: showLegend,
             legend: {
                 orientation: "h",
@@ -2307,16 +2450,7 @@ function updateBehaviorCursor() {
     if (!x.length) return;
 
     Plotly.relayout("replay-behavior-plot", {
-        shapes: [
-            {
-                type: "line",
-                x0: x[currentFrame],
-                x1: x[currentFrame],
-                y0: behaviorYMin,
-                y1: behaviorYMax,
-                line: { color: "#ef4444", width: 2, dash: "dot" },
-            },
-        ],
+        shapes: buildBehaviorShapes(x, behaviorYMin, behaviorYMax),
     });
 }
 
@@ -2591,6 +2725,7 @@ async function loadReplayData() {
 
         rawReplayPayload = payload;
         replayPayload = payload;
+        syncBehaviorOptionsUI(payload.behavior);
         computeNodeAutoRanges(payload);
         currentFrame = 0;
         selectedNodeIds.clear();
@@ -2685,6 +2820,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const nodeVMinInput = document.getElementById("input-node-vmin");
     const nodeVMaxInput = document.getElementById("input-node-vmax");
     const buttonOpenExplore = document.getElementById("button-open-explore");
+    const buttonOpenExploreTop = document.getElementById("button-open-explore-top");
+    const switchBehaviorReversal = document.getElementById("switch-replay-show-reversal");
+    const switchBehaviorEvent = document.getElementById("switch-replay-show-event");
     const buttonToggleSettings = document.getElementById("button-toggle-settings");
     const buttonNodeInfoMore = document.getElementById("button-node-info-more");
     const nodeInfoModalElement = document.getElementById("replay-node-info-modal");
@@ -2704,6 +2842,18 @@ document.addEventListener("DOMContentLoaded", () => {
     setNodeInfoMoreButtonVisible(false);
 
     const urlState = parseReplayStateFromUrl();
+    const localShowReversal = getLocalBool(STORAGE_BEHAVIOR_SHOW_REVERSAL, DEFAULTS.showReversal);
+    const localShowEvent = getLocalBool(STORAGE_BEHAVIOR_SHOW_EVENT, DEFAULTS.showEvent);
+    showBehaviorReversal = typeof urlState.showReversal === "boolean"
+        ? urlState.showReversal
+        : localShowReversal;
+    showBehaviorEvent = typeof urlState.showEvent === "boolean"
+        ? urlState.showEvent
+        : localShowEvent;
+    setLocalBool(STORAGE_BEHAVIOR_SHOW_REVERSAL, showBehaviorReversal);
+    setLocalBool(STORAGE_BEHAVIOR_SHOW_EVENT, showBehaviorEvent);
+    syncBehaviorOptionsUI(null);
+
     const hasSelectValue = (selectElement, value) => (
         Boolean(value)
         && Array.from(selectElement.options || []).some((option) => option.value === value)
@@ -2874,6 +3024,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateReplayConnectomeCitation();
 
+    const rerenderBehaviorOverlays = () => {
+        if (!replayPayload) {
+            updateReplayUrlState({ includeFrame: false });
+            return;
+        }
+        renderBehaviorPlot();
+        updateBehaviorCursor();
+        updateReplayUrlState({ includeFrame: true });
+    };
+
+    if (switchBehaviorReversal) {
+        switchBehaviorReversal.checked = showBehaviorReversal;
+        switchBehaviorReversal.addEventListener("change", (event) => {
+            showBehaviorReversal = Boolean(event.target.checked);
+            setLocalBool(STORAGE_BEHAVIOR_SHOW_REVERSAL, showBehaviorReversal);
+            rerenderBehaviorOverlays();
+        });
+    }
+
+    if (switchBehaviorEvent) {
+        switchBehaviorEvent.checked = showBehaviorEvent;
+        switchBehaviorEvent.addEventListener("change", (event) => {
+            if (!behaviorEventAvailable) {
+                event.target.checked = false;
+                showBehaviorEvent = false;
+                return;
+            }
+            showBehaviorEvent = Boolean(event.target.checked);
+            setLocalBool(STORAGE_BEHAVIOR_SHOW_EVENT, showBehaviorEvent);
+            rerenderBehaviorOverlays();
+        });
+    }
+
     sliderSpacing.addEventListener("input", (event) => {
         updateRangeLabel("label-spacing", event.target.value);
         setLocalFloat(STORAGE_SPACING, parseFloat(event.target.value));
@@ -2950,11 +3133,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    buttonOpenExplore.addEventListener("click", (event) => {
-        if (buttonOpenExplore.classList.contains("disabled")) {
-            event.preventDefault();
-        }
-    });
+    [buttonOpenExplore, buttonOpenExploreTop]
+        .filter((button) => Boolean(button))
+        .forEach((button) => {
+            button.addEventListener("click", (event) => {
+                if (button.classList.contains("disabled")) {
+                    event.preventDefault();
+                }
+            });
+        });
     if (buttonNodeInfoMore) {
         buttonNodeInfoMore.addEventListener("click", () => {
             renderSelectedNodesModalContent();
@@ -2995,6 +3182,11 @@ document.addEventListener("DOMContentLoaded", () => {
         layoutSelect.value = DEFAULTS.layout;
         setLocalFloat(STORAGE_SPACING, DEFAULTS.spacing);
         setLocalFloat(STORAGE_EDGE_SCALE, DEFAULTS.edgeScale);
+        showBehaviorReversal = DEFAULTS.showReversal;
+        showBehaviorEvent = DEFAULTS.showEvent;
+        setLocalBool(STORAGE_BEHAVIOR_SHOW_REVERSAL, showBehaviorReversal);
+        setLocalBool(STORAGE_BEHAVIOR_SHOW_EVENT, showBehaviorEvent);
+        syncBehaviorOptionsUI(replayPayload?.behavior);
         updateElectricalInputState();
         updateReplayUrlState({ includeFrame: false });
         loadReplayData();
