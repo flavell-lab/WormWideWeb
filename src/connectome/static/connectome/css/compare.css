@@ -119,6 +119,48 @@
     font-size: 12px;
 }
 
+.compare-diff-legend-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: #334155;
+}
+
+.compare-diff-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #475569;
+    margin-bottom: 0.25rem;
+}
+
+.compare-diff-swatch {
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 0.2rem;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    flex: 0 0 0.9rem;
+}
+
+.compare-diff-swatch-left {
+    background: #1f77b4;
+}
+
+.compare-diff-swatch-right {
+    background: #ff7f0e;
+}
+
+.compare-diff-swatch-shared {
+    background: #94a3b8;
+}
+
+.compare-diff-legend-note {
+    margin-top: 0.5rem;
+    font-size: 0.74rem;
+    color: #64748b;
+}
+
 .compare-watermark {
     position: absolute;
     bottom: 10px;

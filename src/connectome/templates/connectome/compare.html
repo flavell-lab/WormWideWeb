@@ -49,6 +49,18 @@
           </ul>
         </div>
 
+        <div class="dropdown btn-group btn-group-sm">
+          <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="compare-dropdownDiff"
+            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select diff mode">
+            Diff
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="compare-dropdownDiff" role="menu">
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="off">Off</a></li>
+            <li><a class="dropdown-item active" href="#" role="menuitem" data-value="highlight">Highlight</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="only">Differences only</a></li>
+          </ul>
+        </div>
+
         <button class="btn btn-light btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#compare-legend-modal"
           aria-label="Open legend">
           <i class="bi bi-list-ul" aria-hidden="true"></i>
@@ -165,11 +177,37 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="compare-legend-modal-label">Legend</h5>
+        <h5 class="modal-title" id="compare-legend-modal-label">Info</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div id="compare-legend-modal-items"></div>
+        <div id="compare-diff-legend" class="compare-diff-legend d-none">
+          <hr class="my-3">
+          <div class="compare-diff-legend-title">Diff Legend</div>
+          <div class="compare-diff-legend-item">
+            <span class="compare-diff-swatch compare-diff-swatch-left"></span>
+            Left-only edges
+          </div>
+          <div class="compare-diff-legend-item">
+            <span class="compare-diff-swatch compare-diff-swatch-right"></span>
+            Right-only edges
+          </div>
+          <div class="compare-diff-legend-item">
+            <span class="compare-diff-swatch compare-diff-swatch-shared"></span>
+            Shared edges
+          </div>
+          <div id="compare-diff-legend-note" class="compare-diff-legend-note"></div>
+        </div>
+        <hr class="my-3">
+        <div class="small">
+          <div class="fw-semibold mb-1">Dataset</div>
+          <div class="text-muted">
+            Please see
+            <a href="/about/#connectome_citation" target="_blank" rel="noopener noreferrer">this section</a>
+            for information on connectome datasets.
+          </div>
+        </div>
       </div>
     </div>
   </div>

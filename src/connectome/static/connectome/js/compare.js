@@ -1,11 +1,21 @@
 import { ConnectomeGraph } from './connectome_graph.js';
 import { CONNECTOME_DATASET_TYPE } from '/static/core/js/constants.js';
-import { getLocalStr, setLocalJSON, setLocalStr, updateCitation } from '/static/core/js/utility.js';
+import { getLocalStr, setLocalJSON, setLocalStr, updateCitation, initDropdown } from '/static/core/js/utility.js';
 
 const URL_AVAILABLE_NEURON = "/connectome/api/available-neurons/";
 const DEFAULT_DATASET_LEFT = "cook_jarrell_2019_h";
 const DEFAULT_DATASET_RIGHT = "cook_jarrell_2019_m";
 const SHARED_KEY_PREFIX = "connectome_compare";
+const STORAGE_DIFF_MODE = "connectome_compare_diff_mode";
+
+const DIFF_MODE_OFF = "off";
+const DIFF_MODE_HIGHLIGHT = "highlight";
+const DIFF_MODE_ONLY = "only";
+
+// Matplotlib/Plotly default categorical colors: C0, C1
+const DIFF_COLOR_LEFT = "#1f77b4";  // C0
+const DIFF_COLOR_RIGHT = "#ff7f0e"; // C1
+const DIFF_COLOR_SHARED = "#94a3b8";
 
 function toArray(value) {
     if (Array.isArray(value)) {
@@ -69,6 +79,11 @@ class CompareController {
         this.neuronSelector = null;
         this.neuronSelectorWasMouseSelect = false;
         this.neuronOptionsRequestToken = 0;
+        this.diffMode = getLocalStr(STORAGE_DIFF_MODE, DIFF_MODE_HIGHLIGHT);
+        this.diffApplyScheduled = false;
+        this.lastAppliedDiffMode = DIFF_MODE_OFF;
+        this.diffLegendElement = null;
+        this.diffLegendNoteElement = null;
     }
 
     async init() {
@@ -135,6 +150,9 @@ class CompareController {
         const setSharedLoading = (show) => this.setLoading(show);
         this.panels.left.graph.toggleSpinner = setSharedLoading;
         this.panels.right.graph.toggleSpinner = setSharedLoading;
+
+        this.panels.left.graph.drawGraphCallback = () => this.scheduleApplyDiffMode();
+        this.panels.right.graph.drawGraphCallback = () => this.scheduleApplyDiffMode();
     }
 
     initDatasetSelectors() {
@@ -210,6 +228,282 @@ class CompareController {
         if (clearButton) {
             clearButton.addEventListener("click", () => this.neuronSelector.clear());
         }
+
+        this.initDiffModeControl();
+        this.initColorDropdownCancelsDiff();
+        this.initDiffModeRefreshTriggers();
+    }
+
+    initDiffModeControl() {
+        this.diffLegendElement = document.getElementById("compare-diff-legend");
+        this.diffLegendNoteElement = document.getElementById("compare-diff-legend-note");
+
+        initDropdown(
+            "compare-dropdownDiff",
+            (value) => this.setDiffMode(value, { syncUI: true }),
+            false,
+            this.diffMode
+        );
+
+        this.syncDiffDropdownUI();
+        this.updateDiffLegendVisibility();
+    }
+
+    initColorDropdownCancelsDiff() {
+        const colorMenu = document.querySelector('.dropdown-menu[aria-labelledby="compare-dropdownColor"]');
+        if (!colorMenu) {
+            return;
+        }
+
+        const colorItems = colorMenu.querySelectorAll(".dropdown-item");
+        colorItems.forEach((item) => {
+            item.addEventListener("click", () => {
+                if (this.diffMode !== DIFF_MODE_OFF) {
+                    this.setDiffMode(DIFF_MODE_OFF, { syncUI: true });
+                }
+            });
+        });
+    }
+
+    syncDiffDropdownUI() {
+        const diffMenu = document.querySelector('.dropdown-menu[aria-labelledby="compare-dropdownDiff"]');
+        if (!diffMenu) {
+            return;
+        }
+
+        const diffItems = diffMenu.querySelectorAll(".dropdown-item");
+        diffItems.forEach((item) => item.classList.remove("active"));
+        const activeItem = diffMenu.querySelector(`.dropdown-item[data-value="${this.diffMode}"]`);
+        if (activeItem) {
+            activeItem.classList.add("active");
+        }
+    }
+
+    setDiffMode(mode, { syncUI = false } = {}) {
+        this.diffMode = mode;
+        setLocalStr(STORAGE_DIFF_MODE, mode);
+        if (syncUI) {
+            this.syncDiffDropdownUI();
+        }
+        this.updateDiffLegendVisibility();
+        this.scheduleApplyDiffMode();
+    }
+
+    initDiffModeRefreshTriggers() {
+        const refreshIds = [
+            "compare-plus-c",
+            "compare-minus-c",
+            "compare-plus-e",
+            "compare-minus-e",
+            "compare-threshold-c",
+            "compare-threshold-e",
+        ];
+
+        refreshIds.forEach((id) => {
+            const element = document.getElementById(id);
+            if (!element) return;
+
+            const eventName = id.startsWith("compare-threshold") ? "input" : "click";
+            element.addEventListener(eventName, () => {
+                setTimeout(() => this.scheduleApplyDiffMode(), 0);
+            });
+        });
+    }
+
+    updateDiffLegendVisibility() {
+        if (!this.diffLegendElement) {
+            return;
+        }
+
+        const hidden = this.diffMode === DIFF_MODE_OFF;
+        this.diffLegendElement.classList.toggle("d-none", hidden);
+        if (this.diffLegendNoteElement) {
+            this.diffLegendNoteElement.textContent =
+                this.diffMode === DIFF_MODE_ONLY
+                    ? "Differences only hides shared edges in both panels. Diff is topology-based (edge existence), not weight-based."
+                    : "Highlight mode keeps all edges and color-codes shared versus unique edges. Diff is topology-based (edge existence), not weight-based.";
+        }
+    }
+
+    scheduleApplyDiffMode() {
+        if (this.diffApplyScheduled) {
+            return;
+        }
+
+        this.diffApplyScheduled = true;
+        requestAnimationFrame(() => {
+            this.diffApplyScheduled = false;
+            this.applyDiffMode();
+        });
+    }
+
+    buildVisibleEdgeKeySet(graph) {
+        const keys = new Set();
+        graph.edges().forEach((edge) => {
+            if (edge.visible()) {
+                keys.add(edge.id());
+            }
+        });
+        return keys;
+    }
+
+    getNodeDiffType(node, sharedEdgeKeys) {
+        let hasVisible = false;
+        let hasShared = false;
+        let hasUnique = false;
+
+        node.connectedEdges().forEach((edge) => {
+            if (!edge.visible()) {
+                return;
+            }
+            hasVisible = true;
+            if (sharedEdgeKeys.has(edge.id())) {
+                hasShared = true;
+            } else {
+                hasUnique = true;
+            }
+        });
+
+        if (!hasVisible) return "none";
+        if (hasUnique) return "unique";
+        if (hasShared) return "shared";
+        return "none";
+    }
+
+    getReadableTextColor(hexColor) {
+        const hex = (hexColor || "").replace("#", "");
+        if (hex.length !== 6) {
+            return "#0f172a";
+        }
+
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        return luminance > 0.55 ? "#0f172a" : "#f8fafc";
+    }
+
+    resetDiffStyles(graph) {
+        graph.edges().forEach((edge) => {
+            edge.removeStyle("line-color");
+            edge.removeStyle("target-arrow-color");
+            edge.removeStyle("mid-source-arrow-color");
+            edge.removeStyle("source-arrow-color");
+            edge.removeStyle("opacity");
+        });
+
+        graph.nodes().forEach((node) => {
+            node.removeStyle("pie-size");
+            node.removeStyle("background-color");
+            node.removeStyle("border-width");
+            node.removeStyle("border-color");
+            node.removeStyle("color");
+            node.removeStyle("opacity");
+        });
+    }
+
+    restorePanelNodeColors(panelGraph) {
+        panelGraph.nodeManager.updateNodeColorSet();
+        panelGraph.nodeManager.adjustNodeLabelWrap();
+    }
+
+    applyPanelDiffStyles(panelGraph, sharedEdgeKeys, uniqueColor, onlyDiff) {
+        const graph = panelGraph.graph;
+        graph.edges().forEach((edge) => {
+            if (!edge.visible()) {
+                return;
+            }
+
+            const isShared = sharedEdgeKeys.has(edge.id());
+            if (onlyDiff && isShared) {
+                edge.hide();
+                return;
+            }
+
+            const edgeColor = isShared ? DIFF_COLOR_SHARED : uniqueColor;
+            edge.style({
+                "line-color": edgeColor,
+                "target-arrow-color": edgeColor,
+                "mid-source-arrow-color": edgeColor,
+                "opacity": isShared ? 0.55 : 1,
+            });
+        });
+    }
+
+    applyPanelNodeDiffStyles(panelGraph, sharedEdgeKeys, uniqueColor, onlyDiff) {
+        const graph = panelGraph.graph;
+        graph.nodes().forEach((node) => {
+            if (!node.visible()) {
+                return;
+            }
+
+            const diffType = this.getNodeDiffType(node, sharedEdgeKeys);
+            if (onlyDiff && diffType !== "unique") {
+                node.hide();
+                return;
+            }
+
+            if (diffType === "none") {
+                node.hide();
+                return;
+            }
+
+            const nodeColor = diffType === "unique" ? uniqueColor : DIFF_COLOR_SHARED;
+            node.style({
+                "pie-size": "0%",
+                "background-color": nodeColor,
+                "border-color": nodeColor,
+                "border-width": diffType === "unique" ? 2.6 : 2.0,
+                "color": this.getReadableTextColor(nodeColor),
+                "opacity": diffType === "unique" ? 1 : 0.92,
+            });
+        });
+    }
+
+    applyDiffMode() {
+        const leftGraph = this.panels.left.graph;
+        const rightGraph = this.panels.right.graph;
+        if (!leftGraph || !rightGraph) {
+            return;
+        }
+
+        if (this.diffMode === DIFF_MODE_OFF) {
+            if (this.lastAppliedDiffMode === DIFF_MODE_ONLY) {
+                leftGraph.filterEdge();
+                rightGraph.filterEdge();
+            }
+            this.resetDiffStyles(leftGraph.graph);
+            this.resetDiffStyles(rightGraph.graph);
+            this.restorePanelNodeColors(leftGraph);
+            this.restorePanelNodeColors(rightGraph);
+            this.lastAppliedDiffMode = this.diffMode;
+            return;
+        }
+
+        leftGraph.filterEdge();
+        rightGraph.filterEdge();
+
+        this.resetDiffStyles(leftGraph.graph);
+        this.resetDiffStyles(rightGraph.graph);
+
+        const leftVisibleEdgeKeys = this.buildVisibleEdgeKeySet(leftGraph.graph);
+        const rightVisibleEdgeKeys = this.buildVisibleEdgeKeySet(rightGraph.graph);
+        const sharedEdgeKeys = new Set(
+            [...leftVisibleEdgeKeys].filter((edgeKey) => rightVisibleEdgeKeys.has(edgeKey))
+        );
+
+        const onlyDiff = this.diffMode === DIFF_MODE_ONLY;
+        this.applyPanelDiffStyles(leftGraph, sharedEdgeKeys, DIFF_COLOR_LEFT, onlyDiff);
+        this.applyPanelDiffStyles(rightGraph, sharedEdgeKeys, DIFF_COLOR_RIGHT, onlyDiff);
+        this.applyPanelNodeDiffStyles(leftGraph, sharedEdgeKeys, DIFF_COLOR_LEFT, onlyDiff);
+        this.applyPanelNodeDiffStyles(rightGraph, sharedEdgeKeys, DIFF_COLOR_RIGHT, onlyDiff);
+
+        if (onlyDiff) {
+            leftGraph.layoutManager.updateLayout();
+            rightGraph.layoutManager.updateLayout();
+        }
+
+        this.lastAppliedDiffMode = this.diffMode;
     }
 
     async setInitialDatasets() {
@@ -231,6 +525,7 @@ class CompareController {
 
         await this.refreshSharedNeuronSelector();
         this.syncAllGraphManifests();
+        this.scheduleApplyDiffMode();
     }
 
     async handlePanelDatasetChange(panel, datasetId) {
@@ -263,6 +558,7 @@ class CompareController {
 
         await this.refreshSharedNeuronSelector();
         this.syncAllGraphManifests();
+        this.scheduleApplyDiffMode();
     }
 
     getSelectedDatasets() {
