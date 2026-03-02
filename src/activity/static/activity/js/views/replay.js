@@ -86,6 +86,8 @@ let cy = null;
 let isPlaying = false;
 let currentFrame = 0;
 let timerId = null;
+let playbackStartPerfMs = 0;
+let playbackStartFrame = 0;
 let signalYMax = 1;
 let behaviorYMin = -1;
 let behaviorYMax = 1;
@@ -2681,11 +2683,19 @@ function updateFrame(frame) {
 
 function stopPlayback() {
     isPlaying = false;
-    if (timerId) {
-        clearInterval(timerId);
+    if (timerId !== null) {
+        window.cancelAnimationFrame(timerId);
         timerId = null;
     }
     document.getElementById("button-play-pause").innerHTML = '<i class="bi bi-play-fill"></i> Play';
+}
+
+function getPlaybackFrameDurationMs() {
+    const avgTimestepMinutes = Number.parseFloat(replayPayload?.meta?.avg_timestep);
+    if (Number.isFinite(avgTimestepMinutes) && avgTimestepMinutes > 0) {
+        return avgTimestepMinutes * 60 * 1000;
+    }
+    return Math.max(20, Math.round(1000 / DEFAULTS.fps));
 }
 
 function startPlayback() {
@@ -2695,16 +2705,31 @@ function startPlayback() {
     document.getElementById("button-play-pause").innerHTML = '<i class="bi bi-pause-fill"></i> Pause';
 
     const speed = parseFloat(document.getElementById("select-speed").value) || 1;
-    const interval = Math.max(20, Math.round(1000 / (DEFAULTS.fps * speed)));
-    timerId = setInterval(() => {
-        if (!replayPayload) return;
-        const next = currentFrame + 1;
-        if (next >= replayPayload.meta.trace_length) {
-            updateFrame(0);
-        } else {
-            updateFrame(next);
+    const frameDurationMs = getPlaybackFrameDurationMs();
+    playbackStartPerfMs = performance.now();
+    playbackStartFrame = currentFrame;
+
+    const tick = (nowMs) => {
+        if (!isPlaying || !replayPayload) return;
+
+        const traceLength = replayPayload.meta.trace_length;
+        if (!Number.isInteger(traceLength) || traceLength <= 0) {
+            stopPlayback();
+            return;
         }
-    }, interval);
+
+        const elapsedMs = Math.max(0, nowMs - playbackStartPerfMs);
+        const advancedFrames = (elapsedMs * speed) / frameDurationMs;
+        const nextFrame = Math.floor(playbackStartFrame + advancedFrames) % traceLength;
+
+        if (nextFrame !== currentFrame) {
+            updateFrame(nextFrame);
+        }
+
+        timerId = window.requestAnimationFrame(tick);
+    };
+
+    timerId = window.requestAnimationFrame(tick);
 }
 
 function applyNeuronFilter() {
