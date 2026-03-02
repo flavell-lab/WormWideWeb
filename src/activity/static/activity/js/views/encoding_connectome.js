@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // default options
   const defaultDataset = localStorage.getItem("encoding_connectome_selected_dataset_str")
   if (defaultDataset === null) {
-    setLocalStr("encoding_connectome_selected_dataset_str", "white_1986_whole,witvliet_2020_7,witvliet_2020_8")
+    setLocalStr("encoding_connectome_selected_dataset_str", "cook_jarrell_2019_h")
   }
 
   const connectomeLayout = localStorage.getItem("encoding_connectome_layout")

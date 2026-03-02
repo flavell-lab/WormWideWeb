@@ -34,7 +34,7 @@ export class SelectorDatasetNeuron {
 
         // Retrieve previously selected dataset(s) from localStorage
 
-        const selectedDatasetStr = getLocalStr(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_selected_dataset_str`, "witvliet_2020_8");
+        const selectedDatasetStr = getLocalStr(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_selected_dataset_str`, "cook_jarrell_2019_h");
         this.selectorDataset.setValue(selectedDatasetStr.split(","));
         this.selectorDataset.refreshOptions();
     }

@@ -34,7 +34,7 @@ export class PathSelector
         this.selectorNeuronStart = this.initializeNeuronSelector(this.selectorNeuronStartElement)
         this.selectorNeuronEnd = this.initializeNeuronSelector(this.selectorNeuronEndElement)
 
-        const selectedDatasetStr = getLocalStr("connectome_path_selected_dataset_str", "witvliet_2020_8");
+        const selectedDatasetStr = getLocalStr("connectome_path_selected_dataset_str", "cook_jarrell_2019_h");
         this.selectorDataset.addItem(selectedDatasetStr)
     }
     

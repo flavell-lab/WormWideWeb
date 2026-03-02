@@ -9,7 +9,7 @@ export class DatasetSelector {
         // Initialize selector - dataset
         this.initializeDatasetSelector();
 
-        const selectedDatasetStr = getLocalStr("activity_connectome_selected_dataset_str", "white_1986_whole,witvliet_2020_7,witvliet_2020_8");
+        const selectedDatasetStr = getLocalStr("activity_connectome_selected_dataset_str", "cook_jarrell_2019_h");
         this.selectorDataset.setValue(selectedDatasetStr.split(","))
     }
 
