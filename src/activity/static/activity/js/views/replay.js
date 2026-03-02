@@ -1019,7 +1019,7 @@ function formatReplayTimeLabel(minutesValue, frameIndex) {
     const totalSeconds = Math.max(0, Math.round(minutes * 60));
     const mm = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
     const ss = String(totalSeconds % 60).padStart(2, "0");
-    return `${mm}:${ss} (t=${frameIndex})`;
+    return `${mm}:${ss} (t=${frameIndex + 1})`;
 }
 
 function syncLoadingUi() {
