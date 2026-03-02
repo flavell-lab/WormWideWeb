@@ -157,12 +157,12 @@ class SignalReplayViewTests(SimpleTestCase):
 
 
 class ConnectomeDegreeIndexTests(SimpleTestCase):
-    @patch("activity.views.Synapse.objects.values_list")
+    @patch("activity.views.get_edge_response_data")
     @patch("activity.views.ConnectomeDataset.objects.values_list")
     def test_compute_connectome_full_degree_index_uses_full_graph(
         self,
         mock_connectome_values_list,
-        mock_synapse_values_list,
+        mock_get_edge_response_data,
     ):
         mock_connectome_values_list.return_value = [
             ("conn-a", "A"),
@@ -172,14 +172,40 @@ class ConnectomeDegreeIndexTests(SimpleTestCase):
             ("conn-b", "X"),
             ("conn-b", "Y"),
         ]
-        mock_synapse_values_list.return_value = [
-            ("conn-a", "A", "B", "c", 2),
-            ("conn-a", "B", "C", "e", 3),
-            ("conn-a", "A", "C", "c", 1),
-            ("conn-b", "X", "Y", "e", 4),
-        ]
+        mock_get_edge_response_data.side_effect = lambda data: {
+            "synapses": {
+                "conn-a": [
+                    {"pre": "A", "post": "B", "type": "c", "count": 2},
+                    {"pre": "B", "post": "C", "type": "e", "count": 3},
+                    {"pre": "A", "post": "C", "type": "c", "count": 1},
+                ],
+                "conn-b": [
+                    {"pre": "X", "post": "Y", "type": "e", "count": 4},
+                ],
+            }.get(data["datasets"][0], [])
+        }
 
         index = _compute_connectome_full_degree_index()
+
+        self.assertEqual(mock_get_edge_response_data.call_count, 2)
+        mock_get_edge_response_data.assert_any_call(
+            {
+                "datasets": ["conn-a"],
+                "neurons": ["A", "B", "C", "Z"],
+                "classes": [],
+                "show_individual_neuron": True,
+                "show_connected_neuron": True,
+            }
+        )
+        mock_get_edge_response_data.assert_any_call(
+            {
+                "datasets": ["conn-b"],
+                "neurons": ["X", "Y"],
+                "classes": [],
+                "show_individual_neuron": True,
+                "show_connected_neuron": True,
+            }
+        )
 
         self.assertAlmostEqual(index["conn-a"]["A"]["degree_in_full"], 0.0)
         self.assertAlmostEqual(index["conn-a"]["A"]["degree_out_full"], 3.0)

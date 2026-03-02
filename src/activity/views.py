@@ -14,7 +14,7 @@ from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.http import require_GET, require_POST
 
 from connectome.views import connectome_datasets, get_edge_response_data
-from connectome.models import Dataset as ConnectomeDataset, Synapse
+from connectome.models import Dataset as ConnectomeDataset
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from core.models import JSONCache
 
@@ -22,7 +22,7 @@ ACTIVITY_CACHE_TTL_LONG = 60 * 60 * 24 * 30
 ACTIVITY_CACHE_TTL_MEDIUM = 60 * 60 * 24 * 14
 ACTIVITY_CACHE_TTL_SHORT = 60 * 60 * 24 * 7
 ACTIVITY_REPLAY_CACHE_TTL = 60 * 60 * 24
-ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY = "activity_replay_connectome_degree_index:v2"
+ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY = "activity_replay_connectome_degree_index:v3"
 ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX = "activity_replay_behavior_corr:v1:"
 ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX = "activity_replay:v3:"
 
@@ -574,6 +574,7 @@ def _compute_connectome_full_degree_index():
     )
     directed_graph_by_dataset = {}
     undirected_graph_by_dataset = {}
+    neurons_by_dataset = defaultdict(set)
 
     # Ensure all dataset-neuron pairs exist in the index (including isolated neurons).
     for dataset_id, neuron_name in ConnectomeDataset.objects.values_list(
@@ -587,45 +588,62 @@ def _compute_connectome_full_degree_index():
         if neuron_name:
             directed_graph.add_node(neuron_name)
             undirected_graph.add_node(neuron_name)
+            neurons_by_dataset[dataset_id].add(neuron_name)
             _ = metric_index[dataset_id][neuron_name]
         else:
             _ = metric_index[dataset_id]
 
-    for dataset_id, pre_name, post_name, synapse_type, synapse_count in Synapse.objects.values_list(
-        "dataset__dataset_id",
-        "pre__name",
-        "post__name",
-        "synapse_type",
-        "synapse_count",
-    ):
-        if not dataset_id or not pre_name or not post_name:
+    for dataset_id in directed_graph_by_dataset.keys():
+        dataset_neurons = sorted(neurons_by_dataset.get(dataset_id, set()))
+        if not dataset_neurons:
             continue
+
+        edge_response = get_edge_response_data(
+            {
+                "datasets": [dataset_id],
+                "neurons": dataset_neurons,
+                "classes": [],
+                "show_individual_neuron": True,
+                "show_connected_neuron": True,
+            }
+        )
 
         directed_graph = directed_graph_by_dataset.setdefault(dataset_id, nx.DiGraph())
         undirected_graph = undirected_graph_by_dataset.setdefault(dataset_id, nx.Graph())
-        if not directed_graph.has_node(pre_name):
-            directed_graph.add_node(pre_name)
-            undirected_graph.add_node(pre_name)
-            _ = metric_index[dataset_id][pre_name]
-        if not directed_graph.has_node(post_name):
-            directed_graph.add_node(post_name)
-            undirected_graph.add_node(post_name)
-            _ = metric_index[dataset_id][post_name]
+        for synapse in edge_response.get("synapses", []):
+            pre_name = synapse.get("pre")
+            post_name = synapse.get("post")
+            if not pre_name or not post_name:
+                continue
 
-        weight = float(synapse_count)
-        pre_metrics = metric_index[dataset_id][pre_name]
-        post_metrics = metric_index[dataset_id][post_name]
+            try:
+                weight = float(synapse.get("count"))
+            except (TypeError, ValueError):
+                continue
 
-        pre_metrics["degree_out_full"] += weight
-        post_metrics["degree_in_full"] += weight
-        _add_weighted_edge(directed_graph, pre_name, post_name, weight)
-        _add_weighted_edge(undirected_graph, pre_name, post_name, weight)
+            synapse_type = synapse.get("type")
+            if not directed_graph.has_node(pre_name):
+                directed_graph.add_node(pre_name)
+                undirected_graph.add_node(pre_name)
+                _ = metric_index[dataset_id][pre_name]
+            if not directed_graph.has_node(post_name):
+                directed_graph.add_node(post_name)
+                undirected_graph.add_node(post_name)
+                _ = metric_index[dataset_id][post_name]
 
-        # Gap junctions are effectively bidirectional.
-        if synapse_type == "e":
-            post_metrics["degree_out_full"] += weight
-            pre_metrics["degree_in_full"] += weight
-            _add_weighted_edge(directed_graph, post_name, pre_name, weight)
+            pre_metrics = metric_index[dataset_id][pre_name]
+            post_metrics = metric_index[dataset_id][post_name]
+
+            pre_metrics["degree_out_full"] += weight
+            post_metrics["degree_in_full"] += weight
+            _add_weighted_edge(directed_graph, pre_name, post_name, weight)
+            _add_weighted_edge(undirected_graph, pre_name, post_name, weight)
+
+            # Gap junctions are effectively bidirectional.
+            if synapse_type == "e":
+                post_metrics["degree_out_full"] += weight
+                pre_metrics["degree_in_full"] += weight
+                _add_weighted_edge(directed_graph, post_name, pre_name, weight)
 
     output = {}
     for dataset_id, node_map in metric_index.items():
