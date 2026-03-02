@@ -287,6 +287,20 @@
     </div>
   </div>
 
+  <div class="modal fade" id="replay-node-info-modal" tabindex="-1" aria-labelledby="replay-node-info-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="replay-node-info-modal-label">Selected Neuron Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body small" id="replay-node-info-modal-body">
+          Select multiple nodes to see details.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card card-body mb-3">
     <div class="d-flex flex-wrap align-items-center gap-2 replay-timeline-row">
       <div class="btn-group btn-group-sm replay-timeline-buttons">
@@ -345,9 +359,16 @@
             </div>
           </div>
         </div>
-        <p id="replay-edge-info" class="plot-description mb-2">
-          Click an edge to inspect mode-specific values.
-        </p>
+        <div class="replay-edge-info-row mb-2">
+          <p id="replay-edge-info" class="plot-description mb-0">
+            Click a node or edge to inspect mode-specific values.
+          </p>
+          <div class="replay-edge-info-actions">
+            <button id="button-node-info-more" type="button" class="btn btn-outline-secondary btn-sm">
+              Show more
+            </button>
+          </div>
+        </div>
         <div class="replay-graph-shell">
           <div id="replay-graph"></div>
           <div id="replay-watermark">Connectome data: <span id="replay-connectome-citation">N/A</span></div>

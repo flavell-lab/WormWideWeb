@@ -140,12 +140,34 @@
 }
 
 #replay-edge-info {
+    flex: 1 1 auto;
     height: 3.7rem;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-gutter: stable;
     line-height: 1.3rem;
     padding-right: 0.15rem;
+}
+
+.replay-edge-info-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.6rem;
+}
+
+.replay-edge-info-actions {
+    flex: 0 0 6.1rem;
+    display: flex;
+    align-items: flex-start;
+}
+
+#button-node-info-more {
+    width: 100%;
+    visibility: hidden;
+}
+
+#button-node-info-more.is-visible {
+    visibility: visible;
 }
 
 .replay-colorbars {
@@ -213,5 +235,19 @@
 
     .replay-timeline-time {
         flex-basis: auto;
+    }
+
+    .replay-edge-info-row {
+        flex-direction: column;
+    }
+
+    .replay-edge-info-actions {
+        flex-basis: auto;
+        width: 100%;
+    }
+
+    #button-node-info-more {
+        width: auto;
+        align-self: flex-end;
     }
 }

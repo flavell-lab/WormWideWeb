@@ -77,6 +77,7 @@ let signalYMax = 1;
 let behaviorYMin = -1;
 let behaviorYMax = 1;
 let selectedEdgeId = null;
+let selectedNodeInfoId = null;
 let appliedSpacing = DEFAULTS.spacing;
 let appliedEdgeScale = DEFAULTS.edgeScale;
 let appliedEdgeType = DEFAULTS.edgeType;
@@ -1342,9 +1343,180 @@ function renderEdgeInfo(message) {
     element.innerHTML = message;
 }
 
+function setNodeInfoMoreButtonVisible(isVisible) {
+    const button = document.getElementById("button-node-info-more");
+    if (!button) return;
+    const visible = Boolean(isVisible);
+    button.classList.toggle("is-visible", visible);
+    button.disabled = !visible;
+}
+
 function clearEdgeInfo() {
     selectedEdgeId = null;
-    renderEdgeInfo("Click an edge to inspect mode-specific values.");
+    selectedNodeInfoId = null;
+    renderEdgeInfo("Click a node or edge to inspect mode-specific values.");
+    setNodeInfoMoreButtonVisible(false);
+}
+
+function getNodeInfoLabel(node) {
+    const nodeId = node?.id?.() || "";
+    const idx = node?.data?.("representative_idx_neuron");
+    if (Number.isInteger(idx) && idx >= 1) {
+        return `${idx} (${nodeId})`;
+    }
+    return nodeId;
+}
+
+function renderSelectedNodeInfo(node) {
+    if (!node || node.empty()) {
+        clearEdgeInfo();
+        return;
+    }
+
+    const sizeModeLabel = getSelectLabel("select-node-size-mode", "Node size");
+    const colorModeLabel = getSelectLabel("select-node-color-mode", "Node color");
+    const sizeMode = normalizeNodeMode(document.getElementById("select-node-size-mode").value);
+    const colorMode = normalizeNodeMode(document.getElementById("select-node-color-mode").value);
+    const trace = node.data("trace") || [];
+    const activityValue = trace[currentFrame];
+    const nodeData = node.data();
+    const sizeValue = getNodeSizeValue(nodeData, activityValue, sizeMode);
+    const colorValue = getNodeColorValue(nodeData, activityValue, colorMode);
+    const label = escapeHtml(getNodeInfoLabel(node));
+    const degreeTotal = formatEdgeInfoNumber(getNodeDegreeMetric(nodeData, "degree_total"), 2);
+    const activityText = formatEdgeInfoNumber(activityValue, 4);
+    const sizeText = formatEdgeInfoNumber(sizeValue, 4);
+    const colorText = formatEdgeInfoNumber(colorValue, 4);
+
+    renderEdgeInfo(
+        `<strong>${label}</strong><br>`
+        + `<span><strong>Activity:</strong> ${activityText}</span> `
+        + `<span class="text-muted">| </span>`
+        + `<span><strong>Size (${escapeHtml(sizeModeLabel)}):</strong> ${sizeText}</span> `
+        + `<span class="text-muted">| </span>`
+        + `<span><strong>Color (${escapeHtml(colorModeLabel)}):</strong> ${colorText}</span> `
+        + `<span class="text-muted">| degree total=${degreeTotal}</span>`
+    );
+    setNodeInfoMoreButtonVisible(false);
+}
+
+function getSelectedNodeElementsSorted() {
+    if (!cy || selectedNodeIds.size === 0) return [];
+    const nodes = Array.from(selectedNodeIds)
+        .map((nodeId) => cy.getElementById(nodeId))
+        .filter((node) => node && !node.empty());
+    nodes.sort((a, b) => {
+        const aIdx = a.data("representative_idx_neuron");
+        const bIdx = b.data("representative_idx_neuron");
+        const aHasIdx = Number.isInteger(aIdx);
+        const bHasIdx = Number.isInteger(bIdx);
+        if (aHasIdx && bHasIdx && aIdx !== bIdx) return aIdx - bIdx;
+        if (aHasIdx && !bHasIdx) return -1;
+        if (!aHasIdx && bHasIdx) return 1;
+        return a.id().localeCompare(b.id());
+    });
+    return nodes;
+}
+
+function buildTruncatedNodeLabelList(labels, maxChars = 84) {
+    if (!labels || labels.length === 0) {
+        return { text: "", truncated: false };
+    }
+    const full = labels.join(", ");
+    if (full.length <= maxChars) {
+        return { text: full, truncated: false };
+    }
+
+    const kept = [];
+    let usedChars = 0;
+    for (let i = 0; i < labels.length; i++) {
+        const part = labels[i];
+        const separator = kept.length > 0 ? 2 : 0;
+        const projected = usedChars + separator + part.length;
+        if (projected > maxChars && kept.length > 0) break;
+        if (projected > maxChars) {
+            kept.push(part.slice(0, Math.max(0, maxChars - 3)) + "...");
+            usedChars = maxChars;
+            break;
+        }
+        kept.push(part);
+        usedChars = projected;
+    }
+    const remaining = Math.max(0, labels.length - kept.length);
+    let text = kept.join(", ");
+    if (remaining > 0) {
+        text = `${text} ... (+${remaining})`;
+    }
+    return { text: text, truncated: true };
+}
+
+function renderSelectedNodesSummary() {
+    const selectedNodes = getSelectedNodeElementsSorted();
+    if (selectedNodes.length <= 1) {
+        if (selectedNodes.length === 1) {
+            renderSelectedNodeInfo(selectedNodes[0]);
+            return;
+        }
+        clearEdgeInfo();
+        return;
+    }
+
+    const labels = selectedNodes.map((node) => getNodeInfoLabel(node));
+    const summary = buildTruncatedNodeLabelList(labels);
+    renderEdgeInfo(escapeHtml(summary.text));
+    setNodeInfoMoreButtonVisible(true);
+}
+
+function renderSelectedNodesModalContent() {
+    const modalTitle = document.getElementById("replay-node-info-modal-label");
+    const modalBody = document.getElementById("replay-node-info-modal-body");
+    if (!modalTitle || !modalBody) return;
+
+    const selectedNodes = getSelectedNodeElementsSorted();
+    if (selectedNodes.length === 0) {
+        modalTitle.textContent = "Selected Neuron Details";
+        modalBody.textContent = "No selected neurons.";
+        return;
+    }
+
+    const sizeModeLabel = getSelectLabel("select-node-size-mode", "Node size");
+    const colorModeLabel = getSelectLabel("select-node-color-mode", "Node color");
+    const sizeMode = normalizeNodeMode(document.getElementById("select-node-size-mode").value);
+    const colorMode = normalizeNodeMode(document.getElementById("select-node-color-mode").value);
+    const timeValue = replayPayload?.timeline?.time_minutes?.[currentFrame];
+    const timeLabel = formatReplayTimeLabel(timeValue, currentFrame);
+
+    const rows = selectedNodes
+        .map((node) => {
+            const nodeData = node.data();
+            const trace = nodeData.trace || [];
+            const activityValue = trace[currentFrame];
+            const sizeValue = getNodeSizeValue(nodeData, activityValue, sizeMode);
+            const colorValue = getNodeColorValue(nodeData, activityValue, colorMode);
+            const degreeTotal = getNodeDegreeMetric(nodeData, "degree_total");
+            return (
+                `<tr>`
+                + `<td>${escapeHtml(getNodeInfoLabel(node))}</td>`
+                + `<td>${formatEdgeInfoNumber(activityValue, 4)}</td>`
+                + `<td>${formatEdgeInfoNumber(sizeValue, 4)}</td>`
+                + `<td>${formatEdgeInfoNumber(colorValue, 4)}</td>`
+                + `<td>${formatEdgeInfoNumber(degreeTotal, 2)}</td>`
+                + `</tr>`
+            );
+        })
+        .join("");
+
+    modalTitle.textContent = `Selected Neuron Details (${selectedNodes.length})`;
+    modalBody.innerHTML = (
+        `<div class="text-muted mb-2">Time point ${escapeHtml(timeLabel)}</div>`
+        + `<div class="text-muted mb-2">Size mode: ${escapeHtml(sizeModeLabel)} | Color mode: ${escapeHtml(colorModeLabel)}</div>`
+        + `<div class="table-responsive">`
+        + `<table class="table table-sm align-middle mb-0">`
+        + `<thead><tr><th>Neuron</th><th>Activity</th><th>Size</th><th>Color</th><th>Degree total</th></tr></thead>`
+        + `<tbody>${rows}</tbody>`
+        + `</table>`
+        + `</div>`
+    );
 }
 
 function renderSelectedEdgeInfo(edge) {
@@ -1372,6 +1544,7 @@ function renderSelectedEdgeInfo(edge) {
         + `<span><strong>Color (${escapeHtml(getEdgeModeLabel(colorMode))}):</strong> ${colorValue}</span> `
         + `<span class="text-muted">| source activity=${sourceActivity}, visual intensity=${intensity}</span>`
     );
+    setNodeInfoMoreButtonVisible(false);
 }
 
 function refreshSelectedEdgeInfo() {
@@ -1382,6 +1555,24 @@ function refreshSelectedEdgeInfo() {
         return;
     }
     renderSelectedEdgeInfo(edge);
+}
+
+function refreshSelectedNodeInfo() {
+    if (selectedNodeIds.size > 1) {
+        renderSelectedNodesSummary();
+        return;
+    }
+    if (!cy || !selectedNodeInfoId) return;
+    const node = cy.getElementById(selectedNodeInfoId);
+    if (!node || node.empty()) {
+        selectedNodeInfoId = null;
+        if (!selectedEdgeId) {
+            renderEdgeInfo("Click a node or edge to inspect mode-specific values.");
+            setNodeInfoMoreButtonVisible(false);
+        }
+        return;
+    }
+    renderSelectedNodeInfo(node);
 }
 
 function buildDatasetSelectors() {
@@ -1677,6 +1868,7 @@ function initGraph(payload) {
         cy.destroy();
     }
     selectedEdgeId = null;
+    selectedNodeInfoId = null;
     clearEdgeInfo();
 
     const maxEdgeWeight = payload.meta.max_edge_weight > 0 ? payload.meta.max_edge_weight : 1.0;
@@ -1696,6 +1888,7 @@ function initGraph(payload) {
                 pagerank_centrality: node.pagerank_centrality,
                 eigenvector_centrality: node.eigenvector_centrality,
                 behavior_correlations: node.behavior_correlations || {},
+                representative_idx_neuron: node.representative_idx_neuron,
             },
         });
     });
@@ -1782,16 +1975,39 @@ function initGraph(payload) {
         } else {
             selectedNodeIds = new Set([nodeId]);
         }
+        selectedEdgeId = null;
+        if (selectedNodeIds.size > 1) {
+            selectedNodeInfoId = null;
+        } else if (selectedNodeIds.size === 1) {
+            selectedNodeInfoId = Array.from(selectedNodeIds)[0];
+        } else {
+            selectedNodeInfoId = null;
+        }
 
         renderSignalPlot();
         applySelectionStyles();
+        if (selectedNodeIds.size > 1) {
+            renderSelectedNodesSummary();
+        } else if (selectedNodeInfoId) {
+            const selectedNode = cy.getElementById(selectedNodeInfoId);
+            renderSelectedNodeInfo(selectedNode);
+        } else {
+            renderEdgeInfo("Click a node or edge to inspect mode-specific values.");
+            setNodeInfoMoreButtonVisible(false);
+        }
         updateExploreLink();
         updateReplayUrlState();
     });
 
     cy.on("tap", "edge", (event) => {
         selectedEdgeId = event.target.id();
+        selectedNodeInfoId = null;
+        selectedNodeIds.clear();
+        renderSignalPlot();
+        applySelectionStyles();
         renderSelectedEdgeInfo(event.target);
+        updateExploreLink();
+        updateReplayUrlState();
     });
 
     cy.on("tap", (event) => {
@@ -2203,7 +2419,11 @@ function updateFrame(frame) {
     applySelectionStyles();
     updateBehaviorCursor();
     updateSignalCursor();
-    refreshSelectedEdgeInfo();
+    if (selectedEdgeId) {
+        refreshSelectedEdgeInfo();
+    } else if (selectedNodeInfoId || selectedNodeIds.size > 1) {
+        refreshSelectedNodeInfo();
+    }
     if (!isPlaying) {
         updateReplayUrlState({ includeFrame: true });
     }
@@ -2466,6 +2686,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const nodeVMaxInput = document.getElementById("input-node-vmax");
     const buttonOpenExplore = document.getElementById("button-open-explore");
     const buttonToggleSettings = document.getElementById("button-toggle-settings");
+    const buttonNodeInfoMore = document.getElementById("button-node-info-more");
+    const nodeInfoModalElement = document.getElementById("replay-node-info-modal");
     const advancedSettingsElement = document.getElementById("replay-advanced-settings");
 
     if (advancedSettingsElement && window.bootstrap && window.bootstrap.Collapse) {
@@ -2479,6 +2701,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     setAdvancedSettingsVisible(false);
+    setNodeInfoMoreButtonVisible(false);
 
     const urlState = parseReplayStateFromUrl();
     const hasSelectValue = (selectElement, value) => (
@@ -2732,6 +2955,13 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
         }
     });
+    if (buttonNodeInfoMore) {
+        buttonNodeInfoMore.addEventListener("click", () => {
+            renderSelectedNodesModalContent();
+            if (!nodeInfoModalElement || !(window.bootstrap && window.bootstrap.Modal)) return;
+            window.bootstrap.Modal.getOrCreateInstance(nodeInfoModalElement).show();
+        });
+    }
 
     document.getElementById("button-load-replay").addEventListener("click", () => {
         loadReplayData();
