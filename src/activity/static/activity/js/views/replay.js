@@ -180,7 +180,7 @@ function parseReplayStateFromUrl() {
         neuronIds: parseCsvParam(neuronsParam),
         behaviors: parseCsvParam(params.get("behaviors")),
         selectedNodes: parseCsvParam(params.get("selected_nodes")),
-        frame: parseIntParam(params.get("frame")),
+        frame: parseIntParam(params.get("tp") ?? params.get("frame")),
         layout: params.get("layout") || "",
         edgeType: params.get("edge_type") || "",
         minSynapseChemical: parseIntParam(params.get("min_synapse_chemical")),
@@ -1315,7 +1315,7 @@ function updateReplayUrlState(options = {}) {
         setUrlParam(params, "selected_nodes", Array.from(selectedNodeIds).join(","));
     }
     if (includeFrame && Number.isInteger(currentFrame) && currentFrame >= 0) {
-        setUrlParam(params, "frame", currentFrame);
+        setUrlParam(params, "tp", currentFrame);
     }
 
     const query = params.toString();
