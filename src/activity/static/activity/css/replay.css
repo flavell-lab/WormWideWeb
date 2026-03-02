@@ -139,6 +139,15 @@
     font-size: 0.9rem;
 }
 
+#replay-edge-info {
+    height: 3.7rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    line-height: 1.3rem;
+    padding-right: 0.15rem;
+}
+
 .replay-colorbars {
     display: flex;
     gap: 0.75rem;
