@@ -124,6 +124,30 @@ let pendingUrlState = {
     behaviors: [],
     frame: null,
 };
+const PLAYBACK_SETTINGS_CONTROL_IDS = [
+    "button-clear-neurons",
+    "button-select-all-neurons",
+    "button-toggle-settings",
+    "button-load-replay",
+    "button-reset-replay",
+    "select-layout",
+    "select-edge-type",
+    "switch-replay-show-connected",
+    "input-min-synapse-c",
+    "input-min-synapse-e",
+    "slider-spacing",
+    "slider-edge-scale",
+    "select-edge-size-mode",
+    "select-edge-color-mode",
+    "select-edge-colormap",
+    "input-edge-vmin",
+    "input-edge-vmax",
+    "select-node-size-mode",
+    "select-node-color-mode",
+    "select-node-colormap",
+    "input-node-vmin",
+    "input-node-vmax",
+];
 
 function normalizeEdgeType(value) {
     if (value === "chemical" || value === "electrical") return value;
@@ -1125,7 +1149,7 @@ function syncLoadingUi() {
     }
     const loadButton = document.getElementById("button-load-replay");
     if (loadButton) {
-        loadButton.disabled = isReplayLoading;
+        loadButton.disabled = isReplayLoading || isPlaying;
     }
 }
 
@@ -1226,7 +1250,40 @@ function updateReplayConnectomeCitation() {
 function updateElectricalInputState() {
     const edgeType = normalizeEdgeType(document.getElementById("select-edge-type").value);
     const inputE = document.getElementById("input-min-synapse-e");
-    inputE.disabled = edgeType === "chemical";
+    inputE.disabled = isPlaying || edgeType === "chemical";
+}
+
+function setSettingsDisabled(disabled) {
+    const shouldDisable = Boolean(disabled);
+    PLAYBACK_SETTINGS_CONTROL_IDS.forEach((elementId) => {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        element.disabled = shouldDisable;
+    });
+
+    if (selectors.activitySelector) {
+        if (shouldDisable) {
+            selectors.activitySelector.disable();
+        } else {
+            selectors.activitySelector.enable();
+        }
+    }
+    if (selectors.connectomeSelector) {
+        if (shouldDisable) {
+            selectors.connectomeSelector.disable();
+        } else {
+            selectors.connectomeSelector.enable();
+        }
+    }
+    if (selectors.neuronSelector) {
+        if (shouldDisable) {
+            selectors.neuronSelector.disable();
+        } else {
+            selectors.neuronSelector.enable();
+        }
+    }
+
+    updateElectricalInputState();
 }
 
 function getBehaviorColorIndex(behaviorKey, fallbackIndex) {
@@ -2687,6 +2744,7 @@ function stopPlayback() {
         window.cancelAnimationFrame(timerId);
         timerId = null;
     }
+    setSettingsDisabled(false);
     document.getElementById("button-play-pause").innerHTML = '<i class="bi bi-play-fill"></i> Play';
 }
 
@@ -2702,6 +2760,7 @@ function startPlayback() {
     if (!replayPayload) return;
     stopPlayback();
     isPlaying = true;
+    setSettingsDisabled(true);
     document.getElementById("button-play-pause").innerHTML = '<i class="bi bi-pause-fill"></i> Pause';
 
     const speed = parseFloat(document.getElementById("select-speed").value) || 1;
