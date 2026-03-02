@@ -16,10 +16,30 @@
     }
 }
 
+.ts-wrapper .ts-dropdown .option .select_dataset_option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+}
+
+.ts-wrapper .ts-dropdown .option .select_dataset_name {
+    font-weight: 500;
+}
+
+/* Force dataset option text to stack vertically (name then description). */
+#selectDatasetContainer .ts-wrapper .ts-dropdown .option > div {
+    display: block !important;
+    width: 100%;
+}
+
 .select_dataset_opt {
     font-weight: normal;
     opacity: 0.5;
-    margin: 0 0 0 2px;
+    display: block !important;
+    margin: 0.1rem 0 0;
+    font-size: 0.85em;
+    line-height: 1.2;
 }
 
 .menu-bar-right {
@@ -49,6 +69,19 @@
     width: 100%;
 }
 
+@media (min-width: 993px) {
+    /* Keep selector widths equal on desktop */
+    #selectDatasetContainer.menu-bar-select {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    #selectNeuronContainer.menu-bar-select {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}
+
 @media (max-width: 992px) {
     .menu-bar-right {
         flex: 1 1 100%;
@@ -58,5 +91,51 @@
     .menu-bar-select {
         max-width: none;
         width: 100%;
+    }
+}
+
+.settings-compact h6 {
+    margin-bottom: 0.35rem;
+}
+
+.settings-compact .form-check {
+    min-height: 1.4rem;
+}
+
+.settings-compact .form-check-label {
+    line-height: 1.25;
+}
+
+.settings-help {
+    font-size: 0.9rem;
+    color: var(--gray-700, #495057);
+    line-height: 1.2;
+}
+
+.settings-threshold-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.settings-threshold-item .input-group {
+    max-width: 140px;
+}
+
+.settings-threshold-item input[type="number"] {
+    min-width: 44px;
+}
+
+.settings-slider-group .form-label {
+    line-height: 1.2;
+}
+
+.settings-slider-group .form-range {
+    margin-top: 0;
+}
+
+@media (max-width: 991.98px) {
+    .settings-threshold-grid {
+        grid-template-columns: 1fr;
     }
 }

@@ -23,13 +23,20 @@
     <!-- Menu Bar -->
     <div class="card card-body">
       <div class="d-flex flex-wrap align-items-center gap-2">
-        <!-- First group of buttons -->
-        <div class="btn-group btn-group-sm" role="group" aria-label="Dataset and layout options">
-          <!-- Dataset button with tooltip -->
-          <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseData"
-            aria-expanded="false" aria-controls="collapseData" data-bs-toggle="tooltip"
-            title="Customize which connectomes to use">
-            Dataset
+        <div class="tom-select-container menu-bar-select" id="selectDatasetContainer">
+          <input id="select-dataset" autocomplete="off" type="text" class="form-control form-control-sm"
+            placeholder="Select dataset(s)">
+        </div>
+
+        <div class="tom-select-container menu-bar-select" id="selectNeuronContainer">
+          <input id="select-neuron" autocomplete="off" type="text" class="form-control form-control-sm"
+            placeholder="Select neuron(s) or neuron class(es)">
+        </div>
+
+        <div class="btn-group btn-group-sm" role="group" aria-label="Connectome controls">
+          <button id="clearNeurons" class="btn btn-light btn-sm" type="button" aria-label="Clear all selected neurons"
+            data-bs-toggle="tooltip" title="Clear all selected neurons">
+            Clear
           </button>
 
           <!-- Layout dropdown -->
@@ -77,14 +84,6 @@
               </li>
             </ul>
           </div>
-        </div>
-
-        <!-- Second group of buttons -->
-        <div class="btn-group btn-group-sm" role="group" aria-label="Settings and other utility buttons">
-          <button id="clearNeurons" class="btn btn-light btn-sm" type="button" aria-label="Clear all selected neurons"
-            data-bs-toggle="tooltip" title="Clear all selected neurons">
-            Clear
-          </button>
 
           <!-- Settings/gear button -->
           <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig"
@@ -101,21 +100,19 @@
           <!-- Fullscreen -->
           <button id="buttonConnectomeFullscreen" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
             data-bs-title="Fullscreen Connectome" style="display: block;">
-            <i id="connectomeFullscreenIcon" class="bi bi-fullscreen"></i> <span
-              id="connectomeFullscreenLabel">Fullscreen</span>
+            <i id="connectomeFullscreenIcon" class="bi bi-fullscreen"></i>
+            <span id="connectomeFullscreenLabel" class="visually-hidden">Fullscreen</span>
           </button>
+
+          <a class="btn btn-light btn-sm" href="/about/#connectome_citation" target="_blank" rel="noopener noreferrer"
+            data-bs-toggle="tooltip" data-bs-title="Info on datasets" aria-label="Dataset information">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+          </a>
         </div>
 
         <div class="menu-spinner-slot">
           <div id="spinnerStatus" class="spinner-border spinner-border-sm" role="status" style="display:none">
             <span class="visually-hidden">Loading...</span>
-          </div>
-        </div>
-
-        <div class="d-flex align-items-center menu-bar-right ms-auto">
-          <div class="tom-select-container menu-bar-select" id="selectNeuronContainer">
-            <input id="select-neuron" autocomplete="off" type="text" class="form-control form-control-sm"
-              placeholder="Select neuron(s) or neuron class(es)">
           </div>
         </div>
       </div>
@@ -124,104 +121,64 @@
     </div> -->
     </div> <!-- menu bar -->
 
-    <!-- collapse: dataset -->
-    <div class="collapse mt-3" id="collapseData">
-      <div class="card card-body">
-        <h5 class="card-title d-inline-flex align-items-center">
-          Dataset
-          <a class="btn btn-light btn-sm ms-2" href="/about/#connectome_citation" data-bs-toggle="tooltip"
-            data-bs-title="Info on datasets"><i class="bi bi-info-circle"></i></a>
-        </h5>
-        <!-- <input id="select-dataset" autocomplete="off" placeholder="Select dataset(s)"> -->
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <div class="tom-select-container menu-bar-select" id="selectDatasetContainer">
-            <input id="select-dataset" autocomplete="off" type="text" class="form-control form-control-sm"
-              placeholder="Select dataset(s)">
-          </div>
-        </div>
-      </div>
-    </div>
-
 
     <!-- collapse: settings -->
     <div class="collapse mt-3" id="collapseConfig">
       <div class="card card-body">
-        <h5 class="card-title d-inline-flex align-items-center">
-          Settings
-        </h5>
-        <div class="container mt-2">
-
-          <div class="row d-flex align-items-stretch">
-            <!-- settings section: neurons -->
-            <div class="col-lg-6 column">
-              <h6>Neurons</h6>
-              <div class="form-check form-switch">
+        <div class="settings-compact mt-2">
+          <div class="row g-3 align-items-start">
+            <div class="col-lg-4">
+              <h6 class="mb-2">Neurons</h6>
+              <div class="form-check form-switch mb-2">
                 <input class="form-check-input" type="checkbox" role="switch" id="switchIndividual">
                 <label class="form-check-label" for="switchIndividual">Show individual neuron (i.e. split D/V &
                   L/R)</label>
               </div>
-              <div class="form-check form-switch mb-3">
+              <div class="form-check form-switch mb-0">
                 <input class="form-check-input" type="checkbox" role="switch" id="switchConnected" checked>
                 <label class="form-check-label" for="switchConnected">Show connected neuron</label>
               </div>
             </div>
-            <!-- settings section: synapses -->
-            <div class="col-lg-6 column">
-              <h6>Synapses</h6>
-              <div class="mb-2">Show edges with at least:</div>
-              <div class="d-flex align-items-center gap-2 mb-2">
-                <!-- Chemical -->
-                <div class="col-md-3 column">
-                  <div>Chemical</div>
-                  <div class="input-group input-group-sm flex-nowrap" style="width: 100px;">
+
+            <div class="col-lg-4">
+              <h6 class="mb-2">Synapses</h6>
+              <div class="settings-help mb-2">Show edges with at least:</div>
+              <div class="settings-threshold-grid">
+                <div class="settings-threshold-item">
+                  <label for="threshold-c" class="form-label mb-1">Chemical</label>
+                  <div class="input-group input-group-sm flex-nowrap">
                     <button class="btn btn-secondary btn-sm" id="minus-c">-</button>
                     <input type="number" id="threshold-c" class="form-control form-control-sm text-center" value="1"
-                      min="1" style="width: 40px;">
+                      min="1">
                     <button class="btn btn-secondary btn-sm" id="plus-c">+</button>
                   </div>
                 </div>
-
-                <!-- Spacer -->
-                <div class="extra-space" style="width: 15px;"></div>
-
-                <!-- Electrical -->
-                <div class="col-md-3 column">
-                  <div>Electrical</div>
-                  <div class="input-group input-group-sm flex-nowrap" style="width: 100px;">
+                <div class="settings-threshold-item">
+                  <label for="threshold-e" class="form-label mb-1">Electrical</label>
+                  <div class="input-group input-group-sm flex-nowrap">
                     <button class="btn btn-secondary btn-sm" id="minus-e">-</button>
                     <input type="number" id="threshold-e" class="form-control form-control-sm text-center" value="1"
-                      min="1" style="width: 40px;">
+                      min="1">
                     <button class="btn btn-secondary btn-sm" id="plus-e">+</button>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <hr>
-          <div class="row d-flex align-items-stretch">
-            <div class="col-lg-6 column">
-              <h6>Layout</h6>
-              <div class="input-group input-group-sm flex-nowrap">
-                <label for="sliderSpacing" class="form-label">Spacing</label>
-                <div class="extra-space" style="width: 15px;"></div>
-                <input type="range" class="form-range" min="0.25" max="1.5" step="0.05" id="sliderSpacing"
-                  style="max-width: 300px;">
+
+            <div class="col-lg-4">
+              <h6 class="mb-2">Layout &amp; Edge scaling</h6>
+              <div class="settings-slider-group mb-3">
+                <label for="sliderSpacing" class="form-label mb-1">Spacing</label>
+                <input type="range" class="form-range" min="0.25" max="1.5" step="0.05" id="sliderSpacing">
+              </div>
+              <div class="settings-slider-group">
+                <label for="sliderEdgeScale" class="form-label mb-1">Factor</label>
+                <input type="range" class="form-range" min="0.1" max="3.0" step="0.05" id="sliderEdgeScale">
               </div>
             </div>
-
-            <div class="col-lg-6 column">
-              <h6>Edge scaling</h6>
-              <div class="input-group input-group-sm flex-nowrap">
-                <label for="sliderEdgeScale" class="form-label">Factor</label>
-                <div class="extra-space" style="width: 15px;"></div>
-                <input type="range" class="form-range" min="0.1" max="3.0" step="0.05" id="sliderEdgeScale"
-                  style="max-width: 300px;">
-              </div>
-            </div>
-
           </div>
 
-          <div class="d-flex justify-content-end mt-3">
+          <div class="d-flex justify-content-end mt-2">
             <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#collapseConfig"
               aria-expanded="true" aria-controls="collapseConfig" aria-label="Close">
               Close

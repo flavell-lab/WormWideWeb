@@ -134,7 +134,10 @@ export class SelectorDatasetNeuron {
     getRenderConfig() {
         return {
             option: (data, escape) =>
-                `<div>${escape(data.name)} <span class="select_dataset_opt">${data.description}</span></div>`,
+                `<div class="select_dataset_option">
+                    <div class="select_dataset_name">${escape(data.name)}</div>
+                    <span class="select_dataset_opt">${escape(data.description || "")}</span>
+                </div>`,
             optgroup_header: (data, escape) =>
                 `<div class="optgroup-header"><strong>${escape(data.label)}</strong></div>`,
         };
