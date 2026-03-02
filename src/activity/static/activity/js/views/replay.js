@@ -1703,7 +1703,7 @@ function resetNeuronSelectorOptions(nodes, preferredSelection = [], preferredIsA
                 : null;
             const baseLabel = idx !== null ? `${idx} (${node.id})` : node.id;
             const hasActivity = Boolean(node.has_activity);
-            const label = hasActivity ? baseLabel : `${baseLabel} (connected only)`;
+            const label = hasActivity ? baseLabel : `${baseLabel} (no activity)`;
             return {
                 value: node.id,
                 name: label,
