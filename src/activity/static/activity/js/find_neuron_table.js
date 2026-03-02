@@ -3,6 +3,13 @@ import { URL_ROOT_ACTIVITY_DATA } from '/static/core/js/constants.js';
 
 const plotMultipleURL = "/activity/plot-multiple-data/"
 
+function isNeuroPALDatasetType(datasetTypeList) {
+    if (!Array.isArray(datasetTypeList)) return false;
+    return datasetTypeList.some((datasetType) =>
+        String(datasetType || "").toLowerCase().includes("neuropal")
+    );
+}
+
 export class DatasetTable {
     constructor(tableElementId, data) {
         this.tableElementId = tableElementId
@@ -13,8 +20,10 @@ export class DatasetTable {
         this.matched = {}
 
         this.datasetIdToPaperAndUID = {}
+        this.datasetIdToIsNeuropal = {}
         this.datasets.forEach(dataset => {
             this.datasetIdToPaperAndUID[dataset.dataset_id] = [dataset.paper.paper_id, dataset.dataset_name];
+            this.datasetIdToIsNeuropal[dataset.dataset_id] = isNeuroPALDatasetType(dataset.dataset_type);
         })
 
         this.initTable()
@@ -64,9 +73,19 @@ export class DatasetTable {
     
             // Prepare new action button HTML
             const urlPlot = `/activity/explore/${datasetId}/?n=${neuronList.join("-")}&b=v`;
+            const urlReplayParams = new URLSearchParams({
+                activity_dataset: datasetId,
+                n: neuronList.join("-"),
+            });
+            const urlReplay = `/activity/replay/?${urlReplayParams.toString()}`;
             const urlData = `${URL_ROOT_ACTIVITY_DATA}${this.datasetIdToPaperAndUID[datasetId][0]}/${this.datasetIdToPaperAndUID[datasetId][1]}.json`
+            const replayButton = this.datasetIdToIsNeuropal[datasetId] ? `
+                    <a href="${urlReplay}" class="action-btn" title="Circuit Replay">
+                        <i class="bi bi-diagram-3"></i>
+                    </a>` : "";
             const htmlBtn = `
                 <div class="actions-column">
+                    ${replayButton}
                     <a href="${urlPlot}" class="action-btn" title="Plot">
                         <i class="bi bi-graph-up"></i>
                     </a>

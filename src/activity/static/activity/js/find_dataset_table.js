@@ -1,6 +1,13 @@
 import { getDatasetTypePill } from '/static/core/js/utility.js';
 import { URL_ROOT_ACTIVITY_DATA } from '/static/core/js/constants.js';
 
+function isNeuroPALDatasetType(datasetTypeList) {
+    if (!Array.isArray(datasetTypeList)) return false;
+    return datasetTypeList.some((datasetType) =>
+        String(datasetType || "").toLowerCase().includes("neuropal")
+    );
+}
+
 export class DatasetTable {
     constructor(tableElementId, data, datasetTypes) {
         this.tableElementId = tableElementId
@@ -14,6 +21,7 @@ export class DatasetTable {
     
     initTable() {
         this.data.forEach(dataset => {
+            const isNeuropal = isNeuroPALDatasetType(dataset.dataset_type);
             this.tableData.push({
                 paper: dataset.paper.title,
                 paper_id: dataset.paper.paper_id,
@@ -21,6 +29,7 @@ export class DatasetTable {
                 label: dataset.dataset_name,
                 dataset_type: dataset.dataset_type.map(typeId=>getDatasetTypePill(typeId, this.datasetTypes)).join(" "),
                 dataset_type_raw: dataset.dataset_type.join(","),
+                is_neuropal: isNeuropal,
                 n_neuron: dataset.n_neuron,
                 n_labeled: dataset.n_labeled,
                 length: (dataset.max_t * dataset.avg_timestep).toFixed(1),
@@ -38,13 +47,18 @@ export class DatasetTable {
         this.tableData.forEach((dataset) => {
             // update buttons urls
             const urlPlot = `/activity/explore/${dataset.id}/?n=1-2-3&b=v-hc`
+            const urlReplay = `/activity/replay/?activity_dataset=${encodeURIComponent(dataset.id)}`;
             const urlData = `${URL_ROOT_ACTIVITY_DATA}${dataset.paper_id}/${dataset.label}.json`
+            const replayButton = dataset.is_neuropal ? `<a href="${urlReplay}" class="action-btn" title="Circuit Replay">
+                        <i class="bi bi-diagram-3"></i>
+                    </a>` : "";
             
             const htmlBtn = `<div class="actions-column">
+                    ${replayButton}
                     <a href="${urlPlot}" class="action-btn" title="Plot">
                         <i class="bi bi-graph-up"></i>
                     </a>
-                    <a href="${urlData}" class="action-btn" title="Download"">
+                    <a href="${urlData}" class="action-btn" title="Download">
                         <i class="bi bi-download"></i>
                     </a>
                 </div>`
