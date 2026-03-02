@@ -1042,11 +1042,51 @@ function formatReplayTimeLabel(minutesValue, frameIndex) {
     return `${mm}:${ss} (t=${frameIndex + 1})`;
 }
 
+function getReplayLoadingStatus() {
+    if (isReplayLoading) {
+        return {
+            title: "Loading replay data...",
+            detail: "Fetching connectome edges and activity traces",
+        };
+    }
+    if (isNeuronFilterApplying) {
+        return {
+            title: "Applying neuron filter...",
+            detail: "Recomputing graph edges and ranges",
+        };
+    }
+    if (isNeuronFilterPending) {
+        return {
+            title: "Updating replay view...",
+            detail: "Waiting for selector input to settle",
+        };
+    }
+    return {
+        title: "Loading replay data...",
+        detail: "Preparing connectome and activity traces",
+    };
+}
+
 function syncLoadingUi() {
     const spinner = document.getElementById("replay-spinner");
+    const loadingOverlay = document.getElementById("replay-loading-overlay");
+    const loadingLabel = document.getElementById("replay-loading-label");
+    const loadingDetail = document.getElementById("replay-loading-detail");
     const isBusy = isReplayLoading || isNeuronFilterPending || isNeuronFilterApplying;
+    const loadingStatus = getReplayLoadingStatus();
+
     if (spinner) {
         spinner.style.visibility = isBusy ? "visible" : "hidden";
+    }
+    if (loadingOverlay) {
+        loadingOverlay.classList.toggle("d-none", !isBusy);
+        loadingOverlay.setAttribute("aria-hidden", String(!isBusy));
+    }
+    if (loadingLabel) {
+        loadingLabel.textContent = loadingStatus.title;
+    }
+    if (loadingDetail) {
+        loadingDetail.textContent = loadingStatus.detail;
     }
     const loadButton = document.getElementById("button-load-replay");
     if (loadButton) {

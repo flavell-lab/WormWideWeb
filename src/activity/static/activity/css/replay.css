@@ -35,6 +35,78 @@
     position: relative;
 }
 
+.replay-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.85rem;
+    padding: 1.25rem 1rem 0.8rem;
+    border-radius: 0.5rem;
+    background: rgba(248, 250, 252, 0.84);
+    backdrop-filter: blur(2px);
+    pointer-events: all;
+}
+
+.replay-loading-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.72rem 0.95rem;
+    border-radius: 0.75rem;
+    border: 1px solid #bfdbfe;
+    background: #ffffff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
+.replay-loading-spinner {
+    width: 1.55rem;
+    height: 1.55rem;
+    border-width: 0.2rem;
+}
+
+.replay-loading-title {
+    font-size: 0.93rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #0f172a;
+}
+
+.replay-loading-detail {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    color: #475569;
+}
+
+.replay-loading-track {
+    width: min(360px, 76%);
+    height: 0.34rem;
+    border-radius: 999px;
+    background: #dbeafe;
+    overflow: hidden;
+}
+
+.replay-loading-bar {
+    width: 42%;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2563eb 0%, #3b82f6 70%, #60a5fa 100%);
+    animation: replay-loading-progress 1.15s ease-in-out infinite;
+}
+
+@keyframes replay-loading-progress {
+    from {
+        transform: translateX(-135%);
+    }
+
+    to {
+        transform: translateX(270%);
+    }
+}
+
 #replay-graph {
     position: relative;
     width: 100%;

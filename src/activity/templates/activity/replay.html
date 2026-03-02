@@ -403,6 +403,18 @@
         </div>
         <div class="replay-graph-shell">
           <div id="replay-graph"></div>
+          <div id="replay-loading-overlay" class="replay-loading-overlay d-none" aria-live="polite" aria-atomic="true" aria-hidden="true">
+            <div class="replay-loading-panel">
+              <div class="spinner-border text-primary replay-loading-spinner" role="status" aria-hidden="true"></div>
+              <div class="replay-loading-text">
+                <div id="replay-loading-label" class="replay-loading-title">Loading replay data...</div>
+                <div id="replay-loading-detail" class="replay-loading-detail">Preparing connectome and activity traces</div>
+              </div>
+            </div>
+            <div class="replay-loading-track" aria-hidden="true">
+              <div class="replay-loading-bar"></div>
+            </div>
+          </div>
           <div id="replay-watermark">Connectome data: <span id="replay-connectome-citation">N/A</span></div>
         </div>
       </div>
