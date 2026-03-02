@@ -113,6 +113,7 @@ let debouncedNeuronFilterApply = null;
 let isReplayLoading = false;
 let isNeuronFilterPending = false;
 let isNeuronFilterApplying = false;
+let lastFrameVisualConfigKey = null;
 let pendingUrlState = {
     active: false,
     neuronIds: [],
@@ -1034,6 +1035,33 @@ function valueToEdgeColor(value, settings) {
     }
 }
 
+function buildFrameVisualConfigKey({
+    nodeSizeMode,
+    nodeColorMode,
+    nodeColormap,
+    nodeVMin,
+    nodeVMax,
+    edgeSizeMode,
+    edgeColorMode,
+    edgeColormap,
+    edgeVMin,
+    edgeVMax,
+}) {
+    const toFixedSafe = (value) => Number.isFinite(Number(value)) ? Number(value).toFixed(6) : "nan";
+    return [
+        nodeSizeMode,
+        nodeColorMode,
+        nodeColormap,
+        toFixedSafe(nodeVMin),
+        toFixedSafe(nodeVMax),
+        edgeSizeMode,
+        edgeColorMode,
+        edgeColormap,
+        toFixedSafe(edgeVMin),
+        toFixedSafe(edgeVMax),
+    ].join("|");
+}
+
 function formatReplayTimeLabel(minutesValue, frameIndex) {
     const minutes = Number.isFinite(minutesValue) ? minutesValue : 0;
     const totalSeconds = Math.max(0, Math.round(minutes * 60));
@@ -1930,9 +1958,13 @@ function initGraph(payload) {
     selectedEdgeId = null;
     selectedNodeInfoId = null;
     clearEdgeInfo();
+    lastFrameVisualConfigKey = null;
 
     const maxEdgeWeight = payload.meta.max_edge_weight > 0 ? payload.meta.max_edge_weight : 1.0;
     const elements = [];
+    const nodeHasActivity = new Map(
+        payload.nodes.map((node) => [node.id, Boolean(node.has_activity)])
+    );
 
     payload.nodes.forEach((node) => {
         elements.push({
@@ -1973,6 +2005,7 @@ function initGraph(payload) {
                 frame_size_value: edge.weight,
                 frame_color_value: edge.weight,
                 frame_mode_value: edge.weight,
+                source_has_activity: nodeHasActivity.get(edge.source) ? 1 : 0,
             },
         });
     });
@@ -2527,12 +2560,33 @@ function updateFrame(frame) {
     const edgeColorSettings = getEdgeColorSettings();
     const edgeSizeNormalization = getEdgeSizeNormalization(edgeSizeMode);
     const sizeNormalization = getNodeSizeNormalization(nodeSizeMode);
+    const nodeUsesActivitySignal = (
+        normalizeNodeMode(nodeSizeMode) === "activity"
+        || normalizeNodeMode(colorSettings.colorMode) === "activity"
+    );
+    const edgeUsesSourceSignal = edgeSizeMode !== "count" || edgeColorMode !== "count";
+    const visualConfigKey = buildFrameVisualConfigKey({
+        nodeSizeMode: normalizeNodeMode(nodeSizeMode),
+        nodeColorMode: normalizeNodeMode(colorSettings.colorMode),
+        nodeColormap: colorSettings.colormap,
+        nodeVMin: colorSettings.vmin,
+        nodeVMax: colorSettings.vmax,
+        edgeSizeMode: edgeSizeMode,
+        edgeColorMode: edgeColorMode,
+        edgeColormap: edgeColorSettings.colormap,
+        edgeVMin: edgeColorSettings.vmin,
+        edgeVMax: edgeColorSettings.vmax,
+    });
+    const staticConfigChanged = visualConfigKey !== lastFrameVisualConfigKey;
 
     cy.startBatch();
     cy.nodes().forEach((node) => {
-        const trace = node.data("trace");
         const nodeData = node.data();
         const hasActivity = Boolean(nodeData.has_activity);
+        const shouldUpdateNode = staticConfigChanged || (nodeUsesActivitySignal && hasActivity);
+        if (!shouldUpdateNode) return;
+
+        const trace = node.data("trace");
         const activityValue = hasActivity
             ? (Number.isFinite(Number(trace?.[currentFrame])) ? Number(trace[currentFrame]) : 0)
             : 0;
@@ -2558,6 +2612,13 @@ function updateFrame(frame) {
     });
 
     cy.edges().forEach((edge) => {
+        const sourceHasActivity = Boolean(edge.data("source_has_activity"));
+        const shouldUpdateEdge = (
+            staticConfigChanged
+            || (edgeUsesSourceSignal && sourceHasActivity)
+        );
+        if (!shouldUpdateEdge) return;
+
         const sourceTrace = edge.source().data("trace");
         const sourceActivity = Number.isFinite(Number(sourceTrace?.[currentFrame]))
             ? Number(sourceTrace[currentFrame])
@@ -2597,6 +2658,7 @@ function updateFrame(frame) {
         });
     });
     cy.endBatch();
+    lastFrameVisualConfigKey = visualConfigKey;
 
     applySelectionStyles();
     updateBehaviorCursor();
