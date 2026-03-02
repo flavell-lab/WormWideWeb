@@ -135,7 +135,8 @@
 }
 
 .replay-behavior-controls {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-width: 0;
 }
 
 .signal-plot {
@@ -297,12 +298,24 @@
     }
 
     .behavior-selector-wrap {
-        width: 100%;
+        width: auto;
         min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .replay-behavior-header {
+        flex-wrap: wrap;
+        align-items: center !important;
+    }
+
+    .replay-behavior-header > h5 {
+        width: 100%;
     }
 
     .replay-behavior-controls {
         width: 100%;
+        min-width: 0;
+        justify-content: flex-start;
     }
 
     .replay-timeline-row {
@@ -329,5 +342,11 @@
     #button-node-info-more {
         width: auto;
         align-self: flex-end;
+    }
+}
+
+@media (max-width: 576px) {
+    .replay-behavior-controls {
+        gap: 0.5rem !important;
     }
 }
