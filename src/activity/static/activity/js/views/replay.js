@@ -630,7 +630,7 @@ async function runReplayTour() {
 
     tour.addStep({
         id: "replay-tour-timeline",
-        text: "Use playback controls and the timeline slider to step through frames.",
+        text: "Use playback controls and the timeline slider to step through time points.",
         attachTo: {
             element: ".replay-timeline-row",
             on: "top",
