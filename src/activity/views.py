@@ -731,9 +731,17 @@ def _build_signal_replay_payload(
             "No valid named neuron traces found in the selected activity dataset."
         )
 
-    connectome_names = set(
-        connectome_dataset.available_neurons.values_list("name", flat=True)
+    connectome_neuron_rows = list(
+        connectome_dataset.available_neurons.values_list("name", "cell_type")
     )
+    connectome_names = {
+        neuron_name for neuron_name, _ in connectome_neuron_rows if neuron_name
+    }
+    connectome_cell_type_by_name = {
+        neuron_name: (cell_type or "")
+        for neuron_name, cell_type in connectome_neuron_rows
+        if neuron_name
+    }
     matched_names = sorted(set(traces_by_name.keys()) & connectome_names)
     if len(matched_names) < 3:
         raise ValueError(
@@ -873,6 +881,7 @@ def _build_signal_replay_payload(
                 "variance": float(np.var(trace)),
                 "mean_abs_activity": float(np.mean(np.abs(trace))),
                 "has_activity": has_activity,
+                "cell_type": connectome_cell_type_by_name.get(name, ""),
                 "degree_in": float(node_degree_in[name]),
                 "degree_out": float(node_degree_out[name]),
                 "degree_in_full": degree_in_full,

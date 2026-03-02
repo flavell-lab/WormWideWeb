@@ -9,6 +9,7 @@ import {
     setLocalStr,
     debounce,
     updateCitation,
+    isNodeRectangle,
 } from "/static/core/js/utility.js";
 import { getCycleColor } from "/static/activity/js/plot_data.js";
 import { getNodeColor, PLOTLY_COLOR_SCALES } from "/static/core/js/colorscale.js";
@@ -125,6 +126,10 @@ let pendingUrlState = {
 function normalizeEdgeType(value) {
     if (value === "chemical" || value === "electrical") return value;
     return "all";
+}
+
+function getReplayNodeShape(node) {
+    return isNodeRectangle(node) ? "round-rectangle" : "ellipse";
 }
 
 function clamp(value, min, max) {
@@ -1982,6 +1987,7 @@ function initGraph(payload) {
                 behavior_correlations: node.behavior_correlations || {},
                 representative_idx_neuron: node.representative_idx_neuron,
                 has_activity: node.has_activity ? 1 : 0,
+                cell_type: node.cell_type || "",
             },
         });
     });
@@ -2029,7 +2035,7 @@ function initGraph(payload) {
                     "border-width": 1.2,
                     "border-color": "#f8fafc",
                     "border-style": "solid",
-                    shape: "ellipse",
+                    shape: (node) => getReplayNodeShape(node),
                     opacity: 1,
                 },
             },
@@ -2606,7 +2612,7 @@ function updateFrame(frame) {
             "border-width": hasActivity ? border : Math.max(border, 1.4),
             "border-style": hasActivity ? "solid" : "dashed",
             "border-color": borderColor,
-            shape: hasActivity ? "ellipse" : "diamond",
+            shape: getReplayNodeShape(node),
             opacity: 1,
         });
     });
