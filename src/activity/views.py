@@ -710,6 +710,7 @@ def _build_signal_replay_payload(
     include_electrical,
     min_synapse_chemical,
     min_synapse_electrical,
+    show_connected,
 ):
     activity_dataset = get_object_or_404(
         GCaMPDataset.objects.only(
@@ -773,14 +774,16 @@ def _build_signal_replay_payload(
     )
 
     matched_set = set(matched_names)
+    visible_node_names = set(matched_names)
 
     edge_response = get_edge_response_data(
         {
             "datasets": [connectome_dataset.dataset_id],
             "neurons": matched_names,
             "classes": [],
+            # Replay is NeuroPAL-only and should resolve to individual neurons.
             "show_individual_neuron": True,
-            "show_connected_neuron": False,
+            "show_connected_neuron": show_connected,
         }
     )
 
@@ -789,7 +792,9 @@ def _build_signal_replay_payload(
         post_name = synapse.get("post")
         synapse_type = synapse.get("type")
         synapse_count = synapse.get("count")
-        if pre_name not in matched_set or post_name not in matched_set:
+        if not pre_name or not post_name:
+            continue
+        if (not show_connected) and (pre_name not in matched_set or post_name not in matched_set):
             continue
         try:
             synapse_count = float(synapse_count)
@@ -821,6 +826,8 @@ def _build_signal_replay_payload(
         )
         node_degree_out[pre_name] += weight
         node_degree_in[post_name] += weight
+        visible_node_names.add(pre_name)
+        visible_node_names.add(post_name)
 
         # Gap junctions are effectively bidirectional for replay flow.
         if synapse_type == "e":
@@ -842,12 +849,14 @@ def _build_signal_replay_payload(
 
     behavior = _extract_behavior_traces(activity_dataset, min_len)
     behavior_keys = list(behavior.get("traces", {}).keys())
+    connected_only_names = sorted(name for name in visible_node_names if name not in matched_set)
 
     nodes = []
-    for name in matched_names:
-        trace = normalized_traces[name]
+    for name in sorted(visible_node_names):
+        has_activity = name in normalized_traces
+        trace = normalized_traces.get(name, np.zeros(min_len, dtype=float))
         full_metrics = connectome_metric_map.get(name, {})
-        node_behavior_corr = behavior_corr_by_neuron.get(name, {})
+        node_behavior_corr = behavior_corr_by_neuron.get(name, {}) if has_activity else {}
         filtered_behavior_corr = {
             behavior_key: float(node_behavior_corr.get(behavior_key, 0.0))
             for behavior_key in behavior_keys
@@ -863,6 +872,7 @@ def _build_signal_replay_payload(
                 "trace": trace.tolist(),
                 "variance": float(np.var(trace)),
                 "mean_abs_activity": float(np.mean(np.abs(trace))),
+                "has_activity": has_activity,
                 "degree_in": float(node_degree_in[name]),
                 "degree_out": float(node_degree_out[name]),
                 "degree_in_full": degree_in_full,
@@ -873,7 +883,9 @@ def _build_signal_replay_payload(
                     full_metrics.get("eigenvector_centrality", 0.0)
                 ),
                 "behavior_correlations": filtered_behavior_corr,
-                "representative_idx_neuron": traces_by_name[name]["representative_idx_neuron"],
+                "representative_idx_neuron": traces_by_name[name]["representative_idx_neuron"]
+                if has_activity
+                else None,
             }
         )
 
@@ -885,10 +897,13 @@ def _build_signal_replay_payload(
             "connectome_dataset_id": connectome_dataset.dataset_id,
             "connectome_dataset_name": connectome_dataset.name,
             "include_electrical": include_electrical,
+            "show_connected": show_connected,
             "min_synapse_chemical": min_synapse_chemical,
             "min_synapse_electrical": min_synapse_electrical,
             "trace_length": int(min_len),
             "avg_timestep": float(activity_dataset.avg_timestep),
+            "n_activity_nodes": len(matched_names),
+            "n_connected_only_nodes": len(connected_only_names),
             "n_nodes": len(nodes),
             "n_edges": len(edges),
             "max_edge_weight": float(max_edge_weight),
@@ -926,6 +941,10 @@ def get_signal_replay_data(request):
             request.GET.get("include_electrical"),
             default=True,
         )
+        show_connected = _parse_bool_query(
+            request.GET.get("show_connected"),
+            default=False,
+        )
         min_synapse_chemical = _parse_int_query(
             request.GET.get("min_synapse_chemical"),
             default=1,
@@ -946,7 +965,8 @@ def get_signal_replay_data(request):
     cache_key = (
         f"{ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX}"
         f"{activity_dataset_id}|{connectome_dataset_id}|"
-        f"{int(include_electrical)}|{min_synapse_chemical}|{min_synapse_electrical}"
+        f"{int(include_electrical)}|{int(show_connected)}|"
+        f"{min_synapse_chemical}|{min_synapse_electrical}"
     )
     cached_payload = cache.get(cache_key)
     if cached_payload is not None:
@@ -957,6 +977,7 @@ def get_signal_replay_data(request):
             activity_dataset_id=activity_dataset_id,
             connectome_dataset_id=connectome_dataset_id,
             include_electrical=include_electrical,
+            show_connected=show_connected,
             min_synapse_chemical=min_synapse_chemical,
             min_synapse_electrical=min_synapse_electrical,
         )

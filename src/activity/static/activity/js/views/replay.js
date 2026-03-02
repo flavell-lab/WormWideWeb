@@ -21,6 +21,7 @@ const STORAGE_LAYOUT = "replay_layout";
 const STORAGE_EDGE_SIZE_MODE = "replay_edge_size_mode";
 const STORAGE_EDGE_COLOR_MODE = "replay_edge_color_mode";
 const STORAGE_EDGE_TYPE = "replay_edge_type";
+const STORAGE_SHOW_CONNECTED = "replay_show_connected";
 const STORAGE_EDGE_COLORMAP = "replay_edge_colormap";
 const STORAGE_SPEED = "replay_speed";
 const STORAGE_SPACING = "replay_spacing";
@@ -31,6 +32,7 @@ const STORAGE_NODE_COLORMAP = "replay_node_colormap";
 const STORAGE_BEHAVIOR_SHOW_REVERSAL = "replay_behavior_show_reversal";
 const STORAGE_BEHAVIOR_SHOW_EVENT = "replay_behavior_show_event";
 const STORAGE_TOUR_REPLAY = "tour-activity-replay";
+const DEFAULT_CONNECTOME_DATASET_ID = "cook_jarrell_2019_h";
 const EDGE_SCALE_MIN = 0.1;
 const EDGE_SCALE_MAX = 3.0;
 const EDGE_WIDTH_FACTOR_MIN = 0.45;
@@ -44,6 +46,7 @@ const DEFAULTS = {
     edgeSizeMode: "weighted_source",
     edgeColorMode: "count",
     edgeType: "all",
+    showConnected: false,
     edgeColormap: "YlGnBu",
     speed: 1,
     fps: 10,
@@ -115,7 +118,6 @@ let pendingUrlState = {
     neuronIds: [],
     neuronIndices: [],
     behaviors: [],
-    selectedNodes: [],
     frame: null,
 };
 
@@ -126,13 +128,6 @@ function normalizeEdgeType(value) {
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
-}
-
-function normalizeText(value) {
-    return String(value || "")
-        .toLowerCase()
-        .replaceAll(/[^a-z0-9]+/g, " ")
-        .trim();
 }
 
 function parseTomSelectValues(value) {
@@ -199,10 +194,10 @@ function parseReplayStateFromUrl() {
         neuronIndices: neuronIndices,
         neuronIds: parseCsvParam(neuronsParam),
         behaviors: parseCsvParam(params.get("behaviors")),
-        selectedNodes: parseCsvParam(params.get("selected_nodes")),
         frame: parseIntParam(params.get("tp") ?? params.get("frame")),
         layout: params.get("layout") || "",
         edgeType: params.get("edge_type") || "",
+        showConnected: parseBoolParam(params.get("show_connected")),
         minSynapseChemical: parseIntParam(params.get("min_synapse_chemical")),
         minSynapseElectrical: parseIntParam(params.get("min_synapse_electrical")),
         spacing: parseFloatParam(params.get("spacing")),
@@ -313,6 +308,7 @@ function buildReplayRequestCacheKey({
     activityDataset,
     connectomeDataset,
     includeElectrical,
+    showConnected,
     minSynapseChemical,
     minSynapseElectrical,
 }) {
@@ -320,6 +316,7 @@ function buildReplayRequestCacheKey({
         activityDataset || "",
         connectomeDataset || "",
         includeElectrical ? "1" : "0",
+        showConnected ? "1" : "0",
         String(minSynapseChemical),
         String(minSynapseElectrical),
     ].join("|");
@@ -1132,7 +1129,10 @@ function renderMeta() {
         return;
     }
 
-    element.textContent = `Filtered ${replayPayload.meta.n_nodes} neurons / ${replayPayload.meta.n_edges} edges (matched ${rawReplayPayload.meta.n_nodes} neurons)`;
+    const activityOverlap = Number(rawReplayPayload.meta?.n_activity_nodes ?? rawReplayPayload.meta?.n_nodes ?? 0);
+    const connectedOnly = Number(rawReplayPayload.meta?.n_connected_only_nodes ?? 0);
+    const connectedText = connectedOnly > 0 ? `, connected-only ${connectedOnly}` : "";
+    element.textContent = `Filtered ${replayPayload.meta.n_nodes} neurons / ${replayPayload.meta.n_edges} edges (activity overlap ${activityOverlap}${connectedText})`;
 }
 
 function updateReplayConnectomeCitation() {
@@ -1152,32 +1152,6 @@ function updateElectricalInputState() {
     const edgeType = normalizeEdgeType(document.getElementById("select-edge-type").value);
     const inputE = document.getElementById("input-min-synapse-e");
     inputE.disabled = edgeType === "chemical";
-}
-
-function getPreferredActivityDatasetId() {
-    const exactTarget = "cook jarrell 2019 hermaphrodite";
-    const exactTargetAlt = "cook jarrel 2019 hermaphrodite";
-
-    for (const dataset of replayActivityDatasets) {
-        const normalized = normalizeText(dataset.dataset_name);
-        if (normalized.includes(exactTarget) || normalized.includes(exactTargetAlt)) {
-            return dataset.dataset_id;
-        }
-    }
-
-    for (const dataset of replayActivityDatasets) {
-        const normalized = normalizeText(dataset.dataset_name);
-        if (
-            normalized.includes("cook")
-            && (normalized.includes("jarrell") || normalized.includes("jarrel"))
-            && normalized.includes("2019")
-            && normalized.includes("hermaphrodite")
-        ) {
-            return dataset.dataset_id;
-        }
-    }
-
-    return replayActivityDatasets.length ? replayActivityDatasets[0].dataset_id : "";
 }
 
 function getBehaviorColorIndex(behaviorKey, fallbackIndex) {
@@ -1271,6 +1245,11 @@ function updateReplayUrlState(options = {}) {
     setUrlParam(params, "edge_type", document.getElementById("select-edge-type")?.value || DEFAULTS.edgeType);
     setUrlParam(
         params,
+        "show_connected",
+        document.getElementById("switch-replay-show-connected")?.checked ? 1 : 0
+    );
+    setUrlParam(
+        params,
         "min_synapse_chemical",
         document.getElementById("input-min-synapse-c")?.value || DEFAULTS.minSynapseChemical
     );
@@ -1342,9 +1321,6 @@ function updateReplayUrlState(options = {}) {
         setUrlParam(params, "behaviors", behaviorItems.join(","));
     }
 
-    if (selectedNodeIds.size > 0) {
-        setUrlParam(params, "selected_nodes", Array.from(selectedNodeIds).join(","));
-    }
     if (includeFrame && Number.isInteger(currentFrame) && currentFrame >= 0) {
         setUrlParam(params, "tp", currentFrame);
     }
@@ -1409,13 +1385,16 @@ function renderSelectedNodeInfo(node) {
     const sizeMode = normalizeNodeMode(document.getElementById("select-node-size-mode").value);
     const colorMode = normalizeNodeMode(document.getElementById("select-node-color-mode").value);
     const trace = node.data("trace") || [];
-    const activityValue = trace[currentFrame];
     const nodeData = node.data();
+    const hasActivity = Boolean(nodeData.has_activity);
+    const activityValue = hasActivity ? trace[currentFrame] : null;
     const sizeValue = getNodeSizeValue(nodeData, activityValue, sizeMode);
     const colorValue = getNodeColorValue(nodeData, activityValue, colorMode);
     const label = escapeHtml(getNodeInfoLabel(node));
     const degreeTotal = formatEdgeInfoNumber(getNodeDegreeMetric(nodeData, "degree_total"), 2);
-    const activityText = formatEdgeInfoNumber(activityValue, 4);
+    const activityText = hasActivity
+        ? formatEdgeInfoNumber(activityValue, 4)
+        : "n/a (no activity trace)";
     const sizeText = formatEdgeInfoNumber(sizeValue, 4);
     const colorText = formatEdgeInfoNumber(colorValue, 4);
 
@@ -1521,14 +1500,18 @@ function renderSelectedNodesModalContent() {
         .map((node) => {
             const nodeData = node.data();
             const trace = nodeData.trace || [];
-            const activityValue = trace[currentFrame];
+            const hasActivity = Boolean(nodeData.has_activity);
+            const activityValue = hasActivity ? trace[currentFrame] : null;
             const sizeValue = getNodeSizeValue(nodeData, activityValue, sizeMode);
             const colorValue = getNodeColorValue(nodeData, activityValue, colorMode);
             const degreeTotal = getNodeDegreeMetric(nodeData, "degree_total");
+            const activityText = hasActivity
+                ? formatEdgeInfoNumber(activityValue, 4)
+                : "n/a";
             return (
                 `<tr>`
                 + `<td>${escapeHtml(getNodeInfoLabel(node))}</td>`
-                + `<td>${formatEdgeInfoNumber(activityValue, 4)}</td>`
+                + `<td>${activityText}</td>`
                 + `<td>${formatEdgeInfoNumber(sizeValue, 4)}</td>`
                 + `<td>${formatEdgeInfoNumber(colorValue, 4)}</td>`
                 + `<td>${formatEdgeInfoNumber(degreeTotal, 2)}</td>`
@@ -1718,7 +1701,9 @@ function resetNeuronSelectorOptions(nodes, preferredSelection = [], preferredIsA
             const idx = Number.isInteger(node.representative_idx_neuron)
                 ? node.representative_idx_neuron
                 : null;
-            const label = idx !== null ? `${idx} (${node.id})` : node.id;
+            const baseLabel = idx !== null ? `${idx} (${node.id})` : node.id;
+            const hasActivity = Boolean(node.has_activity);
+            const label = hasActivity ? baseLabel : `${baseLabel} (connected only)`;
             return {
                 value: node.id,
                 name: label,
@@ -1790,7 +1775,9 @@ function resetBehaviorSelectorOptions(behaviorData, preferredSelection = []) {
 
 function filterReplayPayload(rawPayload, selectedNeuronIds, edgeType) {
     const selectedSet = new Set(selectedNeuronIds);
-    const selectedNodesForSignal = rawPayload.nodes.filter((node) => selectedSet.has(node.id));
+    const selectedNodesForSignal = rawPayload.nodes.filter(
+        (node) => selectedSet.has(node.id) && Boolean(node.has_activity)
+    );
     const edgeTypeFilter = normalizeEdgeType(edgeType);
     const candidateEdges = edgeTypeFilter === "all"
         ? rawPayload.edges
@@ -1812,7 +1799,10 @@ function filterReplayPayload(rawPayload, selectedNeuronIds, edgeType) {
         for (let i = 0; i < traceLength; i++) {
             let sumAbs = 0;
             selectedNodesForSignal.forEach((node) => {
-                sumAbs += Math.abs(node.trace[i]);
+                const value = Number(node.trace?.[i]);
+                if (Number.isFinite(value)) {
+                    sumAbs += Math.abs(value);
+                }
             });
             globalSignal[i] = sumAbs / selectedNodesForSignal.length;
         }
@@ -1920,6 +1910,7 @@ function initGraph(payload) {
                 eigenvector_centrality: node.eigenvector_centrality,
                 behavior_correlations: node.behavior_correlations || {},
                 representative_idx_neuron: node.representative_idx_neuron,
+                has_activity: node.has_activity ? 1 : 0,
             },
         });
     });
@@ -1965,6 +1956,8 @@ function initGraph(payload) {
                     height: 24,
                     "border-width": 1.2,
                     "border-color": "#f8fafc",
+                    "border-style": "solid",
+                    shape: "ellipse",
                     opacity: 1,
                 },
             },
@@ -2067,9 +2060,10 @@ function applySelectionStyles() {
         cy.startBatch();
         cy.nodes().forEach((node) => {
             const border = node.data("frame_border") || 1.2;
+            const baseBorderColor = node.data("has_activity") ? "#f8fafc" : "#4b5563";
             node.style({
                 opacity: 1,
-                "border-color": "#f8fafc",
+                "border-color": baseBorderColor,
                 "border-width": border,
             });
         });
@@ -2100,6 +2094,7 @@ function applySelectionStyles() {
     cy.nodes().forEach((node) => {
         const nodeId = node.id();
         const border = node.data("frame_border") || 1.2;
+        const baseBorderColor = node.data("has_activity") ? "#f8fafc" : "#4b5563";
 
         if (selectedNodeIds.has(nodeId)) {
             node.style({
@@ -2110,13 +2105,13 @@ function applySelectionStyles() {
         } else if (selectedAndConnectedNodes.has(nodeId)) {
             node.style({
                 opacity: 1,
-                "border-color": "#f8fafc",
+                "border-color": baseBorderColor,
                 "border-width": border,
             });
         } else {
             node.style({
                 opacity: 0.15,
-                "border-color": "#f8fafc",
+                "border-color": baseBorderColor,
                 "border-width": border,
             });
         }
@@ -2381,16 +2376,17 @@ function renderSignalPlot() {
         });
     } else {
         const nodeMap = new Map(replayPayload.nodes.map((node) => [node.id, node]));
-        const selected = Array.from(selectedNodeIds)
-            .filter((nodeId) => nodeMap.has(nodeId))
+        const selected = Array.from(selectedNodeIds).filter((nodeId) => nodeMap.has(nodeId));
+        const selectedWithActivity = selected
+            .filter((nodeId) => Boolean(nodeMap.get(nodeId)?.has_activity))
             .slice(0, 10);
-        titleElement.textContent = selected.length > 1
-            ? `Selected Neuron Activity (${selected.length})`
+        titleElement.textContent = selectedWithActivity.length > 1
+            ? `Selected Neuron Activity (${selectedWithActivity.length})`
             : "Selected Neuron Activity";
-        showLegend = selected.length > 1;
+        showLegend = selectedWithActivity.length > 1;
 
         let yMax = 0.2;
-        selected.forEach((nodeId, idx) => {
+        selectedWithActivity.forEach((nodeId, idx) => {
             const node = nodeMap.get(nodeId);
             yMax = Math.max(yMax, ...node.trace.map((v) => Math.abs(v)));
             const idxNeuron = Number.isInteger(node.representative_idx_neuron)
@@ -2406,7 +2402,11 @@ function renderSignalPlot() {
                 name: traceName,
             });
         });
-        signalYMax = yMax * 1.1;
+        if (selectedWithActivity.length > 0) {
+            signalYMax = yMax * 1.1;
+        } else {
+            signalYMax = 1;
+        }
     }
 
     Plotly.react(
@@ -2492,28 +2492,37 @@ function updateFrame(frame) {
     cy.startBatch();
     cy.nodes().forEach((node) => {
         const trace = node.data("trace");
-        const activityValue = trace[currentFrame];
         const nodeData = node.data();
+        const hasActivity = Boolean(nodeData.has_activity);
+        const activityValue = hasActivity
+            ? (Number.isFinite(Number(trace?.[currentFrame])) ? Number(trace[currentFrame]) : 0)
+            : 0;
         const sizeValue = getNodeSizeValue(nodeData, activityValue, nodeSizeMode);
         const size = mapValueToNodeSize(sizeValue, sizeNormalization);
         const border = mapValueToNodeBorder(size);
         const colorValue = getNodeColorValue(nodeData, activityValue, colorSettings.colorMode);
-        const fillColor = valueToNodeColor(colorValue, colorSettings);
-        const labelColor = getNodeLabelColorForFill(fillColor);
+        const fillColor = hasActivity ? valueToNodeColor(colorValue, colorSettings) : "#d1d5db";
+        const labelColor = hasActivity ? getNodeLabelColorForFill(fillColor) : "#111827";
+        const borderColor = hasActivity ? "#f8fafc" : "#4b5563";
         node.data("frame_border", border);
         node.style({
             "background-color": fillColor,
             color: labelColor,
             width: size,
             height: size,
-            "border-width": border,
+            "border-width": hasActivity ? border : Math.max(border, 1.4),
+            "border-style": hasActivity ? "solid" : "dashed",
+            "border-color": borderColor,
+            shape: hasActivity ? "ellipse" : "diamond",
             opacity: 1,
         });
     });
 
     cy.edges().forEach((edge) => {
         const sourceTrace = edge.source().data("trace");
-        const sourceActivity = sourceTrace[currentFrame];
+        const sourceActivity = Number.isFinite(Number(sourceTrace?.[currentFrame]))
+            ? Number(sourceTrace[currentFrame])
+            : 0;
         const weight = edge.data("weight");
         const weightNorm = edge.data("weight_norm");
         const baseWidth = edge.data("base_width");
@@ -2641,6 +2650,7 @@ async function loadReplayData() {
     const nodeSizeModeSelect = document.getElementById("select-node-size-mode");
     const nodeColorModeSelect = document.getElementById("select-node-color-mode");
     const edgeType = normalizeEdgeType(document.getElementById("select-edge-type").value);
+    const showConnected = Boolean(document.getElementById("switch-replay-show-connected")?.checked);
     const includeElectrical = true;
     const spacingValue = parseFloat(document.getElementById("slider-spacing").value);
     const edgeScaleValue = parseFloat(document.getElementById("slider-edge-scale").value);
@@ -2677,6 +2687,7 @@ async function loadReplayData() {
     setLocalStr(STORAGE_ACTIVITY_DATASET, activityDataset);
     setLocalStr(STORAGE_CONNECTOME_DATASET, connectomeDataset);
     setLocalStr(STORAGE_EDGE_TYPE, edgeType);
+    setLocalBool(STORAGE_SHOW_CONNECTED, showConnected);
     setLocalInt(STORAGE_MIN_SYNAPSE_C, minSynapseChemical);
     setLocalInt(STORAGE_MIN_SYNAPSE_E, minSynapseElectrical);
     setLocalFloat(STORAGE_SPACING, spacingValue);
@@ -2700,6 +2711,7 @@ async function loadReplayData() {
         activity_dataset: activityDataset,
         connectome_dataset: connectomeDataset,
         include_electrical: includeElectrical ? "1" : "0",
+        show_connected: showConnected ? "1" : "0",
         min_synapse_chemical: String(minSynapseChemical),
         min_synapse_electrical: String(minSynapseElectrical),
     });
@@ -2707,6 +2719,7 @@ async function loadReplayData() {
         activityDataset: activityDataset,
         connectomeDataset: connectomeDataset,
         includeElectrical: includeElectrical,
+        showConnected: showConnected,
         minSynapseChemical: minSynapseChemical,
         minSynapseElectrical: minSynapseElectrical,
     });
@@ -2770,13 +2783,6 @@ async function loadReplayData() {
         applyNeuronFilter();
 
         if (usePendingUrlState && replayPayload) {
-            const availableNodeIds = new Set(replayPayload.nodes.map((node) => node.id));
-            selectedNodeIds = new Set(
-                (pendingUrlState.selectedNodes || []).filter((nodeId) => availableNodeIds.has(nodeId))
-            );
-            renderSignalPlot();
-            applySelectionStyles();
-
             if (Number.isInteger(pendingUrlState.frame)) {
                 currentFrame = clamp(pendingUrlState.frame, 0, replayPayload.meta.trace_length - 1);
                 updateFrame(currentFrame);
@@ -2811,6 +2817,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const edgeSizeModeSelect = document.getElementById("select-edge-size-mode");
     const edgeColorModeSelect = document.getElementById("select-edge-color-mode");
     const edgeTypeSelect = document.getElementById("select-edge-type");
+    const switchShowConnected = document.getElementById("switch-replay-show-connected");
     const edgeColormapSelect = document.getElementById("select-edge-colormap");
     const edgeVMinInput = document.getElementById("input-edge-vmin");
     const edgeVMaxInput = document.getElementById("input-edge-vmax");
@@ -2859,16 +2866,27 @@ document.addEventListener("DOMContentLoaded", () => {
         && Array.from(selectElement.options || []).some((option) => option.value === value)
     );
 
-    const fallbackActivity = getPreferredActivityDatasetId();
-    const fallbackConnectome = replayConnectomeDatasets.length
-        ? replayConnectomeDatasets[0].dataset_id
+    const fallbackActivity = replayActivityDatasets.length
+        ? replayActivityDatasets[0].dataset_id
         : "";
+    const localActivity = getLocalStr(STORAGE_ACTIVITY_DATASET, fallbackActivity);
+    const fallbackConnectome = replayConnectomeDatasets.some(
+        (dataset) => dataset.dataset_id === DEFAULT_CONNECTOME_DATASET_ID
+    )
+        ? DEFAULT_CONNECTOME_DATASET_ID
+        : (replayConnectomeDatasets.length ? replayConnectomeDatasets[0].dataset_id : "");
 
     const initialActivity = replayActivityDatasets.some(
         (dataset) => dataset.dataset_id === urlState.activityDataset
     )
         ? urlState.activityDataset
-        : fallbackActivity;
+        : (
+            replayActivityDatasets.some(
+                (dataset) => dataset.dataset_id === localActivity
+            )
+                ? localActivity
+                : fallbackActivity
+        );
     const localConnectome = getLocalStr(STORAGE_CONNECTOME_DATASET, fallbackConnectome);
     const preferredConnectome = replayConnectomeDatasets.some(
         (dataset) => dataset.dataset_id === urlState.connectomeDataset
@@ -2921,6 +2939,14 @@ document.addEventListener("DOMContentLoaded", () => {
     edgeTypeSelect.value = hasSelectValue(edgeTypeSelect, preferredEdgeType)
         ? preferredEdgeType
         : DEFAULTS.edgeType;
+    const localShowConnected = getLocalBool(STORAGE_SHOW_CONNECTED, DEFAULTS.showConnected);
+    const initialShowConnected = typeof urlState.showConnected === "boolean"
+        ? urlState.showConnected
+        : localShowConnected;
+    if (switchShowConnected) {
+        switchShowConnected.checked = initialShowConnected;
+    }
+    setLocalBool(STORAGE_SHOW_CONNECTED, initialShowConnected);
 
     const localEdgeColormap = getLocalStr(STORAGE_EDGE_COLORMAP, DEFAULTS.edgeColormap);
     const preferredEdgeColormap = urlState.edgeColormap || localEdgeColormap;
@@ -2997,13 +3023,11 @@ document.addEventListener("DOMContentLoaded", () => {
             urlState.neuronIndices.length > 0
             || urlState.neuronIds.length > 0
             || urlState.behaviors.length > 0
-            || urlState.selectedNodes.length > 0
             || Number.isInteger(urlState.frame)
         ),
         neuronIds: urlState.neuronIds,
         neuronIndices: urlState.neuronIndices,
         behaviors: urlState.behaviors,
-        selectedNodes: urlState.selectedNodes,
         frame: Number.isInteger(urlState.frame) ? urlState.frame : null,
     };
 
@@ -3160,6 +3184,7 @@ document.addEventListener("DOMContentLoaded", () => {
         edgeSizeModeSelect.value = DEFAULTS.edgeSizeMode;
         edgeColorModeSelect.value = DEFAULTS.edgeColorMode;
         edgeTypeSelect.value = DEFAULTS.edgeType;
+        if (switchShowConnected) switchShowConnected.checked = DEFAULTS.showConnected;
         edgeColormapSelect.value = DEFAULTS.edgeColormap;
         setEdgeColorRangeForMode(DEFAULTS.edgeColorMode);
         nodeSizeModeSelect.value = DEFAULTS.nodeSizeMode;
@@ -3174,6 +3199,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setLocalStr(STORAGE_EDGE_SIZE_MODE, DEFAULTS.edgeSizeMode);
         setLocalStr(STORAGE_EDGE_COLOR_MODE, DEFAULTS.edgeColorMode);
         setLocalStr(STORAGE_EDGE_TYPE, DEFAULTS.edgeType);
+        setLocalBool(STORAGE_SHOW_CONNECTED, DEFAULTS.showConnected);
         setLocalStr(STORAGE_EDGE_COLORMAP, DEFAULTS.edgeColormap);
         setLocalStr(STORAGE_NODE_SIZE_MODE, DEFAULTS.nodeSizeMode);
         setLocalStr(STORAGE_NODE_COLOR_MODE, DEFAULTS.nodeColorMode);
@@ -3257,6 +3283,16 @@ document.addEventListener("DOMContentLoaded", () => {
             applyNeuronFilter();
         }
     });
+    if (switchShowConnected) {
+        switchShowConnected.addEventListener("change", (event) => {
+            const showConnected = Boolean(event.target.checked);
+            setLocalBool(STORAGE_SHOW_CONNECTED, showConnected);
+            updateReplayUrlState({ includeFrame: false });
+            if (activitySelector.getValue() && connectomeSelector.getValue()) {
+                loadReplayData();
+            }
+        });
+    }
     edgeColormapSelect.addEventListener("change", (event) => {
         setLocalStr(STORAGE_EDGE_COLORMAP, event.target.value);
         updateReplayUrlState({ includeFrame: false });

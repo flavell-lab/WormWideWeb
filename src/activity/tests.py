@@ -143,6 +143,7 @@ class SignalReplayViewTests(SimpleTestCase):
                 "activity_dataset": "activity-demo",
                 "connectome_dataset": "connectome-demo",
                 "include_electrical": "1",
+                "show_connected": "0",
                 "min_synapse_chemical": "2",
                 "min_synapse_electrical": "3",
             },
@@ -152,8 +153,57 @@ class SignalReplayViewTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         body = json.loads(response.content)
         self.assertEqual(body["status"], "ok")
-        mock_build_payload.assert_called_once()
+        mock_build_payload.assert_called_once_with(
+            activity_dataset_id="activity-demo",
+            connectome_dataset_id="connectome-demo",
+            include_electrical=True,
+            show_connected=False,
+            min_synapse_chemical=2,
+            min_synapse_electrical=3,
+        )
         mock_cache_set.assert_called_once()
+        cache_key = mock_cache_set.call_args[0][0]
+        self.assertIn("|1|0|2|3", cache_key)
+
+    @patch("activity.views.cache.set")
+    @patch("activity.views.cache.get", return_value=None)
+    @patch("activity.views._build_signal_replay_payload")
+    def test_get_signal_replay_data_defaults_show_connected_false(
+        self,
+        mock_build_payload,
+        mock_cache_get,
+        mock_cache_set,
+    ):
+        mock_build_payload.return_value = {
+            "status": "ok",
+            "meta": {"trace_length": 3, "n_nodes": 2, "n_edges": 1},
+            "warnings": [],
+            "nodes": [{"id": "AVA", "trace": [0.1, 0.2, 0.3], "degree_out": 1.0}],
+            "edges": [{"source": "AVA", "target": "AVB", "weight": 2.0}],
+            "timeline": {
+                "time_minutes": [0.0, 0.5, 1.0],
+                "global_signal": [0.1, 0.2, 0.3],
+            },
+        }
+
+        request = self.factory.get(
+            "/activity/api/data/replay/",
+            data={
+                "activity_dataset": "activity-demo",
+                "connectome_dataset": "connectome-demo",
+            },
+        )
+
+        response = get_signal_replay_data(request)
+        self.assertEqual(response.status_code, 200)
+        mock_build_payload.assert_called_once_with(
+            activity_dataset_id="activity-demo",
+            connectome_dataset_id="connectome-demo",
+            include_electrical=True,
+            show_connected=False,
+            min_synapse_chemical=1,
+            min_synapse_electrical=1,
+        )
 
 
 class ConnectomeDegreeIndexTests(SimpleTestCase):
