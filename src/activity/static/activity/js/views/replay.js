@@ -158,6 +158,20 @@ function getReplayNodeShape(node) {
     return isNodeRectangle(node) ? "round-rectangle" : "ellipse";
 }
 
+function getReplayNodeDimensions(node, baseSize) {
+    const height = Number.isFinite(baseSize) ? baseSize : 24;
+    if (isNodeRectangle(node)) {
+        return {
+            width: height * 2.0,
+            height: height,
+        };
+    }
+    return {
+        width: height,
+        height: height,
+    };
+}
+
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
@@ -2089,8 +2103,8 @@ function initGraph(payload) {
                     "text-halign": "center",
                     "text-valign": "center",
                     "background-color": "#dbeafe",
-                    width: 24,
-                    height: 24,
+                    width: (node) => getReplayNodeDimensions(node, 24).width,
+                    height: (node) => getReplayNodeDimensions(node, 24).height,
                     "border-width": 1.2,
                     "border-color": "#f8fafc",
                     "border-style": "solid",
@@ -2662,12 +2676,13 @@ function updateFrame(frame) {
         const fillColor = hasActivity ? valueToNodeColor(colorValue, colorSettings) : "#d1d5db";
         const labelColor = hasActivity ? getNodeLabelColorForFill(fillColor) : "#111827";
         const borderColor = hasActivity ? "#f8fafc" : "#4b5563";
+        const dimensions = getReplayNodeDimensions(node, size);
         node.data("frame_border", border);
         node.style({
             "background-color": fillColor,
             color: labelColor,
-            width: size,
-            height: size,
+            width: dimensions.width,
+            height: dimensions.height,
             "border-width": hasActivity ? border : Math.max(border, 1.4),
             "border-style": hasActivity ? "solid" : "dashed",
             "border-color": borderColor,
