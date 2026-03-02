@@ -380,6 +380,38 @@ function updateSingleColorBar(barId, minId, maxId, colormapName, vmin, vmax, fal
     maxLabel.textContent = Number.isFinite(maxValue) ? maxValue.toFixed(2) : "n/a";
 }
 
+function getSelectLabel(selectId, fallbackText) {
+    const select = document.getElementById(selectId);
+    if (!select) return fallbackText;
+    const option = select.options?.[select.selectedIndex];
+    const text = option?.textContent?.trim();
+    return text || fallbackText;
+}
+
+function updateTitleTooltip(titleElement, text) {
+    if (!titleElement) return;
+    titleElement.setAttribute("title", text);
+    titleElement.setAttribute("data-bs-title", text);
+
+    const BootstrapTooltip = window.bootstrap && window.bootstrap.Tooltip;
+    if (!BootstrapTooltip) return;
+
+    const existing = BootstrapTooltip.getInstance(titleElement);
+    if (existing) {
+        existing.dispose();
+    }
+    BootstrapTooltip.getOrCreateInstance(titleElement);
+}
+
+function updateColorBarTitle(titleId, prefix, selectId, fallbackText) {
+    const title = document.getElementById(titleId);
+    if (!title) return;
+    const selectedLabel = getSelectLabel(selectId, fallbackText);
+    const text = `${prefix}: ${selectedLabel}`;
+    title.textContent = text;
+    updateTitleTooltip(title, text);
+}
+
 function updateColorBars() {
     const nodeSettings = getNodeColorSettings();
     const edgeSettings = getEdgeColorSettings();
@@ -400,6 +432,18 @@ function updateColorBars() {
         edgeSettings.vmin,
         edgeSettings.vmax,
         DEFAULTS.edgeColormap
+    );
+    updateColorBarTitle(
+        "replay-node-colorbar-title",
+        "Node color",
+        "select-node-color-mode",
+        "Neural activity"
+    );
+    updateColorBarTitle(
+        "replay-edge-colorbar-title",
+        "Edge color",
+        "select-edge-color-mode",
+        "Connectome counts"
     );
 }
 
