@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Connectome - Compare{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}" integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
+<link rel="stylesheet" href="{% static 'connectome/css/connectome_common.css' %}">
+<link rel="stylesheet" href="{% static 'connectome/css/compare.css' %}">
+{% endblock %}
+
+{% block main %}
+<div id="connectome-compare-container" class="container-xxl py-3">
+  <div class="card card-body mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <div class="tom-select-container compare-toolbar-select" id="compareSelectNeuronContainer">
+        <input id="compare-select-neuron" autocomplete="off" type="text" class="form-control form-control-sm"
+          placeholder="Select neuron(s) or neuron class(es)">
+      </div>
+
+      <div class="btn-group btn-group-sm" role="group" aria-label="Compare controls">
+        <button id="compare-clear-neurons" class="btn btn-light btn-sm" type="button"
+          aria-label="Clear all selected neurons" data-bs-toggle="tooltip" title="Clear all selected neurons">
+          Clear
+        </button>
+
+        <div class="dropdown btn-group btn-group-sm">
+          <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="compare-dropdownLayout"
+            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select layout">
+            Layout
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="compare-dropdownLayout" role="menu">
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="grid">Grid</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="circle">Circle</a></li>
+            <li><a class="dropdown-item active" href="#" role="menuitem" data-value="concentric">Concentric</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="breadthfirst">Hierarchy (BFS)</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="dagre">Hierarchy (Dagre)</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="cose">Compound Spring Embedder</a></li>
+          </ul>
+        </div>
+
+        <div class="dropdown btn-group btn-group-sm">
+          <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="compare-dropdownColor"
+            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select neuron color">
+            Neuron Color
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="compare-dropdownColor" role="menu">
+            <li><a class="dropdown-item active" href="#" role="menuitem" data-value="type">Type</a></li>
+          </ul>
+        </div>
+
+        <button class="btn btn-light btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#compare-legend-modal"
+          aria-label="Open legend">
+          <i class="bi bi-list-ul" aria-hidden="true"></i>
+        </button>
+
+        <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse"
+          data-bs-target="#compare-collapse-config" aria-expanded="false" aria-controls="compare-collapse-config"
+          aria-label="More settings">
+          <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="collapse mt-3" id="compare-collapse-config">
+      <div class="settings-compact mt-2">
+        <div class="row g-3 align-items-start">
+          <div class="col-lg-4">
+            <h6 class="mb-2">Neurons</h6>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="compare-switchIndividual">
+              <label class="form-check-label" for="compare-switchIndividual">Show individual neuron</label>
+            </div>
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" role="switch" id="compare-switchConnected" checked>
+              <label class="form-check-label" for="compare-switchConnected">Show connected neuron</label>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <h6 class="mb-2">Synapses</h6>
+            <div class="settings-help mb-2">Show edges with at least:</div>
+            <div class="settings-threshold-grid">
+              <div class="settings-threshold-item">
+                <label for="compare-threshold-c" class="form-label mb-1">Chemical</label>
+                <div class="input-group input-group-sm flex-nowrap">
+                  <button class="btn btn-secondary btn-sm" id="compare-minus-c">-</button>
+                  <input type="number" id="compare-threshold-c" class="form-control form-control-sm text-center"
+                    value="1" min="1">
+                  <button class="btn btn-secondary btn-sm" id="compare-plus-c">+</button>
+                </div>
+              </div>
+              <div class="settings-threshold-item">
+                <label for="compare-threshold-e" class="form-label mb-1">Electrical</label>
+                <div class="input-group input-group-sm flex-nowrap">
+                  <button class="btn btn-secondary btn-sm" id="compare-minus-e">-</button>
+                  <input type="number" id="compare-threshold-e" class="form-control form-control-sm text-center"
+                    value="1" min="1">
+                  <button class="btn btn-secondary btn-sm" id="compare-plus-e">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <h6 class="mb-2">Layout &amp; Edge scaling</h6>
+            <div class="settings-slider-group mb-3">
+              <label for="compare-sliderSpacing" class="form-label mb-1">Spacing</label>
+              <input type="range" class="form-range" min="0.25" max="1.5" step="0.05" id="compare-sliderSpacing">
+            </div>
+            <div class="settings-slider-group">
+              <label for="compare-sliderEdgeScale" class="form-label mb-1">Factor</label>
+              <input type="range" class="form-range" min="0.1" max="3.0" step="0.05" id="compare-sliderEdgeScale">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="compare-loading-status" class="compare-loading-status" role="status" aria-live="polite" style="display:none">
+    <div class="compare-loading-panel">
+      <div class="spinner-border text-primary compare-loading-spinner" role="status" aria-hidden="true"></div>
+      <div class="compare-loading-text">
+        <div class="compare-loading-title">Loading connectome comparison...</div>
+        <div class="compare-loading-detail">Preparing left and right graph views</div>
+      </div>
+    </div>
+    <div class="compare-loading-track" aria-hidden="true">
+      <div class="compare-loading-bar"></div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12 col-xl-6">
+      <div class="card card-body compare-panel">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="tom-select-container compare-dataset-select flex-grow-1">
+            <input id="compare-select-dataset-left" autocomplete="off" type="text" class="form-control form-control-sm"
+              placeholder="Select a dataset">
+          </div>
+        </div>
+        <div class="compare-graph" id="compare-graph-left">
+          <div class="compare-watermark">Connectome data: <span id="compare-citation-left">N/A</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+      <div class="card card-body compare-panel">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="tom-select-container compare-dataset-select flex-grow-1">
+            <input id="compare-select-dataset-right" autocomplete="off" type="text" class="form-control form-control-sm"
+              placeholder="Select a dataset">
+          </div>
+        </div>
+        <div class="compare-graph" id="compare-graph-right">
+          <div class="compare-watermark">Connectome data: <span id="compare-citation-right">N/A</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="compare-legend-modal" tabindex="-1" aria-labelledby="compare-legend-modal-label"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="compare-legend-modal-label">Legend</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="compare-legend-modal-items"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ IMPORT_CDN.tom_select_js.url }}" integrity="{{ IMPORT_CDN.tom_select_js.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape.url }}" integrity="{{ IMPORT_CDN.cytoscape.integrity }}" crossorigin="anonymous"
+  referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.dagre.url }}" integrity="{{ IMPORT_CDN.dagre.integrity }}" crossorigin="anonymous"
+  referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape_dagre.url }}"></script>
+
+{{ datasets_json|json_script:"connectome-compare-datasets" }}
+<script>const datasets = JSON.parse(JSON.parse(document.getElementById('connectome-compare-datasets').textContent));</script>
+<script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
+<script type="module" src="{% static 'connectome/js/compare.js' %}" defer></script>
+{% endblock %}

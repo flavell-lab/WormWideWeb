@@ -5,9 +5,40 @@ import { getNeuronClassProperty } from './connectome_selector.js';
 import { InfoPanel } from '/static/core/js/info_panel.js'
 import { CONNECTOME_DATASET_ID_TO_DATASET_NAME, URL_CONNECTOME_EDGE, cellTypeDict, ntTypeDict } from '/static/core/js/constants.js';
 
+const DEFAULT_GRAPH_OPTIONS = {
+    switchIndividualId: "switchIndividual",
+    switchConnectedId: "switchConnected",
+    spinnerId: "spinnerStatus",
+    downloadButtonId: "downloadEdgeJSON",
+    layoutDropdownId: "dropdownLayout",
+    colorDropdownId: "dropdownColor",
+    sliderSpacingId: "sliderSpacing",
+    sliderEdgeScaleId: "sliderEdgeScale",
+    nodePositionListId: "node-position-list",
+    updateCustomLayoutId: "updateCustomLayout",
+    updateCustomColorId: "updateCustomColor",
+    legendId: "connectome-legend",
+    legendItemsId: "connectome-legend-items",
+    infoPanelId: "info-panel",
+    infoPanelContainerId: "connectome-container",
+    infoPanelEnabled: true,
+    thresholdIds: {
+        e: { plus: "plus-e", minus: "minus-e", input: "threshold-e" },
+        c: { plus: "plus-c", minus: "minus-c", input: "threshold-c" },
+    },
+    neuronDataLocalKey: null,
+};
+
 export class ConnectomeGraph {
-    constructor(graphId, keyPrefix=null) {
+    constructor(graphId, keyPrefix=null, options={}) {
+        this.options = { ...DEFAULT_GRAPH_OPTIONS, ...options };
+        this.options.thresholdIds = {
+            ...DEFAULT_GRAPH_OPTIONS.thresholdIds,
+            ...(options.thresholdIds || {}),
+        };
         this.keyPrefix = keyPrefix
+        this.storagePrefix = this.keyPrefix ? `${this.keyPrefix}_` : "";
+        this.neuronDataLocalKey = this.options.neuronDataLocalKey || `${this.storagePrefix}neuron_data`;
         this.element = document.getElementById(graphId);
         this.initGraph();
 
@@ -20,55 +51,98 @@ export class ConnectomeGraph {
         this.jsonData = null;
 
         // node
-        this.nodeManager = new NodeManager(this)
+        this.nodeManager = new NodeManager(
+            this,
+            "type",
+            this.keyPrefix,
+            null,
+            this.options.colorDropdownId,
+            this.options.nodePositionListId,
+            this.options.updateCustomColorId,
+            this.options.updateCustomLayoutId,
+            this.options.legendId,
+            this.options.legendItemsId
+        )
         this.updateNodeColorUponDraw = true
 
         // info panel
-        this.infoPanel = new InfoPanel();
-        this.infoPanel.injectInfoPanelHTML("info-panel");
+        this.infoPanel = null;
+        if (this.options.infoPanelEnabled) {
+            this.infoPanel = new InfoPanel();
+            this.infoPanel.injectInfoPanelHTML(this.options.infoPanelId);
+        }
 
         // layout
-        this.nodePositiobManager = new NodePositionManager(this.graph, "node-position-list", "updateCustomLayout", "updateCustomColor");
+        this.nodePositiobManager = new NodePositionManager(
+            this.graph,
+            this.options.nodePositionListId,
+            this.options.updateCustomLayoutId,
+            this.options.updateCustomColorId
+        );
         this.nodePositiobManager.init();
-        this.layoutManager = new GraphLayoutManager(this.graph, keyPrefix, "dropdownLayout", this.nodePositiobManager, "concentric");
+        this.layoutManager = new GraphLayoutManager(
+            this.graph,
+            keyPrefix,
+            this.options.layoutDropdownId,
+            this.nodePositiobManager,
+            "concentric"
+        );
         this.edgeWidthScalingFactor = 1.5
         this.initLayoutSlider();
 
         // set up edge count threshold
-        this.thresholdE = getLocalInt(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_threshold_e`, 1);
-        this.thresholdC = getLocalInt(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_threshold_c`, 1);
+        this.thresholdE = getLocalInt(this.getStorageKey("connectome_threshold_e"), 1);
+        this.thresholdC = getLocalInt(this.getStorageKey("connectome_threshold_c"), 1);
         this.initEdgeCountFilter();
 
         // set up switches
-        this.switchShowIndividual = {value: getLocalBool(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_show_individual_neuron`, false)}
-        this.switchShowConnected = {value: getLocalBool(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_show_connected_neuron`, true)}
-        initSwitch("switchIndividual",
+        this.switchShowIndividual = {value: getLocalBool(this.getStorageKey("connectome_show_individual_neuron"), false)}
+        this.switchShowConnected = {value: getLocalBool(this.getStorageKey("connectome_show_connected_neuron"), true)}
+        initSwitch(this.options.switchIndividualId,
             () => this.debouncedUpdateGraph(),
             () => this.debouncedUpdateGraph(),
-            this.switchShowIndividual, `${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_show_individual_neuron`,
+            this.switchShowIndividual,
+            this.getStorageKey("connectome_show_individual_neuron"),
             this.switchShowIndividual.value);    
 
-        initSwitch("switchConnected",
+        initSwitch(this.options.switchConnectedId,
             () => this.debouncedUpdateGraph(),
             () => this.debouncedUpdateGraph(),
-            this.switchShowConnected, `${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_show_connected_neuron`,
+            this.switchShowConnected,
+            this.getStorageKey("connectome_show_connected_neuron"),
             this.switchShowConnected.value);
 
         // setup download
-        const downloadJSONBtn = document.getElementById('downloadEdgeJSON');
-        downloadJSONBtn.addEventListener('click', () => {
-            if (this.jsonData !== null) {
-                this.downloadEdgeJSON(this.jsonData, 'wormwideweb connectome data.json');
-            } else {
-                alert('Cannot download data');
-            }
-        });
+        const downloadJSONBtn = document.getElementById(this.options.downloadButtonId);
+        if (downloadJSONBtn) {
+            downloadJSONBtn.addEventListener('click', () => {
+                if (this.jsonData !== null) {
+                    this.downloadEdgeJSON(this.jsonData, 'wormwideweb connectome data.json');
+                } else {
+                    alert('Cannot download data');
+                }
+            });
+        }
 
         // event trigger for cytoscape graph selection
         this.initSelection();
 
         // update graph function
-        this.element.updateGraph = this.debouncedUpdateGraph;
+        if (this.element) {
+            this.element.updateGraph = this.debouncedUpdateGraph;
+        }
+    }
+
+    getStorageKey(key) {
+        return `${this.storagePrefix}${key}`;
+    }
+
+    toggleSpinner(show) {
+        const spinner = document.getElementById(this.options.spinnerId);
+        if (!spinner) {
+            return;
+        }
+        spinner.style.display = show ? "block" : "none";
     }
 
     initSelection() {
@@ -180,25 +254,35 @@ export class ConnectomeGraph {
         });
 
         // node select info panel
-        this.graph.on('tap', 'node', (evt) => {
-            const node = evt.target;
-            this.renderInfoPanel(node);
-            this.infoPanel.showPanel();
-        });
-        this.graph.on('tap', (evt) => {
-            if (evt.target === this.graph) {
-                this.infoPanel.hidePanel();
-            }
-        });
+        if (this.options.infoPanelEnabled && this.infoPanel) {
+            this.graph.on('tap', 'node', (evt) => {
+                const node = evt.target;
+                this.renderInfoPanel(node);
+                this.infoPanel.showPanel();
+            });
+            this.graph.on('tap', (evt) => {
+                if (evt.target === this.graph) {
+                    this.infoPanel.hidePanel();
+                }
+            });
+        }
     }
 
     renderInfoPanel(node) {
+        if (!this.infoPanel) {
+            return;
+        }
+
+        const infoPanelId = this.options.infoPanelId;
         if (document.fullscreenElement) {
-            document.getElementById("info-panel").remove()
-            const connectomeContainer = document.getElementById("connectome-container")
-            this.infoPanel.injectInfoPanelHTML("info-panel", connectomeContainer)
+            const infoPanelElement = document.getElementById(infoPanelId);
+            if (infoPanelElement) {
+                infoPanelElement.remove();
+            }
+            const connectomeContainer = document.getElementById(this.options.infoPanelContainerId)
+            this.infoPanel.injectInfoPanelHTML(infoPanelId, connectomeContainer)
         } else {
-            this.infoPanel.injectInfoPanelHTML("info-panel")
+            this.infoPanel.injectInfoPanelHTML(infoPanelId)
         }
 
         const nodeData = node.data();
@@ -217,7 +301,12 @@ export class ConnectomeGraph {
         const urlFunctional = `https://funconn.princeton.edu/?in=${cellClass}`
 
         // set the html to id=panel-content
-        document.getElementById("info-panel-content").innerHTML = `<div class="p-2">
+        const infoPanelContent = document.getElementById("info-panel-content");
+        if (!infoPanelContent) {
+            return;
+        }
+
+        infoPanelContent.innerHTML = `<div class="p-2">
     <!-- Cell Information Section -->
     <h5 class="info-section-title">Cell Information</h5>
     <div class="mb-4">
@@ -382,13 +471,13 @@ export class ConnectomeGraph {
     debouncedUpdateGraph = debounce(this.updateGraph, 500); // 500ms delay
     updateGraph() {
         // spinner
-        document.getElementById("spinnerStatus").style.display = "block"
+        this.toggleSpinner(true);
 
         // reset graph
         this.graph.elements().remove();
         this.jsonData = null;
 
-        if (Object.keys(this.manifest).length > 0) {
+        if (Object.keys(this.manifest).length > 0 && this.listDataset.length > 0) {
             // construct query payload
             const nodeDict = {datasets: this.listDataset, classes: [], neurons: [],
                 show_individual_neuron: this.switchShowIndividual.value,
@@ -422,11 +511,14 @@ export class ConnectomeGraph {
             .then(data => {
                 this.jsonData = data;
                 this.drawGraph(data, nodeDict);
-                document.getElementById("spinnerStatus").style.display = "none"
+                this.toggleSpinner(false);
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                this.toggleSpinner(false);
+            });
         } else {
-            document.getElementById("spinnerStatus").style.display = "none"
+            this.toggleSpinner(false);
         }
     }
 
@@ -439,7 +531,7 @@ export class ConnectomeGraph {
             if (!this.graph.getElementById(neuron).length) {
                 this.graph.add({
                     group: 'nodes',
-                    data: getNeuronClassProperty(neuron, `${this.keyPrefix ? this.keyPrefix + "_" : ""}neuron_data`)
+                    data: getNeuronClassProperty(neuron, this.neuronDataLocalKey)
                 });
             }
         });
@@ -475,16 +567,21 @@ export class ConnectomeGraph {
     initEdgeCountFilter() {
         // Generic handler for increment, decrement, and input
         const setupEdgeFilter = (type) => {
-            const plusButton = document.getElementById(`plus-${type}`);
-            const minusButton = document.getElementById(`minus-${type}`);
-            const inputField = document.getElementById(`threshold-${type}`);
-    
+            const thresholdIds = this.options.thresholdIds[type];
+            const plusButton = document.getElementById(thresholdIds?.plus || `plus-${type}`);
+            const minusButton = document.getElementById(thresholdIds?.minus || `minus-${type}`);
+            const inputField = document.getElementById(thresholdIds?.input || `threshold-${type}`);
+
+            if (!plusButton || !minusButton || !inputField) {
+                return;
+            }
+
             inputField.value = this[`threshold${type.toUpperCase()}`];
 
             plusButton.addEventListener('click', () => {
                 this[`threshold${type.toUpperCase()}`]++;
                 inputField.value = this[`threshold${type.toUpperCase()}`];
-                setLocalInt(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_threshold_${type}`, inputField.value)
+                setLocalInt(this.getStorageKey(`connectome_threshold_${type}`), inputField.value)
                 this.filterEdge();
             });
     
@@ -492,7 +589,7 @@ export class ConnectomeGraph {
                 if (this[`threshold${type.toUpperCase()}`] > 1) {
                     this[`threshold${type.toUpperCase()}`]--;
                     inputField.value = this[`threshold${type.toUpperCase()}`];
-                    setLocalInt(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_threshold_${type}`, inputField.value)
+                    setLocalInt(this.getStorageKey(`connectome_threshold_${type}`), inputField.value)
                     this.filterEdge();
                 }
             });
@@ -501,7 +598,7 @@ export class ConnectomeGraph {
                 const newValue = Math.max(1, parseInt(e.target.value, 10) || 1);
                 this[`threshold${type.toUpperCase()}`] = newValue;
                 inputField.value = newValue; // Reflect the corrected value
-                setLocalInt(`${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_threshold_${type}`, inputField.value)
+                setLocalInt(this.getStorageKey(`connectome_threshold_${type}`), inputField.value)
                 this.filterEdge();
             });
         };
@@ -550,15 +647,26 @@ export class ConnectomeGraph {
             this.layoutManager.updateSpacingFactor(value)
             this.layoutManager.updateLayout()
         };
-        const savedSpacing = initSlider("sliderSpacing", null, `${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_spacing`, 1.0, updateSpacing)
+        const savedSpacing = initSlider(
+            this.options.sliderSpacingId,
+            null,
+            this.getStorageKey("connectome_spacing"),
+            1.0,
+            updateSpacing
+        )
         this.layoutManager.updateSpacingFactor(savedSpacing)
 
         const updateEdgeScalingFactor = (value) => {
             this.edgeWidthScalingFactor = value; // Update the factor
             this.graph.style().update(); // Force Cytoscape to reapply styles
         };
-        const savedEdgeScale = initSlider("sliderEdgeScale", null,
-            `${this.keyPrefix ? this.keyPrefix + "_" : ""}connectome_edge_scale`, 1.5, updateEdgeScalingFactor)
+        const savedEdgeScale = initSlider(
+            this.options.sliderEdgeScaleId,
+            null,
+            this.getStorageKey("connectome_edge_scale"),
+            1.5,
+            updateEdgeScalingFactor
+        )
         this.edgeWidthScalingFactor = savedEdgeScale
     }
     

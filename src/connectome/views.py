@@ -100,6 +100,13 @@ def path(request):
     return render(request, "connectome/path.html", context)
 
 
+@cache_page(60*60*24*30)
+def compare(request):
+    context = {'datasets_json': connectome_datasets()}
+
+    return render(request, "connectome/compare.html", context)
+
+
 @cache_control(public=True, max_age=60*60*24*90)
 def available_neurons(request):
     """

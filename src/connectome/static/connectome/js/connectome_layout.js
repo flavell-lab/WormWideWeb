@@ -89,10 +89,15 @@ export class NodePositionManager {
     // Method to render the input area
     renderNodePositionInput() {
         const customExplanation = document.getElementById("customExplanation");
-        customExplanation.innerHTML = "<b>Enter neuron position in csv format</b><br>neuron,x,y"
+        if (customExplanation) {
+            customExplanation.innerHTML = "<b>Enter neuron position in csv format</b><br>neuron,x,y"
+        }
 
         const updateButton = document.getElementById(this.buttonId);
         const otherButton = document.getElementById(this.otherButtonId);
+        if (!updateButton || !otherButton) {
+            return;
+        }
 
         updateButton.style.display = "block";
         otherButton.style.display = "none";
@@ -235,7 +240,6 @@ export class NodePositionManager {
         // Attach event listener to the update button
         const updateButton = document.getElementById(this.buttonId);
         if (!updateButton) {
-            console.error(`Button with ID '${this.buttonId}' not found.`);
             return;
         }
 

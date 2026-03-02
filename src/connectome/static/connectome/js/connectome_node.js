@@ -13,9 +13,22 @@ import { ConnectomeLegend } from './connectome_legend.js';
  * @param {string} [containerId="node-position-list"] - The ID of the container element for the node position list.
  * @param {string} [buttonId="updateCustomColor"] - The ID of the button element for updating custom colors.
  * @param {string} [otherButtonId="updateCustomLayout"] - The ID of the other button element for updating the custom layout.
+ * @param {string} [legendId="connectome-legend"] - The ID of the legend container.
+ * @param {string} [legendItemsId="connectome-legend-items"] - The ID of the legend items container.
  */
 export class NodeManager {
-    constructor(graphParent, defaultColor="type", localKeyPrefix=null, availableNeurons=null, dropdownIdColor="dropdownColor", containerId="node-position-list", buttonId="updateCustomColor", otherButtonId="updateCustomLayout") {
+    constructor(
+        graphParent,
+        defaultColor = "type",
+        localKeyPrefix = null,
+        availableNeurons = null,
+        dropdownIdColor = "dropdownColor",
+        containerId = "node-position-list",
+        buttonId = "updateCustomColor",
+        otherButtonId = "updateCustomLayout",
+        legendId = "connectome-legend",
+        legendItemsId = "connectome-legend-items"
+    ) {
         this.availableNeurons = availableNeurons
         this.colorScheme = [
             'rgb(221,221,221)', // 0 Light Gray
@@ -33,7 +46,7 @@ export class NodeManager {
         this.graph = graphParent.graph; // Cytoscape graph instance
         this.graphParent = graphParent;
 
-        this.connectomeLegend = new ConnectomeLegend(this.graph);
+        this.connectomeLegend = new ConnectomeLegend(this.graph, legendId, legendItemsId);
         this.updateLegend();
 
         this.containerId = containerId;
@@ -231,9 +244,15 @@ export class NodeManager {
 
     renderNodeColorInput() {
         const customExplanation = document.getElementById("customExplanation");
-        customExplanation.innerHTML = "<b>Enter neuron color in CSV format</b><br>neuron,r,g,b<br>RGB values: [0,255]";
+        if (customExplanation) {
+            customExplanation.innerHTML = "<b>Enter neuron color in CSV format</b><br>neuron,r,g,b<br>RGB values: [0,255]";
+        }
+
         const updateButton = document.getElementById(this.buttonId);
         const otherButton = document.getElementById(this.otherButtonId);
+        if (!updateButton || !otherButton) {
+            return;
+        }
 
         updateButton.style.display = "block";
         otherButton.style.display = "none";
@@ -393,12 +412,13 @@ export class NodeManager {
     initUpdateButton() {
         const updateButton = document.getElementById(this.buttonId);
         if (!updateButton) {
-            console.error(`Button with ID '${this.buttonId}' not found.`);
             return;
         }
 
         updateButton.addEventListener('click', () => {
-            this.connectomeLegend.legendContainer.style.display = "none";
+            if (this.connectomeLegend?.legendContainer) {
+                this.connectomeLegend.legendContainer.style.display = "none";
+            }
             this.applyNodeColorsCustom();
         });
     }

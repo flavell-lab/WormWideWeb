@@ -110,7 +110,13 @@ export function getCSRFToken() {
 //
 export function initSwitch(elementId, actionOn, actionOff, stateTarget, localStorageKey, defaultState) {
     const switchElement = document.getElementById(elementId);
-    switchElement.checked = getLocalBool(localStorageKey, defaultState)
+    const initialState = getLocalBool(localStorageKey, defaultState);
+    stateTarget.value = initialState;
+    if (!switchElement) {
+        return initialState;
+    }
+
+    switchElement.checked = initialState;
 
     switchElement.addEventListener('change', (event) => {
         if (event.target.checked) {
@@ -125,6 +131,8 @@ export function initSwitch(elementId, actionOn, actionOff, stateTarget, localSto
             actionOff()
         }
     });
+
+    return initialState;
 }
 
 //
@@ -132,7 +140,15 @@ export function initSwitch(elementId, actionOn, actionOff, stateTarget, localSto
 //
 export function initSlider(sliderId, stateTarget, localStorageKey, fallback, callback) {
     const slider = document.getElementById(sliderId);
-    slider.value = getLocalFloat(localStorageKey, fallback)
+    const savedValue = getLocalFloat(localStorageKey, fallback)
+    if (!slider) {
+        if (stateTarget !== null) {
+            stateTarget.value = savedValue;
+        }
+        return savedValue;
+    }
+
+    slider.value = savedValue
     slider.addEventListener("input", (e) => {
         const value = e.target.value;
         if (stateTarget !== null) {
@@ -344,12 +360,24 @@ export function handleFullscreenElement(fullscreenMap, elementId) {
 // connectome
 //
 export function updateCitation(listDataset, elementId, datasetOptions) {
-    if (listDataset.length == 1 && listDataset[0] === "") {
-        document.getElementById(elementId).textContent = "N/A"
-    } else {
-        const citations = listDataset.map(datasetId => datasetOptions[datasetId].citation).join("$");
-        const citationText = [...new Set(citations.split('$').map(s => s.trim()))].sort().join(', ');
-
-        document.getElementById(elementId).textContent = citationText
+    const citationElement = document.getElementById(elementId);
+    if (!citationElement) {
+        return;
     }
+
+    if (listDataset.length === 1 && listDataset[0] === "") {
+        citationElement.textContent = "N/A"
+        return;
+    }
+
+    const citations = listDataset
+        .map(datasetId => datasetOptions?.[datasetId]?.citation || "")
+        .filter(Boolean)
+        .join("$");
+
+    const citationText = [...new Set(citations.split('$').map(s => s.trim()).filter(Boolean))]
+        .sort()
+        .join(', ');
+
+    citationElement.textContent = citationText || "N/A"
 }

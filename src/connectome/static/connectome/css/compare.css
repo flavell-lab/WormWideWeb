@@ -1,0 +1,224 @@
+#connectome-compare-container {
+    background-color: var(--background-light);
+    min-height: calc(100dvh - 56px);
+    display: flex;
+    flex-direction: column;
+}
+
+#connectome-compare-container > .row.g-3 {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+#connectome-compare-container > .row.g-3 > [class*="col-"] {
+    display: flex;
+}
+
+.compare-toolbar-select {
+    flex: 1 1 360px;
+    min-width: 320px;
+}
+
+.compare-toolbar-select .ts-wrapper,
+.compare-dataset-select .ts-wrapper {
+    width: 100%;
+}
+
+.compare-panel {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.compare-loading-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.85rem;
+    position: fixed;
+    top: 5.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1055;
+    margin: 0;
+    padding: 0.2rem 0.35rem;
+    pointer-events: none;
+}
+
+.compare-loading-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.72rem 0.95rem;
+    border-radius: 0.75rem;
+    border: 1px solid #bfdbfe;
+    background: #ffffff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
+.compare-loading-spinner {
+    width: 1.55rem;
+    height: 1.55rem;
+    border-width: 0.2rem;
+}
+
+.compare-loading-title {
+    font-size: 0.93rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #0f172a;
+}
+
+.compare-loading-detail {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    color: #475569;
+}
+
+.compare-loading-track {
+    width: min(360px, 76%);
+    height: 0.34rem;
+    border-radius: 999px;
+    background: #dbeafe;
+    overflow: hidden;
+}
+
+.compare-loading-bar {
+    width: 42%;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2563eb 0%, #3b82f6 70%, #60a5fa 100%);
+    animation: compare-loading-progress 1.15s ease-in-out infinite;
+}
+
+@keyframes compare-loading-progress {
+    from {
+        transform: translateX(-135%);
+    }
+
+    to {
+        transform: translateX(270%);
+    }
+}
+
+.compare-graph {
+    flex: 1 1 auto;
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 420px;
+    background-color: #fff;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+#compare-legend-modal-items {
+    font-size: 12px;
+}
+
+.compare-watermark {
+    position: absolute;
+    bottom: 10px;
+    left: 20px;
+    font-size: 12px;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.2rem 0.35rem;
+    border-radius: 0.25rem;
+}
+
+.settings-compact h6 {
+    margin-bottom: 0.35rem;
+}
+
+.settings-compact .form-check {
+    min-height: 1.4rem;
+}
+
+.settings-compact .form-check-label {
+    line-height: 1.25;
+}
+
+.settings-help {
+    font-size: 0.9rem;
+    color: var(--gray-700, #495057);
+    line-height: 1.2;
+}
+
+.settings-threshold-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.settings-threshold-item .input-group {
+    max-width: 140px;
+}
+
+.settings-threshold-item input[type="number"] {
+    min-width: 44px;
+}
+
+.settings-slider-group .form-label {
+    line-height: 1.2;
+}
+
+.settings-slider-group .form-range {
+    margin-top: 0;
+}
+
+.ts-wrapper .ts-dropdown .option .select_dataset_option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+}
+
+.ts-wrapper .ts-dropdown .option .select_dataset_name {
+    font-weight: 500;
+}
+
+.select_dataset_opt {
+    font-weight: normal;
+    opacity: 0.5;
+    display: block !important;
+    margin: 0.1rem 0 0;
+    font-size: 0.85em;
+    line-height: 1.2;
+}
+
+@media (max-width: 1199.98px) {
+    #connectome-compare-container {
+        min-height: auto;
+    }
+
+    #connectome-compare-container > .row.g-3 {
+        flex: 0 0 auto;
+    }
+
+    #connectome-compare-container > .row.g-3 > [class*="col-"] {
+        display: block;
+    }
+
+    .compare-graph {
+        height: 65vh;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .compare-toolbar-select {
+        min-width: 100%;
+    }
+
+    .settings-threshold-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .compare-graph {
+        height: 60vh;
+        min-height: 360px;
+    }
+}
