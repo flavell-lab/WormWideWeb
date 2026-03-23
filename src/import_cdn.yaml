@@ -55,6 +55,8 @@ dagre:
     integrity: "sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ=="
 cytoscape_dagre:
     url: "https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"
+cytoscape_svg:
+    url: "https://cdn.jsdelivr.net/npm/cytoscape-svg/cytoscape-svg.js"
 
 # shepard
 shepard_css:

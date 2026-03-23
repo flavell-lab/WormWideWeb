@@ -10,6 +10,8 @@ const DEFAULT_GRAPH_OPTIONS = {
     switchConnectedId: "switchConnected",
     spinnerId: "spinnerStatus",
     downloadButtonId: "downloadEdgeJSON",
+    downloadPNGButtonId: "downloadPlotPNG",
+    downloadSVGButtonId: "downloadPlotSVG",
     layoutDropdownId: "dropdownLayout",
     colorDropdownId: "dropdownColor",
     sliderSpacingId: "sliderSpacing",
@@ -121,6 +123,20 @@ export class ConnectomeGraph {
                 } else {
                     alert('Cannot download data');
                 }
+            });
+        }
+
+        const downloadPNGBtn = document.getElementById(this.options.downloadPNGButtonId);
+        if (downloadPNGBtn) {
+            downloadPNGBtn.addEventListener('click', () => {
+                this.downloadGraphPNG('wormwideweb connectome plot.png');
+            });
+        }
+
+        const downloadSVGBtn = document.getElementById(this.options.downloadSVGButtonId);
+        if (downloadSVGBtn) {
+            downloadSVGBtn.addEventListener('click', () => {
+                this.downloadGraphSVG('wormwideweb connectome plot.svg');
             });
         }
 
@@ -695,5 +711,48 @@ export class ConnectomeGraph {
         // Clean up
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }    
+    }
+
+    downloadGraphPNG(fileName='wormwideweb connectome plot.png') {
+        if (!this.graph) {
+            alert('Cannot download plot');
+            return;
+        }
+
+        const pngData = this.graph.png({
+            full: true,
+            scale: 2,
+            bg: '#ffffff',
+        });
+
+        const a = document.createElement('a');
+        a.href = pngData;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    downloadGraphSVG(fileName='wormwideweb connectome plot.svg') {
+        if (!this.graph || typeof this.graph.svg !== 'function') {
+            alert('Cannot download SVG plot');
+            return;
+        }
+
+        const svgData = this.graph.svg({
+            full: true,
+            bg: '#ffffff',
+            scale: 1,
+        });
+
+        const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 }
