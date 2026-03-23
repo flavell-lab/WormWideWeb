@@ -106,6 +106,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const buttonToggleConnectome = document.getElementById("buttonToggleConnectome")
     const buttonCircuitReplay = document.getElementById("buttonCircuitReplay")
+    const buttonConnectomeDownloadData = document.getElementById("activityConnectomeDownloadData")
+    const buttonConnectomeDownloadPNG = document.getElementById("activityConnectomeDownloadPNG")
+    const buttonConnectomeDownloadSVG = document.getElementById("activityConnectomeDownloadSVG")
+
+    if (isNeuroPAL && plotGraph) {
+        if (buttonConnectomeDownloadData) {
+            buttonConnectomeDownloadData.addEventListener("click", () => {
+                if (plotGraph.jsonData !== null) {
+                    plotGraph.downloadEdgeJSON(plotGraph.jsonData, "wormwideweb connectome data.json");
+                } else {
+                    alert("Cannot download data");
+                }
+            });
+        }
+
+        if (buttonConnectomeDownloadPNG) {
+            buttonConnectomeDownloadPNG.addEventListener("click", () => {
+                plotGraph.downloadGraphPNG("wormwideweb connectome plot.png");
+            });
+        }
+
+        if (buttonConnectomeDownloadSVG) {
+            buttonConnectomeDownloadSVG.addEventListener("click", () => {
+                plotGraph.downloadGraphSVG("wormwideweb connectome plot.svg");
+            });
+        }
+    }
 
     const buildCircuitReplayUrl = () => {
         const activityDataset = data.dataset_id;

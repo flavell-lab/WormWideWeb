@@ -278,6 +278,23 @@
               data-bs-placement="top" data-bs-title="Open selected neurons in Circuit Replay">
               Circuit Replay
             </a>
+            <div class="dropdown btn-group btn-group-sm">
+              <button id="activityConnectomeDownloadMenuButton" class="btn btn-light btn-sm dropdown-toggle"
+                type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download options">
+                <i class="bi bi-download" aria-hidden="true"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="activityConnectomeDownloadMenuButton">
+                <li>
+                  <button id="activityConnectomeDownloadData" class="dropdown-item" type="button">Data</button>
+                </li>
+                <li>
+                  <button id="activityConnectomeDownloadPNG" class="dropdown-item" type="button">PNG</button>
+                </li>
+                <li>
+                  <button id="activityConnectomeDownloadSVG" class="dropdown-item" type="button">SVG</button>
+                </li>
+              </ul>
+            </div>
             <!-- Settings/gear button -->
             <button id="buttonConnectomeFullscreen" class="btn btn-light" data-bs-toggle="tooltip"
               data-bs-placement="top" data-bs-title="Fullscreen Connectome" style="display: block;">
@@ -488,6 +505,7 @@
 <script src="{{ IMPORT_CDN.cytoscape.url }}"
   integrity="{{ IMPORT_CDN.cytoscape.integrity }}"
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape_svg.url }}"></script>
 
 <!-- layout extensions -->
 <script src="{{ IMPORT_CDN.dagre.url }}"

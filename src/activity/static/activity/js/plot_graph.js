@@ -730,4 +730,66 @@ export class PlotGraph {
         this.nodeManager.highlightNode(manifest.classes.concat(manifest.neurons), 5, "black")
         this.filterEdge()
     }
+
+    downloadEdgeJSON(jsonData, fileName='wormwideweb connectome data.json') {
+        let jsonString;
+        if (typeof jsonData === 'string') {
+          jsonString = jsonData;
+        } else {
+          jsonString = JSON.stringify(jsonData, null, 2);
+        }
+
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    downloadGraphPNG(fileName='wormwideweb connectome plot.png') {
+        if (!this.graph) {
+            alert('Cannot download plot');
+            return;
+        }
+
+        const pngData = this.graph.png({
+            full: true,
+            scale: 2,
+            bg: '#ffffff',
+        });
+
+        const a = document.createElement('a');
+        a.href = pngData;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    downloadGraphSVG(fileName='wormwideweb connectome plot.svg') {
+        if (!this.graph || typeof this.graph.svg !== 'function') {
+            alert('Cannot download SVG plot');
+            return;
+        }
+
+        const svgData = this.graph.svg({
+            full: true,
+            bg: '#ffffff',
+            scale: 1,
+        });
+
+        const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 }
