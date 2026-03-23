@@ -61,6 +61,24 @@
           </ul>
         </div>
 
+        <div class="dropdown btn-group btn-group-sm">
+          <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="compare-download-menu-button"
+            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download options">
+            <i class="bi bi-download" aria-hidden="true"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="compare-download-menu-button">
+            <li><h6 class="dropdown-header">Left graph</h6></li>
+            <li><button class="dropdown-item compare-download-option" type="button" data-side="left" data-format="data">Data</button></li>
+            <li><button class="dropdown-item compare-download-option" type="button" data-side="left" data-format="png">PNG</button></li>
+            <li><button class="dropdown-item compare-download-option" type="button" data-side="left" data-format="svg">SVG</button></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header">Right graph</h6></li>
+            <li><button class="dropdown-item compare-download-option" type="button" data-side="right" data-format="data">Data</button></li>
+            <li><button class="dropdown-item compare-download-option" type="button" data-side="right" data-format="png">PNG</button></li>
+            <li><button class="dropdown-item compare-download-option" type="button" data-side="right" data-format="svg">SVG</button></li>
+          </ul>
+        </div>
+
         <button class="btn btn-light btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#compare-legend-modal"
           aria-label="Open legend">
           <i class="bi bi-list-ul" aria-hidden="true"></i>
@@ -219,6 +237,7 @@
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="{{ IMPORT_CDN.cytoscape.url }}" integrity="{{ IMPORT_CDN.cytoscape.integrity }}" crossorigin="anonymous"
   referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape_svg.url }}"></script>
 <script src="{{ IMPORT_CDN.dagre.url }}" integrity="{{ IMPORT_CDN.dagre.integrity }}" crossorigin="anonymous"
   referrerpolicy="no-referrer"></script>
 <script src="{{ IMPORT_CDN.cytoscape_dagre.url }}"></script>

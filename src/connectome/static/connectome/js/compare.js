@@ -229,9 +229,52 @@ class CompareController {
             clearButton.addEventListener("click", () => this.neuronSelector.clear());
         }
 
+        this.initDownloadMenu();
         this.initDiffModeControl();
         this.initColorDropdownCancelsDiff();
         this.initDiffModeRefreshTriggers();
+    }
+
+    initDownloadMenu() {
+        const downloadItems = document.querySelectorAll(".compare-download-option");
+        if (!downloadItems.length) {
+            return;
+        }
+
+        downloadItems.forEach((item) => {
+            item.addEventListener("click", () => {
+                const side = item.dataset.side;
+                const format = item.dataset.format;
+                const panel = side ? this.panels[side] : null;
+                const panelGraph = panel?.graph;
+
+                if (!panelGraph) {
+                    alert("Cannot download graph");
+                    return;
+                }
+
+                if (format === "data") {
+                    if (panelGraph.jsonData !== null) {
+                        panelGraph.downloadEdgeJSON(
+                            panelGraph.jsonData,
+                            `wormwideweb connectome ${side} data.json`
+                        );
+                    } else {
+                        alert("Cannot download data");
+                    }
+                    return;
+                }
+
+                if (format === "png") {
+                    panelGraph.downloadGraphPNG(`wormwideweb connectome ${side} plot.png`);
+                    return;
+                }
+
+                if (format === "svg") {
+                    panelGraph.downloadGraphSVG(`wormwideweb connectome ${side} plot.svg`);
+                }
+            });
+        });
     }
 
     initDiffModeControl() {
