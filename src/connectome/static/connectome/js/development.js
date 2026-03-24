@@ -1039,6 +1039,27 @@ class DevelopmentTrajectoryController {
         const stageHoverLabels = STAGES.map((stage) => stageHoverLabel(stage));
         const yLabels = data.edges.map((edge) => buildEdgeLabel(edge));
         const zValues = data.edges.map((edge) => edge.stageValues);
+        const plotHeight = this.heatmapElement?.clientHeight || 460;
+        const usableHeight = Math.max(120, plotHeight - 64);
+        const minTickSpacingPx = 12;
+        const maxDisplayableYTicks = Math.max(8, Math.floor(usableHeight / minTickSpacingPx));
+        const hideYTicks = yLabels.length > maxDisplayableYTicks;
+        const yAxisConfig = hideYTicks
+            ? {
+                automargin: true,
+                showticklabels: false,
+                ticks: '',
+                title: {
+                    text: 'Too many to display',
+                    standoff: 8,
+                    font: { size: 10, color: '#64748b' },
+                },
+            }
+            : {
+                automargin: true,
+                tickfont: { size: 10 },
+            };
+        const leftMargin = hideYTicks ? 92 : 210;
 
         Plotly.react(this.heatmapElement, [{
             type: 'heatmap',
@@ -1056,17 +1077,14 @@ class DevelopmentTrajectoryController {
                 len: 1,
             },
         }], {
-            margin: { t: 10, r: 92, b: 44, l: 210 },
+            margin: { t: 10, r: 92, b: 44, l: leftMargin },
             xaxis: {
                 title: 'Development stage',
                 tickmode: 'array',
                 tickvals: stageHoverLabels,
                 ticktext: stageTickLabels,
             },
-            yaxis: {
-                automargin: true,
-                tickfont: { size: 10 },
-            },
+            yaxis: yAxisConfig,
             annotations: [{
                 text: 'Synapse count',
                 xref: 'paper',
