@@ -698,6 +698,7 @@ class DevelopmentTrajectoryController {
             normalizedOptions.forEach((option) => selectControl.addOption(option));
             selectControl.refreshOptions(false);
             selectControl.setValue(this.getTrendSelectorDisplayValue(selectedValue), true);
+            selectControl.inputState();
             return;
         }
 

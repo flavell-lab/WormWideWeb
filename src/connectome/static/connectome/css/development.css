@@ -171,20 +171,18 @@
     line-height: 1.2;
 }
 
-.development-trend-filter-item .form-select {
+.development-trend-filter-item .development-trend-select {
     font-size: 0.84rem;
 }
 
-.development-trend-filter-item .ts-wrapper.form-select,
-.development-trend-filter-item .ts-wrapper.form-select-sm {
+.development-trend-filter-item .ts-wrapper {
     padding: 0;
     border: 0;
     background: transparent;
     box-shadow: none;
 }
 
-.development-trend-filter-item .ts-wrapper.form-select .ts-control,
-.development-trend-filter-item .ts-wrapper.form-select-sm .ts-control {
+.development-trend-filter-item .ts-wrapper .ts-control {
     min-height: calc(1.5em + 0.5rem + 2px);
     padding: 0 0.5rem;
     border: 1px solid #ced4da;
@@ -198,6 +196,25 @@
 .development-trend-filter-item .ts-wrapper.single .ts-control .item,
 .development-trend-filter-item .ts-wrapper.single .ts-control input {
     line-height: 1.2;
+}
+
+.development-trend-filter-item .ts-wrapper.single .ts-control .item {
+    color: #334155;
+}
+
+.development-trend-filter-item .ts-wrapper.single .ts-control {
+    position: relative;
+}
+
+.development-trend-filter-item .ts-wrapper.single:not(.has-items) .ts-control::before {
+    content: 'All';
+    color: #64748b;
+    line-height: 1.2;
+}
+
+.development-trend-filter-item .ts-wrapper.single .ts-control input::placeholder {
+    color: #64748b;
+    opacity: 1;
 }
 
 .development-panel-note {
