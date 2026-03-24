@@ -76,12 +76,81 @@ const DEFAULT_LAYOUT = 'concentric';
 
 const HEATMAP_COLORMAP_OPTIONS = [
     { value: 'Viridis', label: 'Viridis' },
-    { value: 'RdBu', label: 'RdBu (divergent)' },
-    { value: 'Spectral', label: 'Spectral (divergent)' },
-    { value: 'PRGn', label: 'PRGn (divergent)' },
-    { value: 'Cividis', label: 'Cividis' },
     { value: 'Plasma', label: 'Plasma' },
+    { value: 'Inferno', label: 'Inferno' },
+    { value: 'Magma', label: 'Magma' },
+    { value: 'Cividis', label: 'Cividis' },
+    { value: 'Greys', label: 'Greys' },
+    { value: 'Blues', label: 'Blues' },
+    { value: 'Greens', label: 'Greens' },
+    { value: 'Reds', label: 'Reds' },
+    { value: 'Oranges', label: 'Oranges' },
+    { value: 'YlGnBu', label: 'YlGnBu' },
+    { value: 'YlOrRd', label: 'YlOrRd' },
+    { value: 'Turbo', label: 'Turbo' },
 ];
+const CUSTOM_HEATMAP_COLORSCALES = Object.freeze({
+    Plasma: [
+        [0.0, '#0d0887'],
+        [0.1, '#46039f'],
+        [0.2, '#7201a8'],
+        [0.3, '#9c179e'],
+        [0.4, '#bd3786'],
+        [0.5, '#d8576b'],
+        [0.6, '#ed7953'],
+        [0.7, '#fb9f3a'],
+        [0.8, '#fdca26'],
+        [1.0, '#f0f921'],
+    ],
+    Inferno: [
+        [0.0, '#000004'],
+        [0.1, '#1b0c41'],
+        [0.2, '#4a0c6b'],
+        [0.3, '#781c6d'],
+        [0.4, '#a52c60'],
+        [0.5, '#cf4446'],
+        [0.6, '#ed6925'],
+        [0.7, '#fb9b06'],
+        [0.8, '#f7d13d'],
+        [1.0, '#fcffa4'],
+    ],
+    Magma: [
+        [0.0, '#000004'],
+        [0.1, '#1c1044'],
+        [0.2, '#4f127b'],
+        [0.3, '#812581'],
+        [0.4, '#b5367a'],
+        [0.5, '#e55063'],
+        [0.6, '#fb8761'],
+        [0.7, '#fec287'],
+        [0.8, '#fbfdbf'],
+        [1.0, '#fbfdbf'],
+    ],
+    Oranges: [
+        [0.0, '#fff5eb'],
+        [0.125, '#feedde'],
+        [0.25, '#fdd0a2'],
+        [0.375, '#fdae6b'],
+        [0.5, '#fd8d3c'],
+        [0.625, '#f16913'],
+        [0.75, '#d94801'],
+        [0.875, '#a63603'],
+        [1.0, '#7f2704'],
+    ],
+    Turbo: [
+        [0.0, '#30123b'],
+        [0.1, '#4145ab'],
+        [0.2, '#4675ed'],
+        [0.3, '#39a2fc'],
+        [0.4, '#1bcfd4'],
+        [0.5, '#24eca6'],
+        [0.6, '#61fc6c'],
+        [0.7, '#a4fc3b'],
+        [0.8, '#d1e834'],
+        [0.9, '#f7ba2e'],
+        [1.0, '#d93806'],
+    ],
+});
 const HEATMAP_COLORMAP_VALUES = new Set(HEATMAP_COLORMAP_OPTIONS.map((option) => option.value));
 const DEFAULT_HEATMAP_COLORMAP = 'Viridis';
 const HEATMAP_ROW_ORDER_OPTIONS = [
@@ -171,6 +240,10 @@ function normalizeLayout(value) {
 
 function normalizeHeatmapColormap(value) {
     return HEATMAP_COLORMAP_VALUES.has(value) ? value : DEFAULT_HEATMAP_COLORMAP;
+}
+
+function resolveHeatmapColorscale(value) {
+    return CUSTOM_HEATMAP_COLORSCALES[value] || value;
 }
 
 function normalizeHeatmapRowOrder(value) {
@@ -2034,7 +2107,7 @@ class DevelopmentTrajectoryController {
             x: stageHoverLabels,
             y: yLabels,
             z: zValues,
-            colorscale: this.heatmapColormap,
+            colorscale: resolveHeatmapColorscale(this.heatmapColormap),
             hovertemplate: '<b>%{y}</b><br>%{x}: %{z}<extra></extra>',
             colorbar: {
                 tickfont: { size: 10 },
