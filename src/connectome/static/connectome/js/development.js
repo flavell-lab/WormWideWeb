@@ -54,6 +54,10 @@ const STORAGE = {
     layout: 'connectome_development_layout',
     layoutSpacing: 'connectome_development_layout_spacing',
     edgeScale: 'connectome_development_edge_scale',
+    layoutSpacingSmall: 'connectome_development_layout_spacing_small',
+    layoutSpacingSlider: 'connectome_development_layout_spacing_slider',
+    edgeScaleSmall: 'connectome_development_edge_scale_small',
+    edgeScaleSlider: 'connectome_development_edge_scale_slider',
     heatmapColormap: 'connectome_development_heatmap_colormap',
     sliderStage: 'connectome_development_slider_stage',
 };
@@ -166,14 +170,17 @@ class DevelopmentTrajectoryController {
         this.manifest = {};
         this.currentData = null;
         this.latestResponseData = null;
-        this.basePositions = {};
+        this.basePositionsSmall = {};
+        this.basePositionsSlider = {};
 
         this.neuronSelector = null;
         this.neuronSelectorWasMouseSelect = false;
 
         this.stageGraphs = [];
+        this.stageGraphsHasBeenFit = [];
         this.sliderGraph = null;
         this.sliderHasBeenFit = false;
+        this.activeNetworkView = 'small';
 
         this.selectedEdgeIndex = null;
         this.lastRequestToken = 0;
@@ -183,8 +190,32 @@ class DevelopmentTrajectoryController {
         this.showConnectedNeuron = getLocalBool(STORAGE.showConnectedNeuron, true);
         this.thresholdChemical = parsePositiveInt(getLocalStr(STORAGE.thresholdChemical, '0'), 0);
         this.layoutName = normalizeLayout(getLocalStr(STORAGE.layout, DEFAULT_LAYOUT));
-        this.layoutSpacing = parseClampedFloat(getLocalStr(STORAGE.layoutSpacing, '1'), 1, 0.25, 1.5);
-        this.edgeScaleFactor = parseClampedFloat(getLocalStr(STORAGE.edgeScale, '1'), 1, 0.1, 3.0);
+        const legacyLayoutSpacing = parseClampedFloat(getLocalStr(STORAGE.layoutSpacing, '1'), 1, 0.25, 1.5);
+        const legacyEdgeScaleFactor = parseClampedFloat(getLocalStr(STORAGE.edgeScale, '1'), 1, 0.1, 3.0);
+        this.layoutSpacingSmall = parseClampedFloat(
+            getLocalStr(STORAGE.layoutSpacingSmall, String(legacyLayoutSpacing)),
+            legacyLayoutSpacing,
+            0.25,
+            1.5,
+        );
+        this.layoutSpacingSlider = parseClampedFloat(
+            getLocalStr(STORAGE.layoutSpacingSlider, String(legacyLayoutSpacing)),
+            legacyLayoutSpacing,
+            0.25,
+            1.5,
+        );
+        this.edgeScaleFactorSmall = parseClampedFloat(
+            getLocalStr(STORAGE.edgeScaleSmall, String(legacyEdgeScaleFactor)),
+            legacyEdgeScaleFactor,
+            0.1,
+            3.0,
+        );
+        this.edgeScaleFactorSlider = parseClampedFloat(
+            getLocalStr(STORAGE.edgeScaleSlider, String(legacyEdgeScaleFactor)),
+            legacyEdgeScaleFactor,
+            0.1,
+            3.0,
+        );
         this.heatmapColormap = normalizeHeatmapColormap(getLocalStr(STORAGE.heatmapColormap, DEFAULT_HEATMAP_COLORMAP));
         this.sliderStageIndex = clamp(parseInt(getLocalStr(STORAGE.sliderStage, '0'), 10) || 0, 0, STAGES.length - 1);
 
@@ -193,7 +224,10 @@ class DevelopmentTrajectoryController {
         this.scheduleRefresh = debounce(() => this.refresh(), 350);
         this.scheduleLocalRerender = debounce(() => this.renderFromLatestResponse(), 150);
         this.scheduleRelayout = debounce(() => this.relayoutCurrentGraphs(), 120);
-        this.scheduleRescaleEdges = debounce(() => this.rerenderGraphViews(false), 120);
+        this.scheduleRelayoutSmall = debounce(() => this.relayoutSmallMultiples(), 120);
+        this.scheduleRelayoutSlider = debounce(() => this.relayoutSliderNetwork(), 120);
+        this.scheduleRescaleSmall = debounce(() => this.rerenderSmallMultiples(), 120);
+        this.scheduleRescaleSlider = debounce(() => this.rerenderSliderNetwork(), 120);
     }
 
     async init() {
@@ -348,28 +382,48 @@ class DevelopmentTrajectoryController {
     }
 
     initRenderControls() {
-        this.layoutSpacingElement.value = String(this.layoutSpacing);
-        this.edgeScaleElement.value = String(this.edgeScaleFactor);
+        this.syncActiveNetworkView();
+        this.syncNetworkRenderControlValues();
         if (this.heatmapColormapElement) {
             this.heatmapColormapElement.value = this.heatmapColormap;
         }
 
         this.layoutSpacingElement.addEventListener('input', (event) => {
-            const spacing = parseClampedFloat(event.target.value, this.layoutSpacing, 0.25, 1.5);
-            if (spacing === this.layoutSpacing) return;
-            this.layoutSpacing = spacing;
+            this.syncActiveNetworkView();
+            const isSliderView = this.activeNetworkView === 'slider';
+            const currentSpacing = isSliderView ? this.layoutSpacingSlider : this.layoutSpacingSmall;
+            const spacing = parseClampedFloat(event.target.value, currentSpacing, 0.25, 1.5);
+            if (spacing === currentSpacing) return;
+
             this.layoutSpacingElement.value = String(spacing);
-            setLocalStr(STORAGE.layoutSpacing, String(spacing));
-            this.scheduleRelayout();
+            if (isSliderView) {
+                this.layoutSpacingSlider = spacing;
+                setLocalStr(STORAGE.layoutSpacingSlider, String(spacing));
+                this.scheduleRelayoutSlider();
+            } else {
+                this.layoutSpacingSmall = spacing;
+                setLocalStr(STORAGE.layoutSpacingSmall, String(spacing));
+                this.scheduleRelayoutSmall();
+            }
         });
 
         this.edgeScaleElement.addEventListener('input', (event) => {
-            const factor = parseClampedFloat(event.target.value, this.edgeScaleFactor, 0.1, 3.0);
-            if (factor === this.edgeScaleFactor) return;
-            this.edgeScaleFactor = factor;
+            this.syncActiveNetworkView();
+            const isSliderView = this.activeNetworkView === 'slider';
+            const currentFactor = isSliderView ? this.edgeScaleFactorSlider : this.edgeScaleFactorSmall;
+            const factor = parseClampedFloat(event.target.value, currentFactor, 0.1, 3.0);
+            if (factor === currentFactor) return;
+
             this.edgeScaleElement.value = String(factor);
-            setLocalStr(STORAGE.edgeScale, String(factor));
-            this.scheduleRescaleEdges();
+            if (isSliderView) {
+                this.edgeScaleFactorSlider = factor;
+                setLocalStr(STORAGE.edgeScaleSlider, String(factor));
+                this.scheduleRescaleSlider();
+            } else {
+                this.edgeScaleFactorSmall = factor;
+                setLocalStr(STORAGE.edgeScaleSmall, String(factor));
+                this.scheduleRescaleSmall();
+            }
         });
 
         if (this.heatmapColormapElement) {
@@ -388,10 +442,35 @@ class DevelopmentTrajectoryController {
         this.rerenderGraphViews(true);
     }
 
+    relayoutSmallMultiples() {
+        if (!this.currentData?.edges?.length) return;
+        this.basePositionsSmall = this.computeBasePositions(this.currentData, this.layoutSpacingSmall);
+        this.renderSmallMultiples(this.currentData);
+    }
+
+    relayoutSliderNetwork() {
+        if (!this.currentData?.edges?.length) return;
+        this.basePositionsSlider = this.computeBasePositions(this.currentData, this.layoutSpacingSlider);
+        this.sliderHasBeenFit = false;
+        this.updateSliderStageView();
+    }
+
+    rerenderSmallMultiples() {
+        if (!this.currentData?.edges?.length) return;
+        this.renderSmallMultiples(this.currentData);
+    }
+
+    rerenderSliderNetwork() {
+        if (!this.currentData?.edges?.length) return;
+        this.updateSliderStageView();
+    }
+
     rerenderGraphViews(recomputeLayout = false) {
         if (!this.currentData?.edges?.length) return;
         if (recomputeLayout) {
-            this.basePositions = this.computeBasePositions(this.currentData);
+            this.basePositionsSmall = this.computeBasePositions(this.currentData, this.layoutSpacingSmall);
+            this.basePositionsSlider = this.computeBasePositions(this.currentData, this.layoutSpacingSlider);
+            this.stageGraphsHasBeenFit = STAGES.map(() => false);
             this.sliderHasBeenFit = false;
         }
         this.renderSmallMultiples(this.currentData);
@@ -402,9 +481,44 @@ class DevelopmentTrajectoryController {
         const tabButtons = document.querySelectorAll('#development-view-tabs button[data-bs-toggle="tab"]');
         tabButtons.forEach((button) => {
             button.addEventListener('shown.bs.tab', () => {
+                this.syncActiveNetworkView();
+                this.syncNetworkRenderControlValues();
+                if (this.activeNetworkView === 'slider') {
+                    this.sliderHasBeenFit = false;
+                } else if (this.activeNetworkView === 'small') {
+                    this.stageGraphsHasBeenFit = STAGES.map(() => false);
+                }
                 this.resizeVisibleGraphs();
             });
         });
+    }
+
+    syncActiveNetworkView() {
+        const activeTabButton = document.querySelector('#development-view-tabs .nav-link.active');
+        const activeTarget = activeTabButton?.getAttribute('data-bs-target') || '';
+        if (activeTarget === '#development-pane-slider') {
+            this.activeNetworkView = 'slider';
+        } else if (activeTarget === '#development-pane-multiples') {
+            this.activeNetworkView = 'small';
+        }
+    }
+
+    syncNetworkRenderControlValues() {
+        const isSliderView = this.activeNetworkView === 'slider';
+        const spacingValue = isSliderView ? this.layoutSpacingSlider : this.layoutSpacingSmall;
+        const edgeScaleValue = isSliderView ? this.edgeScaleFactorSlider : this.edgeScaleFactorSmall;
+
+        if (this.layoutSpacingElement) {
+            this.layoutSpacingElement.value = String(spacingValue);
+        }
+        if (this.edgeScaleElement) {
+            this.edgeScaleElement.value = String(edgeScaleValue);
+        }
+    }
+
+    isGraphContainerVisible(graph) {
+        const container = graph?.container?.();
+        return Boolean(container && container.offsetParent !== null && container.clientWidth > 0 && container.clientHeight > 0);
     }
 
     initNeuronSelector() {
@@ -476,6 +590,7 @@ class DevelopmentTrajectoryController {
         `).join('');
 
         this.stageGraphs = STAGES.map((_, index) => this.createGraph(`development-stage-graph-${index}`, true));
+        this.stageGraphsHasBeenFit = STAGES.map(() => false);
     }
 
     initSliderGraph() {
@@ -900,7 +1015,9 @@ class DevelopmentTrajectoryController {
 
         this.currentData = this.transformResponse(this.latestResponseData);
         this.selectedEdgeIndex = this.resolveSelectedEdgeIndex(this.selectedEdgeIndex);
-        this.basePositions = this.computeBasePositions(this.currentData);
+        this.basePositionsSmall = this.computeBasePositions(this.currentData, this.layoutSpacingSmall);
+        this.basePositionsSlider = this.computeBasePositions(this.currentData, this.layoutSpacingSlider);
+        this.stageGraphsHasBeenFit = STAGES.map(() => false);
         this.sliderHasBeenFit = false;
 
         this.updateSelectionSummary();
@@ -1027,7 +1144,7 @@ class DevelopmentTrajectoryController {
         return currentIndex;
     }
 
-    computeBasePositions(data) {
+    computeBasePositions(data, spacingFactor) {
         if (!data.nodes.length) {
             return {};
         }
@@ -1035,7 +1152,7 @@ class DevelopmentTrajectoryController {
         const elements = [
             ...data.nodes.map((nodeId) => ({
                 group: 'nodes',
-                data: { id: nodeId },
+                data: this.getNodeDisplayData(nodeId),
             })),
             ...data.edges
                 .filter((edge) => edge.total > 0)
@@ -1051,18 +1168,26 @@ class DevelopmentTrajectoryController {
 
         const layoutGraph = cytoscape({
             headless: true,
-            styleEnabled: false,
             elements,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        height: 35,
+                        width: (node) => (isNodeRectangle(node) ? 70 : 35),
+                    },
+                },
+            ],
         });
 
         try {
-            layoutGraph.layout(this.getLayoutOptions()).run();
+            layoutGraph.layout(this.getLayoutOptions(spacingFactor)).run();
         } catch (error) {
             console.warn(`Failed applying ${this.layoutName} layout, falling back to ${DEFAULT_LAYOUT}.`, error);
             this.layoutName = DEFAULT_LAYOUT;
             setLocalStr(STORAGE.layout, this.layoutName);
             this.updateLayoutMenuState();
-            layoutGraph.layout(this.getLayoutOptions()).run();
+            layoutGraph.layout(this.getLayoutOptions(spacingFactor)).run();
         }
 
         const positions = {};
@@ -1074,13 +1199,13 @@ class DevelopmentTrajectoryController {
         return positions;
     }
 
-    getLayoutOptions() {
-        const spacingFactor = this.layoutSpacing;
+    getLayoutOptions(spacingFactor) {
         if (this.layoutName === 'grid') {
             return {
                 name: 'grid',
                 fit: false,
                 avoidOverlap: true,
+                avoidOverlapPadding: Math.round(8 * spacingFactor),
                 spacingFactor,
                 animate: false,
             };
@@ -1090,6 +1215,7 @@ class DevelopmentTrajectoryController {
                 name: 'circle',
                 fit: false,
                 avoidOverlap: true,
+                avoidOverlapPadding: Math.round(8 * spacingFactor),
                 spacingFactor,
                 animate: false,
             };
@@ -1127,15 +1253,16 @@ class DevelopmentTrajectoryController {
             name: 'concentric',
             fit: false,
             avoidOverlap: true,
+            avoidOverlapPadding: Math.round(8 * spacingFactor),
             minNodeSpacing: Math.round(24 * spacingFactor),
             spacingFactor,
             animate: false,
         };
     }
 
-    computeEdgeWidth(count, compactMode) {
+    computeEdgeWidth(count, compactMode, edgeScaleFactor) {
         const baseScale = compactMode ? 1.9 : 2.2;
-        return Math.max(0.25, Math.log(Number(count || 0) + 1) * baseScale * this.edgeScaleFactor);
+        return Math.max(0.25, Math.log(Number(count || 0) + 1) * baseScale * edgeScaleFactor);
     }
 
     getStageEdgeCount(stageIndex) {
@@ -1143,7 +1270,7 @@ class DevelopmentTrajectoryController {
         return this.currentData.edges.filter((edge) => edge.stageValues[stageIndex] > 0).length;
     }
 
-    buildStageElements(stageIndex, compactMode) {
+    buildStageElements(stageIndex, compactMode, edgeScaleFactor) {
         const activeNodes = new Set();
         const stageLabel = stageHoverLabel(STAGES[stageIndex]);
 
@@ -1159,7 +1286,7 @@ class DevelopmentTrajectoryController {
                         source: edge.pre,
                         target: edge.post,
                         count: edge.stageValues[stageIndex],
-                        width: this.computeEdgeWidth(edge.stageValues[stageIndex], compactMode),
+                        width: this.computeEdgeWidth(edge.stageValues[stageIndex], compactMode, edgeScaleFactor),
                         type: edge.type,
                         edge_label: buildEdgeLabel(edge),
                         stage_label: stageLabel,
@@ -1181,8 +1308,8 @@ class DevelopmentTrajectoryController {
         return { nodeElements, edgeElements };
     }
 
-    applyStageElementsToGraph(graph, stageIndex, fitGraph = true, compactMode = false) {
-        const { nodeElements, edgeElements } = this.buildStageElements(stageIndex, compactMode);
+    applyStageElementsToGraph(graph, stageIndex, basePositions, edgeScaleFactor, fitGraph = true, compactMode = false) {
+        const { nodeElements, edgeElements } = this.buildStageElements(stageIndex, compactMode, edgeScaleFactor);
 
         graph.batch(() => {
             graph.elements().remove();
@@ -1193,7 +1320,7 @@ class DevelopmentTrajectoryController {
 
         graph.layout({
             name: 'preset',
-            positions: (node) => this.basePositions[node.id()] || { x: 0, y: 0 },
+            positions: (node) => basePositions[node.id()] || { x: 0, y: 0 },
             fit: fitGraph,
             padding: 20,
             animate: false,
@@ -1411,7 +1538,19 @@ class DevelopmentTrajectoryController {
 
     renderSmallMultiples(data) {
         this.stageGraphs.forEach((graph, stageIndex) => {
-            this.applyStageElementsToGraph(graph, stageIndex, true, true);
+            const graphVisible = this.isGraphContainerVisible(graph);
+            const shouldFit = graphVisible && !this.stageGraphsHasBeenFit[stageIndex];
+            this.applyStageElementsToGraph(
+                graph,
+                stageIndex,
+                this.basePositionsSmall,
+                this.edgeScaleFactorSmall,
+                shouldFit,
+                true,
+            );
+            if (graphVisible && shouldFit) {
+                this.stageGraphsHasBeenFit[stageIndex] = true;
+            }
             const edgeCount = this.getStageEdgeCount(stageIndex);
             const summary = document.getElementById(`development-stage-summary-${stageIndex}`);
             if (summary) {
@@ -1440,9 +1579,19 @@ class DevelopmentTrajectoryController {
             return;
         }
 
-        const shouldFit = !this.sliderHasBeenFit;
-        this.applyStageElementsToGraph(this.sliderGraph, this.sliderStageIndex, shouldFit, false);
-        this.sliderHasBeenFit = true;
+        const sliderVisible = this.isGraphContainerVisible(this.sliderGraph);
+        const shouldFit = sliderVisible && !this.sliderHasBeenFit;
+        this.applyStageElementsToGraph(
+            this.sliderGraph,
+            this.sliderStageIndex,
+            this.basePositionsSlider,
+            this.edgeScaleFactorSlider,
+            shouldFit,
+            false,
+        );
+        if (sliderVisible) {
+            this.sliderHasBeenFit = true;
+        }
     }
 
     toggleAutoplay() {
@@ -1477,14 +1626,38 @@ class DevelopmentTrajectoryController {
         this.stageGraphs.forEach((graph, stageIndex) => {
             graph.resize();
             if (this.currentData?.edges?.length) {
-                this.applyStageElementsToGraph(graph, stageIndex, true, true);
+                const graphVisible = this.isGraphContainerVisible(graph);
+                const shouldFit = graphVisible && !this.stageGraphsHasBeenFit[stageIndex];
+                this.applyStageElementsToGraph(
+                    graph,
+                    stageIndex,
+                    this.basePositionsSmall,
+                    this.edgeScaleFactorSmall,
+                    shouldFit,
+                    true,
+                );
+                if (graphVisible && shouldFit) {
+                    this.stageGraphsHasBeenFit[stageIndex] = true;
+                }
             }
         });
 
         if (this.sliderGraph) {
             this.sliderGraph.resize();
             if (this.currentData?.edges?.length) {
-                this.applyStageElementsToGraph(this.sliderGraph, this.sliderStageIndex, false, false);
+                const sliderVisible = this.isGraphContainerVisible(this.sliderGraph);
+                const shouldFit = sliderVisible && !this.sliderHasBeenFit;
+                this.applyStageElementsToGraph(
+                    this.sliderGraph,
+                    this.sliderStageIndex,
+                    this.basePositionsSlider,
+                    this.edgeScaleFactorSlider,
+                    shouldFit,
+                    false,
+                );
+                if (sliderVisible && shouldFit) {
+                    this.sliderHasBeenFit = true;
+                }
             }
         }
     }
@@ -1493,7 +1666,9 @@ class DevelopmentTrajectoryController {
         this.stopAutoplay();
         this.currentData = null;
         this.latestResponseData = null;
-        this.basePositions = {};
+        this.basePositionsSmall = {};
+        this.basePositionsSlider = {};
+        this.stageGraphsHasBeenFit = STAGES.map(() => false);
         this.updateSelectionSummary();
         this.densityNoticeElement.classList.add('d-none');
 
