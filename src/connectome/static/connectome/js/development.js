@@ -56,6 +56,7 @@ const STORAGE = {
     edgeScaleSmall: 'connectome_development_edge_scale_small',
     edgeScaleSlider: 'connectome_development_edge_scale_slider',
     heatmapColormap: 'connectome_development_heatmap_colormap',
+    heatmapRowOrder: 'connectome_development_heatmap_row_order',
     sliderStage: 'connectome_development_slider_stage',
 };
 
@@ -80,6 +81,15 @@ const HEATMAP_COLORMAP_OPTIONS = [
 ];
 const HEATMAP_COLORMAP_VALUES = new Set(HEATMAP_COLORMAP_OPTIONS.map((option) => option.value));
 const DEFAULT_HEATMAP_COLORMAP = 'Viridis';
+const HEATMAP_ROW_ORDER_OPTIONS = [
+    { value: 'pre_post', label: 'Pre \u2192 Post (A-Z)' },
+    { value: 'post_pre', label: 'Post \u2192 Pre (A-Z)' },
+    { value: 'total_desc', label: 'Total synapses (high-low)' },
+    { value: 'peak_stage', label: 'Peak stage' },
+    { value: 'clustered', label: 'Clustered (trajectory)' },
+];
+const HEATMAP_ROW_ORDER_VALUES = new Set(HEATMAP_ROW_ORDER_OPTIONS.map((option) => option.value));
+const DEFAULT_HEATMAP_ROW_ORDER = 'pre_post';
 const PLOTLY_C0 = '#1f77b4';
 const TYPE_COLORS = Object.freeze({
     u: 'rgb(210,210,210)',
@@ -151,6 +161,10 @@ function normalizeHeatmapColormap(value) {
     return HEATMAP_COLORMAP_VALUES.has(value) ? value : DEFAULT_HEATMAP_COLORMAP;
 }
 
+function normalizeHeatmapRowOrder(value) {
+    return HEATMAP_ROW_ORDER_VALUES.has(value) ? value : DEFAULT_HEATMAP_ROW_ORDER;
+}
+
 function stageTickLabel(stage) {
     const [stagePart, hourPart] = stage.shortLabel.split(' ');
     return `${stagePart}<br>(${hourPart || ''})`;
@@ -217,6 +231,7 @@ class DevelopmentTrajectoryController {
             3.0,
         );
         this.heatmapColormap = normalizeHeatmapColormap(getLocalStr(STORAGE.heatmapColormap, DEFAULT_HEATMAP_COLORMAP));
+        this.heatmapRowOrder = normalizeHeatmapRowOrder(getLocalStr(STORAGE.heatmapRowOrder, DEFAULT_HEATMAP_ROW_ORDER));
         this.sliderStageIndex = clamp(parseInt(getLocalStr(STORAGE.sliderStage, '0'), 10) || 0, 0, STAGES.length - 1);
 
         this.autoplayTimer = null;
@@ -274,6 +289,7 @@ class DevelopmentTrajectoryController {
         this.layoutSpacingElement = document.getElementById('development-sliderSpacing');
         this.edgeScaleElement = document.getElementById('development-sliderEdgeScale');
         this.heatmapColormapElement = document.getElementById('development-heatmap-cmap');
+        this.heatmapRowOrderElement = document.getElementById('development-heatmap-row-order');
         this.clearButton = document.getElementById('development-clear-neurons');
     }
 
@@ -388,6 +404,9 @@ class DevelopmentTrajectoryController {
         if (this.heatmapColormapElement) {
             this.heatmapColormapElement.value = this.heatmapColormap;
         }
+        if (this.heatmapRowOrderElement) {
+            this.heatmapRowOrderElement.value = this.heatmapRowOrder;
+        }
 
         this.layoutSpacingElement.addEventListener('input', (event) => {
             this.syncActiveNetworkView();
@@ -434,6 +453,19 @@ class DevelopmentTrajectoryController {
                 setLocalStr(STORAGE.heatmapColormap, this.heatmapColormap);
                 if (this.currentData?.edges?.length) {
                     this.renderHeatmap(this.currentData);
+                }
+            });
+        }
+
+        if (this.heatmapRowOrderElement) {
+            this.heatmapRowOrderElement.addEventListener('change', (event) => {
+                this.heatmapRowOrder = normalizeHeatmapRowOrder(event.target.value);
+                this.heatmapRowOrderElement.value = this.heatmapRowOrder;
+                setLocalStr(STORAGE.heatmapRowOrder, this.heatmapRowOrder);
+                if (this.currentData?.edges?.length) {
+                    this.renderHeatmap(this.currentData);
+                } else {
+                    this.renderEmptyHeatmap('Select neurons or neuron classes to load trajectories.');
                 }
             });
         }
@@ -703,6 +735,121 @@ class DevelopmentTrajectoryController {
             edgeCount: entries.length,
             isAggregated: true,
         };
+    }
+
+    normalizeTrajectory(values) {
+        const total = values.reduce((sum, value) => sum + Number(value || 0), 0);
+        if (total <= 0) {
+            return values.map(() => 0);
+        }
+        return values.map((value) => Number(value || 0) / total);
+    }
+
+    trajectoryDistance(profileA, profileB) {
+        let sumSq = 0;
+        for (let index = 0; index < profileA.length; index += 1) {
+            const delta = profileA[index] - profileB[index];
+            sumSq += delta * delta;
+        }
+        return Math.sqrt(sumSq);
+    }
+
+    getClusteredHeatmapEntries(entries) {
+        if (entries.length <= 2) {
+            return entries;
+        }
+
+        if (entries.length > 900) {
+            return [...entries].sort((entryA, entryB) => {
+                const peakA = entryA.edge.stageValues.indexOf(Math.max(...entryA.edge.stageValues));
+                const peakB = entryB.edge.stageValues.indexOf(Math.max(...entryB.edge.stageValues));
+                if (peakA !== peakB) return peakA - peakB;
+                if (entryB.edge.total !== entryA.edge.total) return entryB.edge.total - entryA.edge.total;
+                return buildEdgeLabel(entryA.edge).localeCompare(buildEdgeLabel(entryB.edge));
+            });
+        }
+
+        const profiles = entries.map((entry) => this.normalizeTrajectory(entry.edge.stageValues));
+        let startIndex = 0;
+        for (let index = 1; index < entries.length; index += 1) {
+            if (entries[index].edge.total > entries[startIndex].edge.total) {
+                startIndex = index;
+            }
+        }
+
+        const remaining = new Set(entries.map((_, index) => index));
+        remaining.delete(startIndex);
+        const orderedIndices = [startIndex];
+
+        while (remaining.size) {
+            const lastIndex = orderedIndices[orderedIndices.length - 1];
+            let bestIndex = null;
+            let bestDistance = Infinity;
+            remaining.forEach((candidateIndex) => {
+                const distance = this.trajectoryDistance(profiles[lastIndex], profiles[candidateIndex]);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestIndex = candidateIndex;
+                } else if (distance === bestDistance) {
+                    const candidateTotal = entries[candidateIndex].edge.total;
+                    const bestTotal = bestIndex === null ? -Infinity : entries[bestIndex].edge.total;
+                    if (candidateTotal > bestTotal) {
+                        bestIndex = candidateIndex;
+                    }
+                }
+            });
+
+            if (bestIndex === null) {
+                break;
+            }
+            remaining.delete(bestIndex);
+            orderedIndices.push(bestIndex);
+        }
+
+        return orderedIndices.map((index) => entries[index]);
+    }
+
+    getHeatmapOrderedEntries(data) {
+        const entries = data.edges.map((edge, index) => ({ edge, index }));
+
+        if (this.heatmapRowOrder === 'post_pre') {
+            return entries.sort((entryA, entryB) => {
+                const postCompare = entryA.edge.post.localeCompare(entryB.edge.post);
+                if (postCompare !== 0) return postCompare;
+                return entryA.edge.pre.localeCompare(entryB.edge.pre);
+            });
+        }
+
+        if (this.heatmapRowOrder === 'total_desc') {
+            return entries.sort((entryA, entryB) => {
+                if (entryB.edge.total !== entryA.edge.total) {
+                    return entryB.edge.total - entryA.edge.total;
+                }
+                return buildEdgeLabel(entryA.edge).localeCompare(buildEdgeLabel(entryB.edge));
+            });
+        }
+
+        if (this.heatmapRowOrder === 'peak_stage') {
+            return entries.sort((entryA, entryB) => {
+                const peakA = entryA.edge.stageValues.indexOf(Math.max(...entryA.edge.stageValues));
+                const peakB = entryB.edge.stageValues.indexOf(Math.max(...entryB.edge.stageValues));
+                if (peakA !== peakB) return peakA - peakB;
+                const peakValueA = Math.max(...entryA.edge.stageValues);
+                const peakValueB = Math.max(...entryB.edge.stageValues);
+                if (peakValueB !== peakValueA) return peakValueB - peakValueA;
+                return buildEdgeLabel(entryA.edge).localeCompare(buildEdgeLabel(entryB.edge));
+            });
+        }
+
+        if (this.heatmapRowOrder === 'clustered') {
+            return this.getClusteredHeatmapEntries(entries);
+        }
+
+        return entries.sort((entryA, entryB) => {
+            const preCompare = entryA.edge.pre.localeCompare(entryB.edge.pre);
+            if (preCompare !== 0) return preCompare;
+            return entryA.edge.post.localeCompare(entryB.edge.post);
+        });
     }
 
     getSliderRenderPositions() {
@@ -1589,10 +1736,15 @@ class DevelopmentTrajectoryController {
             return;
         }
 
+        if (this.heatmapRowOrderElement) {
+            this.heatmapRowOrderElement.disabled = false;
+        }
+
         const stageTickLabels = STAGES.map((stage) => stageTickLabel(stage));
         const stageHoverLabels = STAGES.map((stage) => stageHoverLabel(stage));
-        const yLabels = data.edges.map((edge) => buildEdgeLabel(edge));
-        const zValues = data.edges.map((edge) => edge.stageValues);
+        const orderedEntries = this.getHeatmapOrderedEntries(data);
+        const yLabels = orderedEntries.map(({ edge }) => buildEdgeLabel(edge));
+        const zValues = orderedEntries.map(({ edge }) => edge.stageValues);
         const plotHeight = this.heatmapElement?.clientHeight || 460;
         const usableHeight = Math.max(120, plotHeight - 64);
         const minTickSpacingPx = 12;
@@ -1668,8 +1820,11 @@ class DevelopmentTrajectoryController {
             const rowIndex = yLabels.indexOf(rowLabel);
             if (rowIndex === -1) return;
 
-            this.selectedEdgeIndex = rowIndex;
-            const selectedEdge = this.currentData?.edges?.[rowIndex];
+            const selectedEntry = orderedEntries[rowIndex];
+            if (!selectedEntry) return;
+
+            this.selectedEdgeIndex = selectedEntry.index;
+            const selectedEdge = selectedEntry.edge;
             if (selectedEdge) {
                 this.trendPreFilter = selectedEdge.pre;
                 this.trendPostFilter = selectedEdge.post;
@@ -1982,6 +2137,10 @@ class DevelopmentTrajectoryController {
     }
 
     renderEmptyHeatmap(message) {
+        if (this.heatmapRowOrderElement) {
+            this.heatmapRowOrderElement.disabled = true;
+        }
+
         Plotly.react(this.heatmapElement, [], {
             margin: { t: 12, r: 8, b: 30, l: 30 },
             xaxis: { visible: false },

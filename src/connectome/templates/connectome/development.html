@@ -170,7 +170,19 @@
       <div class="row g-3">
         <div class="col-xl-8">
           <div class="card card-body development-panel">
-            <h6 class="mb-2">Edge Trajectory Heatmap</h6>
+            <div class="development-heatmap-head mb-2">
+              <h6 class="mb-0">Edge Trajectory Heatmap</h6>
+              <div class="development-heatmap-order">
+                <label class="visually-hidden" for="development-heatmap-row-order">Heatmap row order</label>
+                <select id="development-heatmap-row-order" class="form-select form-select-sm" aria-label="Heatmap row order">
+                  <option value="pre_post" selected>Pre → Post (A-Z)</option>
+                  <option value="post_pre">Post → Pre (A-Z)</option>
+                  <option value="total_desc">Total synapses (high-low)</option>
+                  <option value="peak_stage">Peak stage</option>
+                  <option value="clustered">Clustered (trajectory)</option>
+                </select>
+              </div>
+            </div>
             <div id="development-heatmap" class="development-plot"></div>
             <div class="development-panel-note mt-2">Click a heatmap row to inspect that edge trajectory in detail.</div>
           </div>
