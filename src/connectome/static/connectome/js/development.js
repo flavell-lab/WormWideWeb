@@ -180,6 +180,7 @@ class DevelopmentTrajectoryController {
         this.stageGraphsHasBeenFit = [];
         this.sliderGraph = null;
         this.sliderHasBeenFit = false;
+        this.sliderUserPositions = {};
         this.activeNetworkView = 'small';
 
         this.selectedEdgeIndex = null;
@@ -451,6 +452,7 @@ class DevelopmentTrajectoryController {
     relayoutSliderNetwork() {
         if (!this.currentData?.edges?.length) return;
         this.basePositionsSlider = this.computeBasePositions(this.currentData, this.layoutSpacingSlider);
+        this.sliderUserPositions = {};
         this.sliderHasBeenFit = false;
         this.updateSliderStageView();
     }
@@ -471,6 +473,7 @@ class DevelopmentTrajectoryController {
             this.basePositionsSmall = this.computeBasePositions(this.currentData, this.layoutSpacingSmall);
             this.basePositionsSlider = this.computeBasePositions(this.currentData, this.layoutSpacingSlider);
             this.stageGraphsHasBeenFit = STAGES.map(() => false);
+            this.sliderUserPositions = {};
             this.sliderHasBeenFit = false;
         }
         this.renderSmallMultiples(this.currentData);
@@ -519,6 +522,20 @@ class DevelopmentTrajectoryController {
     isGraphContainerVisible(graph) {
         const container = graph?.container?.();
         return Boolean(container && container.offsetParent !== null && container.clientWidth > 0 && container.clientHeight > 0);
+    }
+
+    getSliderRenderPositions() {
+        if (!this.sliderUserPositions || !Object.keys(this.sliderUserPositions).length) {
+            return this.basePositionsSlider;
+        }
+
+        const mergedPositions = { ...this.basePositionsSlider };
+        Object.entries(this.sliderUserPositions).forEach(([nodeId, position]) => {
+            if (nodeId in mergedPositions) {
+                mergedPositions[nodeId] = position;
+            }
+        });
+        return mergedPositions;
     }
 
     initNeuronSelector() {
@@ -595,7 +612,20 @@ class DevelopmentTrajectoryController {
 
     initSliderGraph() {
         this.sliderGraph = this.createGraph('development-slider-graph', false);
+        this.initSliderDragPersistence();
         this.updateSliderStageText();
+    }
+
+    initSliderDragPersistence() {
+        if (!this.sliderGraph) return;
+        this.sliderGraph.on('dragfree', 'node', (event) => {
+            const node = event.target;
+            const position = node.position();
+            this.sliderUserPositions[node.id()] = {
+                x: position.x,
+                y: position.y,
+            };
+        });
     }
 
     createGraph(containerId, compactMode) {
@@ -1018,6 +1048,7 @@ class DevelopmentTrajectoryController {
         this.basePositionsSmall = this.computeBasePositions(this.currentData, this.layoutSpacingSmall);
         this.basePositionsSlider = this.computeBasePositions(this.currentData, this.layoutSpacingSlider);
         this.stageGraphsHasBeenFit = STAGES.map(() => false);
+        this.sliderUserPositions = {};
         this.sliderHasBeenFit = false;
 
         this.updateSelectionSummary();
@@ -1631,7 +1662,7 @@ class DevelopmentTrajectoryController {
         this.applyStageElementsToGraph(
             this.sliderGraph,
             this.sliderStageIndex,
-            this.basePositionsSlider,
+            this.getSliderRenderPositions(),
             this.edgeScaleFactorSlider,
             shouldFit,
             false,
@@ -1697,7 +1728,7 @@ class DevelopmentTrajectoryController {
                 this.applyStageElementsToGraph(
                     this.sliderGraph,
                     this.sliderStageIndex,
-                    this.basePositionsSlider,
+                    this.getSliderRenderPositions(),
                     this.edgeScaleFactorSlider,
                     shouldFit,
                     false,
@@ -1716,6 +1747,7 @@ class DevelopmentTrajectoryController {
         this.basePositionsSmall = {};
         this.basePositionsSlider = {};
         this.stageGraphsHasBeenFit = STAGES.map(() => false);
+        this.sliderUserPositions = {};
         this.updateSelectionSummary();
         this.densityNoticeElement.classList.add('d-none');
 
