@@ -1783,7 +1783,7 @@ class DevelopmentTrajectoryController {
                 len: 1,
             },
         }], {
-            margin: { t: 10, r: 92, b: 44, l: leftMargin },
+            margin: { t: 10, r: 108, b: 44, l: leftMargin },
             xaxis: {
                 title: 'Development stage',
                 tickmode: 'array',
@@ -1795,7 +1795,7 @@ class DevelopmentTrajectoryController {
                 text: 'Synapse count',
                 xref: 'paper',
                 yref: 'paper',
-                x: 1.14,
+                x: 1.11,
                 y: 0.5,
                 showarrow: false,
                 textangle: 90,
