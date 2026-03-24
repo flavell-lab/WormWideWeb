@@ -2326,8 +2326,8 @@ class DevelopmentTrajectoryController {
     }
 
     applyCitation() {
-        const citationElement = document.getElementById('development-citation');
-        if (!citationElement) return;
+        const citationElements = document.querySelectorAll('.development-citation');
+        if (!citationElements.length) return;
 
         const citations = [...new Set(
             (datasets || [])
@@ -2336,7 +2336,10 @@ class DevelopmentTrajectoryController {
                 .filter(Boolean)
         )];
 
-        citationElement.textContent = citations.join(', ') || 'Witvliet et al., 2021';
+        const citationText = citations.join(', ') || 'Witvliet et al., 2021';
+        citationElements.forEach((element) => {
+            element.textContent = citationText;
+        });
     }
 }
 
