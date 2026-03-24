@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Connectome - Development{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}" integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{% static 'core/css/tomselect_selector_n.css' %}">
+<link rel="stylesheet" href="{% static 'connectome/css/connectome_common.css' %}">
+<link rel="stylesheet" href="{% static 'connectome/css/development.css' %}">
+{% endblock %}
+
+{% block main %}
+<div id="connectome-development-container" class="container-xxl py-3">
+  <div class="card card-body mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <div class="tom-select-container development-toolbar-select" id="developmentSelectNeuronContainer">
+        <input id="development-select-neuron" autocomplete="off" type="text" class="form-control form-control-sm"
+          placeholder="Select neuron(s) or neuron class(es)">
+      </div>
+
+      <button id="development-clear-neurons" class="btn btn-light btn-sm" type="button"
+        aria-label="Clear all selected neurons" data-bs-toggle="tooltip" title="Clear all selected neurons">
+        Clear
+      </button>
+
+      <div class="btn-group btn-group-sm" role="group" aria-label="Edge scope mode">
+        <input type="radio" class="btn-check" name="development-edge-scope" id="development-scope-within" value="within" autocomplete="off">
+        <label class="btn btn-outline-secondary" for="development-scope-within">Within selected</label>
+
+        <input type="radio" class="btn-check" name="development-edge-scope" id="development-scope-neighbors" value="neighbors" autocomplete="off">
+        <label class="btn btn-outline-secondary" for="development-scope-neighbors">Include neighbors</label>
+      </div>
+
+      <div class="form-check form-switch development-switch-wrap ms-1">
+        <input class="form-check-input" type="checkbox" role="switch" id="development-switch-electrical">
+        <label class="form-check-label" for="development-switch-electrical">Include electrical</label>
+      </div>
+
+      <span id="development-selection-summary" class="development-selection-summary ms-auto">No neurons selected</span>
+      <div id="development-spinner" class="spinner-border spinner-border-sm" role="status" style="display:none">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <div id="development-density-notice" class="alert alert-warning development-density-notice d-none mt-3 mb-0" role="status">
+      Large selection detected. Rendering all edges may take longer, but no edges are hidden.
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs" id="development-view-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="development-tab-heatmap" data-bs-toggle="tab" data-bs-target="#development-pane-heatmap"
+        type="button" role="tab" aria-controls="development-pane-heatmap" aria-selected="true">
+        Edge Heatmap + Trend
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="development-tab-multiples" data-bs-toggle="tab" data-bs-target="#development-pane-multiples"
+        type="button" role="tab" aria-controls="development-pane-multiples" aria-selected="false">
+        Small-Multiple Networks
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="development-tab-slider" data-bs-toggle="tab" data-bs-target="#development-pane-slider"
+        type="button" role="tab" aria-controls="development-pane-slider" aria-selected="false">
+        Time-Slider Network
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content mt-3">
+    <section class="tab-pane fade show active" id="development-pane-heatmap" role="tabpanel" aria-labelledby="development-tab-heatmap">
+      <div class="row g-3">
+        <div class="col-xl-8">
+          <div class="card card-body development-panel">
+            <h6 class="mb-2">Edge Trajectory Heatmap</h6>
+            <div id="development-heatmap" class="development-plot"></div>
+            <div class="development-panel-note mt-2">Click a heatmap row to inspect that edge trajectory in detail.</div>
+          </div>
+        </div>
+        <div class="col-xl-4">
+          <div class="card card-body development-panel">
+            <h6 class="mb-2">Selected Edge Trend</h6>
+            <div id="development-trend" class="development-plot development-trend-plot"></div>
+            <div id="development-trend-details" class="development-trend-details"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-pane fade" id="development-pane-multiples" role="tabpanel" aria-labelledby="development-tab-multiples">
+      <div id="development-stage-grid" class="development-stage-grid"></div>
+    </section>
+
+    <section class="tab-pane fade" id="development-pane-slider" role="tabpanel" aria-labelledby="development-tab-slider">
+      <div class="card card-body development-panel">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+          <button id="development-slider-play" class="btn btn-light btn-sm" type="button" aria-label="Play stage animation">
+            <i class="bi bi-play-fill" aria-hidden="true"></i>
+            Play
+          </button>
+
+          <div class="development-slider-wrap">
+            <input id="development-stage-slider" type="range" min="0" max="6" step="1" value="0" class="form-range mb-0" aria-label="Stage slider">
+          </div>
+
+          <span id="development-stage-label" class="development-stage-label">L1 (~0h)</span>
+          <span id="development-stage-summary" class="development-stage-summary">0 edges shown</span>
+        </div>
+
+        <div id="development-slider-graph" class="development-slider-graph"></div>
+        <div class="development-watermark">Connectome data: <span id="development-citation">Witvliet et al., 2021</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ IMPORT_CDN.tom_select_js.url }}" integrity="{{ IMPORT_CDN.tom_select_js.integrity }}"
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.plotly.url }}" integrity="{{ IMPORT_CDN.plotly.integrity }}" crossorigin="anonymous"
+  referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape.url }}" integrity="{{ IMPORT_CDN.cytoscape.integrity }}" crossorigin="anonymous"
+  referrerpolicy="no-referrer"></script>
+
+{{ datasets_json|json_script:"connectome-development-datasets" }}
+<script>const datasets = JSON.parse(JSON.parse(document.getElementById('connectome-development-datasets').textContent));</script>
+<script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
+<script type="module" src="{% static 'connectome/js/development.js' %}" defer></script>
+{% endblock %}

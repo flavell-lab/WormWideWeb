@@ -5,7 +5,7 @@ import networkx as nx
 from django.test import Client, RequestFactory, SimpleTestCase, override_settings
 
 import connectome.graph_data
-from connectome.views import find_paths, get_edges
+from connectome.views import development, find_paths, get_edges
 
 
 def _empty_response():
@@ -133,3 +133,22 @@ class FindPathsViewTests(SimpleTestCase):
             response = find_paths(request)
 
         self.assertEqual(response.status_code, 400)
+
+
+class DevelopmentViewTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("connectome.views.connectome_witvliet_datasets")
+    def test_development_view_renders_with_witvliet_metadata(self, mock_connectome_witvliet_datasets):
+        mock_connectome_witvliet_datasets.return_value = json.dumps(
+            [{"dataset_id": "witvliet_2020_1", "name": "Dataset 1"}]
+        )
+
+        request = self.factory.get("/connectome/development/")
+        response = development(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"connectome-development-datasets", response.content)
+        self.assertIn(b"witvliet_2020_1", response.content)
+        mock_connectome_witvliet_datasets.assert_called_once_with()

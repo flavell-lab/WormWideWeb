@@ -12,6 +12,16 @@ from collections import defaultdict
 import connectome.graph_data 
 
 CONNECTOME_CACHE_TTL = 60 * 60 * 24 * 30
+WITVLIET_DATASET_IDS = [
+    "witvliet_2020_1",
+    "witvliet_2020_2",
+    "witvliet_2020_3",
+    "witvliet_2020_4",
+    "witvliet_2020_5",
+    "witvliet_2020_6",
+    "witvliet_2020_7",
+    "witvliet_2020_8",
+]
 
 
 def _edge_cache_key(dataset_id, neuron_or_class):
@@ -79,6 +89,31 @@ def connectome_datasets(cache_key=None):
     return datasets_json
 
 
+def connectome_witvliet_datasets(cache_key=None):
+    cache_key = cache_key or "connectome_witvliet_datasets_json"
+    datasets_json = cache.get(cache_key)
+    if datasets_json is None:
+        datasets = Dataset.objects.filter(dataset_id__in=WITVLIET_DATASET_IDS).values(
+            "name",
+            "dataset_id",
+            "dataset_type",
+            "description",
+            "animal_visual_time",
+            "citation",
+            "dataset_sha256",
+        )
+        dataset_by_id = {dataset["dataset_id"]: dataset for dataset in datasets}
+        ordered_datasets = [
+            dataset_by_id[dataset_id]
+            for dataset_id in WITVLIET_DATASET_IDS
+            if dataset_id in dataset_by_id
+        ]
+        datasets_json = json.dumps(ordered_datasets, cls=DjangoJSONEncoder)
+        cache.set(cache_key, datasets_json, timeout=CONNECTOME_CACHE_TTL)
+
+    return datasets_json
+
+
 @cache_page(60*60*24*30)
 def index(request):
     context = {}
@@ -105,6 +140,13 @@ def compare(request):
     context = {'datasets_json': connectome_datasets()}
 
     return render(request, "connectome/compare.html", context)
+
+
+@cache_page(60*60*24*30)
+def development(request):
+    context = {"datasets_json": connectome_witvliet_datasets()}
+
+    return render(request, "connectome/development.html", context)
 
 
 @cache_control(public=True, max_age=60*60*24*90)
