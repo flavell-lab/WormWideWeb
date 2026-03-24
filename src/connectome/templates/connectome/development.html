@@ -70,19 +70,16 @@
               <label class="form-check-label" for="development-switch-individual">Show individual neuron (i.e. split D/V &
                 L/R)</label>
             </div>
-            <div class="form-check form-switch mb-2">
+            <div class="form-check form-switch mb-0">
               <input class="form-check-input" type="checkbox" role="switch" id="development-switch-connected" checked>
               <label class="form-check-label" for="development-switch-connected">Show connected neuron</label>
-            </div>
-            <div class="form-check form-switch mb-0 development-switch-wrap">
-              <input class="form-check-input" type="checkbox" role="switch" id="development-switch-electrical" checked>
-              <label class="form-check-label" for="development-switch-electrical">Show electrical synapse</label>
             </div>
           </div>
 
           <div class="col-lg-4">
             <h6 class="mb-2">Synapses</h6>
             <div class="settings-help mb-2">Show edges with at least:</div>
+            <div class="small text-muted mb-2">Gap junctions are not included in this feature.</div>
             <div class="settings-threshold-grid">
               <div class="settings-threshold-item">
                 <label for="development-threshold-c" class="form-label mb-1">Chemical</label>
@@ -91,15 +88,6 @@
                   <input type="number" id="development-threshold-c" class="form-control form-control-sm text-center"
                     value="0" min="0">
                   <button type="button" class="btn btn-secondary btn-sm" id="development-plus-c" aria-label="Increase chemical threshold">+</button>
-                </div>
-              </div>
-              <div class="settings-threshold-item">
-                <label for="development-threshold-e" class="form-label mb-1">Electrical</label>
-                <div class="input-group input-group-sm flex-nowrap">
-                  <button type="button" class="btn btn-secondary btn-sm" id="development-minus-e" aria-label="Decrease electrical threshold">-</button>
-                  <input type="number" id="development-threshold-e" class="form-control form-control-sm text-center"
-                    value="0" min="0">
-                  <button type="button" class="btn btn-secondary btn-sm" id="development-plus-e" aria-label="Increase electrical threshold">+</button>
                 </div>
               </div>
             </div>

@@ -47,9 +47,7 @@ const STORAGE = {
     selectedValues: 'connectome_development_selected_values',
     showIndividualNeuron: 'connectome_development_show_individual_neuron',
     showConnectedNeuron: 'connectome_development_show_connected_neuron',
-    includeElectrical: 'connectome_development_include_electrical',
     thresholdChemical: 'connectome_development_threshold_chemical',
-    thresholdElectrical: 'connectome_development_threshold_electrical',
     layout: 'connectome_development_layout',
     layoutSpacing: 'connectome_development_layout_spacing',
     edgeScale: 'connectome_development_edge_scale',
@@ -106,9 +104,6 @@ function stageValueLabel(value) {
 }
 
 function buildEdgeLabel(edge) {
-    if (edge.type === 'e') {
-        return `${edge.pre} - ${edge.post} (gap junction)`;
-    }
     return `${edge.pre} \u2192 ${edge.post}`;
 }
 
@@ -174,9 +169,7 @@ class DevelopmentTrajectoryController {
 
         this.showIndividualNeuron = getLocalBool(STORAGE.showIndividualNeuron, false);
         this.showConnectedNeuron = getLocalBool(STORAGE.showConnectedNeuron, true);
-        this.includeElectrical = getLocalBool(STORAGE.includeElectrical, true);
         this.thresholdChemical = parsePositiveInt(getLocalStr(STORAGE.thresholdChemical, '0'), 0);
-        this.thresholdElectrical = parsePositiveInt(getLocalStr(STORAGE.thresholdElectrical, '0'), 0);
         this.layoutName = normalizeLayout(getLocalStr(STORAGE.layout, DEFAULT_LAYOUT));
         this.layoutSpacing = parseClampedFloat(getLocalStr(STORAGE.layoutSpacing, '1'), 1, 0.25, 1.5);
         this.edgeScaleFactor = parseClampedFloat(getLocalStr(STORAGE.edgeScale, '1'), 1, 0.1, 3.0);
@@ -228,13 +221,9 @@ class DevelopmentTrajectoryController {
         this.layoutItemElements = [...document.querySelectorAll('#connectome-development-container #development-dropdownLayout + .dropdown-menu .dropdown-item')];
         this.showIndividualElement = document.getElementById('development-switch-individual');
         this.showConnectedElement = document.getElementById('development-switch-connected');
-        this.includeElectricalElement = document.getElementById('development-switch-electrical');
         this.thresholdChemicalElement = document.getElementById('development-threshold-c');
-        this.thresholdElectricalElement = document.getElementById('development-threshold-e');
         this.thresholdChemicalMinusButton = document.getElementById('development-minus-c');
         this.thresholdChemicalPlusButton = document.getElementById('development-plus-c');
-        this.thresholdElectricalMinusButton = document.getElementById('development-minus-e');
-        this.thresholdElectricalPlusButton = document.getElementById('development-plus-e');
         this.layoutSpacingElement = document.getElementById('development-sliderSpacing');
         this.edgeScaleElement = document.getElementById('development-sliderEdgeScale');
         this.heatmapColormapElement = document.getElementById('development-heatmap-cmap');
@@ -254,7 +243,6 @@ class DevelopmentTrajectoryController {
 
         this.showIndividualElement.checked = this.showIndividualNeuron;
         this.showConnectedElement.checked = this.showConnectedNeuron;
-        this.includeElectricalElement.checked = this.includeElectrical;
 
         this.showIndividualElement.addEventListener('change', () => {
             this.showIndividualNeuron = this.showIndividualElement.checked;
@@ -266,12 +254,6 @@ class DevelopmentTrajectoryController {
             this.showConnectedNeuron = this.showConnectedElement.checked;
             setLocalBool(STORAGE.showConnectedNeuron, this.showConnectedNeuron);
             this.scheduleRefresh();
-        });
-
-        this.includeElectricalElement.addEventListener('change', () => {
-            this.includeElectrical = this.includeElectricalElement.checked;
-            setLocalBool(STORAGE.includeElectrical, this.includeElectrical);
-            this.scheduleLocalRerender();
         });
 
         this.clearButton.addEventListener('click', () => {
@@ -321,52 +303,30 @@ class DevelopmentTrajectoryController {
 
     initThresholdControls() {
         this.thresholdChemicalElement.value = String(this.thresholdChemical);
-        this.thresholdElectricalElement.value = String(this.thresholdElectrical);
 
         this.thresholdChemicalElement.addEventListener('input', (event) => {
-            this.updateThreshold('chemical', event.target.value, false);
+            this.updateThreshold(event.target.value, false);
         });
         this.thresholdChemicalElement.addEventListener('change', (event) => {
-            this.updateThreshold('chemical', event.target.value, true);
-        });
-        this.thresholdElectricalElement.addEventListener('input', (event) => {
-            this.updateThreshold('electrical', event.target.value, false);
-        });
-        this.thresholdElectricalElement.addEventListener('change', (event) => {
-            this.updateThreshold('electrical', event.target.value, true);
+            this.updateThreshold(event.target.value, true);
         });
 
         this.thresholdChemicalMinusButton.addEventListener('click', (event) => {
             event.preventDefault();
-            this.updateThreshold('chemical', this.thresholdChemical - 1, true);
+            this.updateThreshold(this.thresholdChemical - 1, true);
         });
         this.thresholdChemicalPlusButton.addEventListener('click', (event) => {
             event.preventDefault();
-            this.updateThreshold('chemical', this.thresholdChemical + 1, true);
-        });
-        this.thresholdElectricalMinusButton.addEventListener('click', (event) => {
-            event.preventDefault();
-            this.updateThreshold('electrical', this.thresholdElectrical - 1, true);
-        });
-        this.thresholdElectricalPlusButton.addEventListener('click', (event) => {
-            event.preventDefault();
-            this.updateThreshold('electrical', this.thresholdElectrical + 1, true);
+            this.updateThreshold(this.thresholdChemical + 1, true);
         });
     }
 
-    updateThreshold(kind, value, rerenderNow) {
-        const nextValue = parsePositiveInt(value, kind === 'chemical' ? this.thresholdChemical : this.thresholdElectrical);
-        if (kind === 'chemical') {
-            if (nextValue === this.thresholdChemical && String(nextValue) === this.thresholdChemicalElement.value) return;
-            this.thresholdChemical = nextValue;
-            this.thresholdChemicalElement.value = String(nextValue);
-            setLocalStr(STORAGE.thresholdChemical, String(nextValue));
-        } else {
-            if (nextValue === this.thresholdElectrical && String(nextValue) === this.thresholdElectricalElement.value) return;
-            this.thresholdElectrical = nextValue;
-            this.thresholdElectricalElement.value = String(nextValue);
-            setLocalStr(STORAGE.thresholdElectrical, String(nextValue));
-        }
+    updateThreshold(value, rerenderNow) {
+        const nextValue = parsePositiveInt(value, this.thresholdChemical);
+        if (nextValue === this.thresholdChemical && String(nextValue) === this.thresholdChemicalElement.value) return;
+        this.thresholdChemical = nextValue;
+        this.thresholdChemicalElement.value = String(nextValue);
+        setLocalStr(STORAGE.thresholdChemical, String(nextValue));
 
         if (rerenderNow) {
             this.renderFromLatestResponse();
@@ -538,9 +498,9 @@ class DevelopmentTrajectoryController {
                     selector: 'edge',
                     style: {
                         width: 'data(width)',
-                        'line-color': (edge) => (edge.data('type') === 'e' ? '#94a3b8' : '#1f2937'),
-                        'target-arrow-color': (edge) => (edge.data('type') === 'e' ? '#94a3b8' : '#1f2937'),
-                        'target-arrow-shape': (edge) => (edge.data('type') === 'e' ? 'none' : 'triangle'),
+                        'line-color': '#1f2937',
+                        'target-arrow-color': '#1f2937',
+                        'target-arrow-shape': 'triangle',
                         'curve-style': 'bezier',
                         opacity: 0.92,
                     },
@@ -772,8 +732,8 @@ class DevelopmentTrajectoryController {
     transformResponse(responseData) {
         const synapses = responseData?.synapses || [];
         const edges = synapses
+            .filter((synapse) => String(synapse.type || '').toLowerCase() === 'c')
             .map((synapse) => {
-                const edgeType = String(synapse.type || '').toLowerCase();
                 const listCount = WITVLIET_DATASET_IDS.map((_, index) => Number(synapse.list_count?.[index] || 0));
                 const l4Mean = (listCount[6] + listCount[7]) / 2;
                 const stageValues = [
@@ -805,10 +765,10 @@ class DevelopmentTrajectoryController {
                 ];
 
                 return {
-                    key: `${synapse.pre}!${synapse.post}!${edgeType}`,
+                    key: `${synapse.pre}!${synapse.post}!c`,
                     pre: synapse.pre,
                     post: synapse.post,
-                    type: edgeType,
+                    type: 'c',
                     stageValues,
                     stageMins,
                     stageMaxs,
@@ -816,12 +776,9 @@ class DevelopmentTrajectoryController {
                     total: stageValues.reduce((acc, value) => acc + value, 0),
                 };
             })
-            .filter((edge) => edge.type === 'c' || edge.type === 'e')
-            .filter((edge) => this.includeElectrical || edge.type === 'c')
             .filter((edge) => {
-                const threshold = edge.type === 'e' ? this.thresholdElectrical : this.thresholdChemical;
-                if (threshold <= 0) return true;
-                return Math.max(...edge.stageValues) >= threshold;
+                if (this.thresholdChemical <= 0) return true;
+                return Math.max(...edge.stageValues) >= this.thresholdChemical;
             })
             .sort((edgeA, edgeB) => {
                 const preCompare = edgeA.pre.localeCompare(edgeB.pre);
