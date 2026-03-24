@@ -23,22 +23,32 @@
         Clear
       </button>
 
-      <div class="btn-group btn-group-sm" role="group" aria-label="Edge scope mode">
-        <input type="radio" class="btn-check" name="development-edge-scope" id="development-scope-within" value="within" autocomplete="off">
-        <label class="btn btn-outline-secondary" for="development-scope-within">Within selected</label>
-
-        <input type="radio" class="btn-check" name="development-edge-scope" id="development-scope-neighbors" value="neighbors" autocomplete="off">
-        <label class="btn btn-outline-secondary" for="development-scope-neighbors">Include neighbors</label>
+      <div class="dropdown btn-group btn-group-sm">
+        <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="development-dropdownLayout"
+          data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select layout">
+          Layout
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="development-dropdownLayout" role="menu">
+          <li><a class="dropdown-item" href="#" role="menuitem" data-value="grid">Grid</a></li>
+          <li><a class="dropdown-item" href="#" role="menuitem" data-value="circle">Circle</a></li>
+          <li><a class="dropdown-item active" href="#" role="menuitem" data-value="concentric">Concentric</a></li>
+          <li><a class="dropdown-item" href="#" role="menuitem" data-value="breadthfirst">Hierarchy (BFS)</a></li>
+          <li><a class="dropdown-item" href="#" role="menuitem" data-value="dagre">Hierarchy (Dagre)</a></li>
+          <li><a class="dropdown-item" href="#" role="menuitem" data-value="cose">Compound Spring Embedder</a></li>
+        </ul>
       </div>
 
-      <div class="form-check form-switch development-switch-wrap ms-1">
-        <input class="form-check-input" type="checkbox" role="switch" id="development-switch-electrical">
-        <label class="form-check-label" for="development-switch-electrical">Include electrical</label>
-      </div>
+      <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse"
+        data-bs-target="#developmentCollapseConfig" aria-expanded="false" aria-controls="developmentCollapseConfig"
+        aria-label="More settings">
+        <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+      </button>
 
       <span id="development-selection-summary" class="development-selection-summary ms-auto">No neurons selected</span>
-      <div id="development-spinner" class="spinner-border spinner-border-sm" role="status" style="display:none">
-        <span class="visually-hidden">Loading...</span>
+      <div class="development-menu-spinner-slot">
+        <div id="development-spinner" class="spinner-border spinner-border-sm" role="status" style="display:none">
+          <span class="visually-hidden">Loading...</span>
+        </div>
       </div>
     </div>
 
@@ -47,28 +57,100 @@
     </div>
   </div>
 
-  <ul class="nav nav-tabs" id="development-view-tabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="development-tab-heatmap" data-bs-toggle="tab" data-bs-target="#development-pane-heatmap"
-        type="button" role="tab" aria-controls="development-pane-heatmap" aria-selected="true">
-        Edge Heatmap + Trend
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="development-tab-multiples" data-bs-toggle="tab" data-bs-target="#development-pane-multiples"
-        type="button" role="tab" aria-controls="development-pane-multiples" aria-selected="false">
-        Small-Multiple Networks
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="development-tab-slider" data-bs-toggle="tab" data-bs-target="#development-pane-slider"
-        type="button" role="tab" aria-controls="development-pane-slider" aria-selected="false">
-        Time-Slider Network
-      </button>
-    </li>
-  </ul>
+  <div class="collapse mt-3 mb-3" id="developmentCollapseConfig">
+    <div class="card card-body">
+      <div class="settings-compact mt-2">
+        <div class="row g-3 align-items-start">
+          <div class="col-lg-4">
+            <h6 class="mb-2">Neurons</h6>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="development-switch-individual">
+              <label class="form-check-label" for="development-switch-individual">Show individual neuron (i.e. split D/V &
+                L/R)</label>
+            </div>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="development-switch-connected" checked>
+              <label class="form-check-label" for="development-switch-connected">Show connected neuron</label>
+            </div>
+            <div class="form-check form-switch mb-0 development-switch-wrap">
+              <input class="form-check-input" type="checkbox" role="switch" id="development-switch-electrical" checked>
+              <label class="form-check-label" for="development-switch-electrical">Show electrical synapse</label>
+            </div>
+          </div>
 
-  <div class="tab-content mt-3">
+          <div class="col-lg-4">
+            <h6 class="mb-2">Synapses</h6>
+            <div class="settings-help mb-2">Show edges with at least:</div>
+            <div class="settings-threshold-grid">
+              <div class="settings-threshold-item">
+                <label for="development-threshold-c" class="form-label mb-1">Chemical</label>
+                <div class="input-group input-group-sm flex-nowrap">
+                  <button type="button" class="btn btn-secondary btn-sm" id="development-minus-c" aria-label="Decrease chemical threshold">-</button>
+                  <input type="number" id="development-threshold-c" class="form-control form-control-sm text-center"
+                    value="0" min="0">
+                  <button type="button" class="btn btn-secondary btn-sm" id="development-plus-c" aria-label="Increase chemical threshold">+</button>
+                </div>
+              </div>
+              <div class="settings-threshold-item">
+                <label for="development-threshold-e" class="form-label mb-1">Electrical</label>
+                <div class="input-group input-group-sm flex-nowrap">
+                  <button type="button" class="btn btn-secondary btn-sm" id="development-minus-e" aria-label="Decrease electrical threshold">-</button>
+                  <input type="number" id="development-threshold-e" class="form-control form-control-sm text-center"
+                    value="0" min="0">
+                  <button type="button" class="btn btn-secondary btn-sm" id="development-plus-e" aria-label="Increase electrical threshold">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <h6 class="mb-2">Layout &amp; Edge scaling</h6>
+            <div class="settings-slider-group mb-3">
+              <label for="development-sliderSpacing" class="form-label mb-1">Spacing</label>
+              <input type="range" class="form-range" min="0.25" max="1.5" step="0.05" id="development-sliderSpacing">
+            </div>
+            <div class="settings-slider-group">
+              <label for="development-sliderEdgeScale" class="form-label mb-1">Factor</label>
+              <input type="range" class="form-range" min="0.1" max="3.0" step="0.05" id="development-sliderEdgeScale">
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-2">
+          <button type="button" class="btn btn-secondary" data-bs-toggle="collapse"
+            data-bs-target="#developmentCollapseConfig" aria-expanded="true"
+            aria-controls="developmentCollapseConfig" aria-label="Close settings">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="development-view-switch-wrap">
+    <ul class="nav nav-pills development-view-switch" id="development-view-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="development-tab-heatmap" data-bs-toggle="tab" data-bs-target="#development-pane-heatmap"
+          type="button" role="tab" aria-controls="development-pane-heatmap" aria-selected="true">
+          Edge Heatmap + Trend
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="development-tab-multiples" data-bs-toggle="tab" data-bs-target="#development-pane-multiples"
+          type="button" role="tab" aria-controls="development-pane-multiples" aria-selected="false">
+          Small-Multiple Networks
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="development-tab-slider" data-bs-toggle="tab" data-bs-target="#development-pane-slider"
+          type="button" role="tab" aria-controls="development-pane-slider" aria-selected="false">
+          Time-Slider Network
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <div class="tab-content development-tab-content">
     <section class="tab-pane fade show active" id="development-pane-heatmap" role="tabpanel" aria-labelledby="development-tab-heatmap">
       <div class="row g-3">
         <div class="col-xl-8">
@@ -123,6 +205,9 @@
   referrerpolicy="no-referrer"></script>
 <script src="{{ IMPORT_CDN.cytoscape.url }}" integrity="{{ IMPORT_CDN.cytoscape.integrity }}" crossorigin="anonymous"
   referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.dagre.url }}" integrity="{{ IMPORT_CDN.dagre.integrity }}" crossorigin="anonymous"
+  referrerpolicy="no-referrer"></script>
+<script src="{{ IMPORT_CDN.cytoscape_dagre.url }}"></script>
 
 {{ datasets_json|json_script:"connectome-development-datasets" }}
 <script>const datasets = JSON.parse(JSON.parse(document.getElementById('connectome-development-datasets').textContent));</script>

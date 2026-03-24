@@ -35,10 +35,27 @@ const STAGES = [
 
 const STORAGE = {
     selectedValues: 'connectome_development_selected_values',
-    scopeMode: 'connectome_development_scope_mode',
+    showIndividualNeuron: 'connectome_development_show_individual_neuron',
+    showConnectedNeuron: 'connectome_development_show_connected_neuron',
     includeElectrical: 'connectome_development_include_electrical',
+    thresholdChemical: 'connectome_development_threshold_chemical',
+    thresholdElectrical: 'connectome_development_threshold_electrical',
+    layout: 'connectome_development_layout',
+    layoutSpacing: 'connectome_development_layout_spacing',
+    edgeScale: 'connectome_development_edge_scale',
     sliderStage: 'connectome_development_slider_stage',
 };
+
+const LAYOUT_OPTIONS = [
+    { value: 'grid', label: 'Grid' },
+    { value: 'circle', label: 'Circle' },
+    { value: 'concentric', label: 'Concentric' },
+    { value: 'breadthfirst', label: 'Hierarchy (BFS)' },
+    { value: 'dagre', label: 'Hierarchy (Dagre)' },
+    { value: 'cose', label: 'Compound Spring Embedder' },
+];
+const LAYOUT_VALUES = new Set(LAYOUT_OPTIONS.map((option) => option.value));
+const DEFAULT_LAYOUT = 'concentric';
 
 const LARGE_EDGE_THRESHOLD = 450;
 const LARGE_NODE_THRESHOLD = 140;
@@ -84,11 +101,28 @@ function escapeHtml(value) {
     return div.innerHTML;
 }
 
+function parsePositiveInt(value, fallback = 0) {
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.max(0, parsed);
+}
+
+function parseClampedFloat(value, fallback, min, max) {
+    const parsed = parseFloat(value);
+    if (!Number.isFinite(parsed)) return fallback;
+    return clamp(parsed, min, max);
+}
+
+function normalizeLayout(value) {
+    return LAYOUT_VALUES.has(value) ? value : DEFAULT_LAYOUT;
+}
+
 class DevelopmentTrajectoryController {
     constructor() {
         this.availableNeuronData = { neurons: {}, neuron_classes: {} };
         this.manifest = {};
         this.currentData = null;
+        this.latestResponseData = null;
         this.basePositions = {};
 
         this.neuronSelector = null;
@@ -102,13 +136,22 @@ class DevelopmentTrajectoryController {
         this.lastRequestToken = 0;
         this.loadingCount = 0;
 
-        this.scopeMode = getLocalStr(STORAGE.scopeMode, 'within');
-        this.includeElectrical = getLocalBool(STORAGE.includeElectrical, false);
+        this.showIndividualNeuron = getLocalBool(STORAGE.showIndividualNeuron, false);
+        this.showConnectedNeuron = getLocalBool(STORAGE.showConnectedNeuron, true);
+        this.includeElectrical = getLocalBool(STORAGE.includeElectrical, true);
+        this.thresholdChemical = parsePositiveInt(getLocalStr(STORAGE.thresholdChemical, '0'), 0);
+        this.thresholdElectrical = parsePositiveInt(getLocalStr(STORAGE.thresholdElectrical, '0'), 0);
+        this.layoutName = normalizeLayout(getLocalStr(STORAGE.layout, DEFAULT_LAYOUT));
+        this.layoutSpacing = parseClampedFloat(getLocalStr(STORAGE.layoutSpacing, '1'), 1, 0.25, 1.5);
+        this.edgeScaleFactor = parseClampedFloat(getLocalStr(STORAGE.edgeScale, '1'), 1, 0.1, 3.0);
         this.sliderStageIndex = clamp(parseInt(getLocalStr(STORAGE.sliderStage, '0'), 10) || 0, 0, STAGES.length - 1);
 
         this.autoplayTimer = null;
 
         this.scheduleRefresh = debounce(() => this.refresh(), 350);
+        this.scheduleLocalRerender = debounce(() => this.renderFromLatestResponse(), 150);
+        this.scheduleRelayout = debounce(() => this.relayoutCurrentGraphs(), 120);
+        this.scheduleRescaleEdges = debounce(() => this.rerenderGraphViews(false), 120);
     }
 
     async init() {
@@ -144,9 +187,19 @@ class DevelopmentTrajectoryController {
         this.stageLabelElement = document.getElementById('development-stage-label');
         this.stageSummaryElement = document.getElementById('development-stage-summary');
         this.sliderPlayButton = document.getElementById('development-slider-play');
-        this.scopeWithinElement = document.getElementById('development-scope-within');
-        this.scopeNeighborsElement = document.getElementById('development-scope-neighbors');
+        this.layoutButtonElement = document.getElementById('development-dropdownLayout');
+        this.layoutItemElements = [...document.querySelectorAll('#connectome-development-container #development-dropdownLayout + .dropdown-menu .dropdown-item')];
+        this.showIndividualElement = document.getElementById('development-switch-individual');
+        this.showConnectedElement = document.getElementById('development-switch-connected');
         this.includeElectricalElement = document.getElementById('development-switch-electrical');
+        this.thresholdChemicalElement = document.getElementById('development-threshold-c');
+        this.thresholdElectricalElement = document.getElementById('development-threshold-e');
+        this.thresholdChemicalMinusButton = document.getElementById('development-minus-c');
+        this.thresholdChemicalPlusButton = document.getElementById('development-plus-c');
+        this.thresholdElectricalMinusButton = document.getElementById('development-minus-e');
+        this.thresholdElectricalPlusButton = document.getElementById('development-plus-e');
+        this.layoutSpacingElement = document.getElementById('development-sliderSpacing');
+        this.edgeScaleElement = document.getElementById('development-sliderEdgeScale');
         this.clearButton = document.getElementById('development-clear-neurons');
     }
 
@@ -157,32 +210,30 @@ class DevelopmentTrajectoryController {
 
     initControls() {
         this.initNeuronSelector();
+        this.initLayoutControls();
+        this.initThresholdControls();
+        this.initRenderControls();
 
-        if (this.scopeMode === 'neighbors') {
-            this.scopeNeighborsElement.checked = true;
-        } else {
-            this.scopeWithinElement.checked = true;
-        }
-
-        this.scopeWithinElement.addEventListener('change', () => {
-            if (!this.scopeWithinElement.checked) return;
-            this.scopeMode = 'within';
-            setLocalStr(STORAGE.scopeMode, this.scopeMode);
-            this.scheduleRefresh();
-        });
-
-        this.scopeNeighborsElement.addEventListener('change', () => {
-            if (!this.scopeNeighborsElement.checked) return;
-            this.scopeMode = 'neighbors';
-            setLocalStr(STORAGE.scopeMode, this.scopeMode);
-            this.scheduleRefresh();
-        });
-
+        this.showIndividualElement.checked = this.showIndividualNeuron;
+        this.showConnectedElement.checked = this.showConnectedNeuron;
         this.includeElectricalElement.checked = this.includeElectrical;
+
+        this.showIndividualElement.addEventListener('change', () => {
+            this.showIndividualNeuron = this.showIndividualElement.checked;
+            setLocalBool(STORAGE.showIndividualNeuron, this.showIndividualNeuron);
+            this.scheduleRefresh();
+        });
+
+        this.showConnectedElement.addEventListener('change', () => {
+            this.showConnectedNeuron = this.showConnectedElement.checked;
+            setLocalBool(STORAGE.showConnectedNeuron, this.showConnectedNeuron);
+            this.scheduleRefresh();
+        });
+
         this.includeElectricalElement.addEventListener('change', () => {
             this.includeElectrical = this.includeElectricalElement.checked;
             setLocalBool(STORAGE.includeElectrical, this.includeElectrical);
-            this.scheduleRefresh();
+            this.scheduleLocalRerender();
         });
 
         this.clearButton.addEventListener('click', () => {
@@ -202,6 +253,125 @@ class DevelopmentTrajectoryController {
         });
 
         this.sliderPlayButton.addEventListener('click', () => this.toggleAutoplay());
+    }
+
+    initLayoutControls() {
+        this.updateLayoutMenuState();
+
+        this.layoutItemElements.forEach((item) => {
+            item.addEventListener('click', (event) => {
+                event.preventDefault();
+                const layoutValue = normalizeLayout(item.dataset.value);
+                if (layoutValue === this.layoutName) return;
+                this.layoutName = layoutValue;
+                setLocalStr(STORAGE.layout, this.layoutName);
+                this.updateLayoutMenuState();
+                this.scheduleRelayout();
+            });
+        });
+    }
+
+    updateLayoutMenuState() {
+        this.layoutItemElements.forEach((item) => {
+            item.classList.toggle('active', item.dataset.value === this.layoutName);
+        });
+
+        const label = LAYOUT_OPTIONS.find((option) => option.value === this.layoutName)?.label || 'Layout';
+        this.layoutButtonElement.textContent = 'Layout';
+        this.layoutButtonElement.title = `Layout: ${label}`;
+    }
+
+    initThresholdControls() {
+        this.thresholdChemicalElement.value = String(this.thresholdChemical);
+        this.thresholdElectricalElement.value = String(this.thresholdElectrical);
+
+        this.thresholdChemicalElement.addEventListener('input', (event) => {
+            this.updateThreshold('chemical', event.target.value, false);
+        });
+        this.thresholdChemicalElement.addEventListener('change', (event) => {
+            this.updateThreshold('chemical', event.target.value, true);
+        });
+        this.thresholdElectricalElement.addEventListener('input', (event) => {
+            this.updateThreshold('electrical', event.target.value, false);
+        });
+        this.thresholdElectricalElement.addEventListener('change', (event) => {
+            this.updateThreshold('electrical', event.target.value, true);
+        });
+
+        this.thresholdChemicalMinusButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            this.updateThreshold('chemical', this.thresholdChemical - 1, true);
+        });
+        this.thresholdChemicalPlusButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            this.updateThreshold('chemical', this.thresholdChemical + 1, true);
+        });
+        this.thresholdElectricalMinusButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            this.updateThreshold('electrical', this.thresholdElectrical - 1, true);
+        });
+        this.thresholdElectricalPlusButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            this.updateThreshold('electrical', this.thresholdElectrical + 1, true);
+        });
+    }
+
+    updateThreshold(kind, value, rerenderNow) {
+        const nextValue = parsePositiveInt(value, kind === 'chemical' ? this.thresholdChemical : this.thresholdElectrical);
+        if (kind === 'chemical') {
+            if (nextValue === this.thresholdChemical && String(nextValue) === this.thresholdChemicalElement.value) return;
+            this.thresholdChemical = nextValue;
+            this.thresholdChemicalElement.value = String(nextValue);
+            setLocalStr(STORAGE.thresholdChemical, String(nextValue));
+        } else {
+            if (nextValue === this.thresholdElectrical && String(nextValue) === this.thresholdElectricalElement.value) return;
+            this.thresholdElectrical = nextValue;
+            this.thresholdElectricalElement.value = String(nextValue);
+            setLocalStr(STORAGE.thresholdElectrical, String(nextValue));
+        }
+
+        if (rerenderNow) {
+            this.renderFromLatestResponse();
+        } else {
+            this.scheduleLocalRerender();
+        }
+    }
+
+    initRenderControls() {
+        this.layoutSpacingElement.value = String(this.layoutSpacing);
+        this.edgeScaleElement.value = String(this.edgeScaleFactor);
+
+        this.layoutSpacingElement.addEventListener('input', (event) => {
+            const spacing = parseClampedFloat(event.target.value, this.layoutSpacing, 0.25, 1.5);
+            if (spacing === this.layoutSpacing) return;
+            this.layoutSpacing = spacing;
+            this.layoutSpacingElement.value = String(spacing);
+            setLocalStr(STORAGE.layoutSpacing, String(spacing));
+            this.scheduleRelayout();
+        });
+
+        this.edgeScaleElement.addEventListener('input', (event) => {
+            const factor = parseClampedFloat(event.target.value, this.edgeScaleFactor, 0.1, 3.0);
+            if (factor === this.edgeScaleFactor) return;
+            this.edgeScaleFactor = factor;
+            this.edgeScaleElement.value = String(factor);
+            setLocalStr(STORAGE.edgeScale, String(factor));
+            this.scheduleRescaleEdges();
+        });
+    }
+
+    relayoutCurrentGraphs() {
+        this.rerenderGraphViews(true);
+    }
+
+    rerenderGraphViews(recomputeLayout = false) {
+        if (!this.currentData?.edges?.length) return;
+        if (recomputeLayout) {
+            this.basePositions = this.computeBasePositions(this.currentData);
+            this.sliderHasBeenFit = false;
+        }
+        this.renderSmallMultiples(this.currentData);
+        this.updateSliderStageView();
     }
 
     initTabs() {
@@ -315,11 +485,7 @@ class DevelopmentTrajectoryController {
                 {
                     selector: 'edge',
                     style: {
-                        width: (edge) => {
-                            const count = Number(edge.data('count') || 0);
-                            const scale = compactMode ? 1.9 : 2.2;
-                            return Math.max(0.7, Math.log(count + 1) * scale);
-                        },
+                        width: 'data(width)',
                         'line-color': (edge) => (edge.data('type') === 'e' ? '#94a3b8' : '#1f2937'),
                         'target-arrow-color': (edge) => (edge.data('type') === 'e' ? '#94a3b8' : '#1f2937'),
                         'target-arrow-shape': (edge) => (edge.data('type') === 'e' ? 'none' : 'triangle'),
@@ -477,8 +643,6 @@ class DevelopmentTrajectoryController {
 
     async refresh() {
         if (!Object.keys(this.manifest).length) {
-            this.currentData = null;
-            this.updateSelectionSummary();
             this.renderNoSelectionState();
             return;
         }
@@ -491,17 +655,8 @@ class DevelopmentTrajectoryController {
             if (requestToken !== this.lastRequestToken) {
                 return;
             }
-
-            this.currentData = this.transformResponse(responseData);
-            this.selectedEdgeIndex = this.resolveSelectedEdgeIndex(this.selectedEdgeIndex);
-            this.basePositions = this.computeBasePositions(this.currentData);
-
-            this.updateSelectionSummary();
-            this.updateDensityNotice(this.currentData);
-            this.renderHeatmap(this.currentData);
-            this.renderTrend(this.currentData);
-            this.renderSmallMultiples(this.currentData);
-            this.updateSliderStageView();
+            this.latestResponseData = responseData;
+            this.renderFromLatestResponse();
         } catch (error) {
             console.error('Failed refreshing developmental trajectory:', error);
             this.renderErrorState('Could not load connectome trajectory. Please try again.');
@@ -510,13 +665,29 @@ class DevelopmentTrajectoryController {
         }
     }
 
+    renderFromLatestResponse() {
+        if (!this.latestResponseData) return;
+
+        this.currentData = this.transformResponse(this.latestResponseData);
+        this.selectedEdgeIndex = this.resolveSelectedEdgeIndex(this.selectedEdgeIndex);
+        this.basePositions = this.computeBasePositions(this.currentData);
+        this.sliderHasBeenFit = false;
+
+        this.updateSelectionSummary();
+        this.updateDensityNotice(this.currentData);
+        this.renderHeatmap(this.currentData);
+        this.renderTrend(this.currentData);
+        this.renderSmallMultiples(this.currentData);
+        this.updateSliderStageView();
+    }
+
     async fetchEdgeData() {
         const payload = {
             datasets: WITVLIET_DATASET_IDS,
             neurons: [],
             classes: [],
-            show_individual_neuron: false,
-            show_connected_neuron: this.scopeMode === 'neighbors',
+            show_individual_neuron: this.showIndividualNeuron,
+            show_connected_neuron: this.showConnectedNeuron,
         };
 
         Object.entries(this.manifest).forEach(([value, nodeType]) => {
@@ -593,6 +764,11 @@ class DevelopmentTrajectoryController {
                     total: stageValues.reduce((acc, value) => acc + value, 0),
                 };
             })
+            .filter((edge) => {
+                const threshold = edge.type === 'e' ? this.thresholdElectrical : this.thresholdChemical;
+                if (threshold <= 0) return true;
+                return Math.max(...edge.stageValues) >= threshold;
+            })
             .sort((edgeA, edgeB) => {
                 if (edgeB.total !== edgeA.total) {
                     return edgeB.total - edgeA.total;
@@ -649,14 +825,15 @@ class DevelopmentTrajectoryController {
             elements,
         });
 
-        layoutGraph.layout({
-            name: 'concentric',
-            fit: false,
-            avoidOverlap: true,
-            minNodeSpacing: 24,
-            spacingFactor: 1.05,
-            animate: false,
-        }).run();
+        try {
+            layoutGraph.layout(this.getLayoutOptions()).run();
+        } catch (error) {
+            console.warn(`Failed applying ${this.layoutName} layout, falling back to ${DEFAULT_LAYOUT}.`, error);
+            this.layoutName = DEFAULT_LAYOUT;
+            setLocalStr(STORAGE.layout, this.layoutName);
+            this.updateLayoutMenuState();
+            layoutGraph.layout(this.getLayoutOptions()).run();
+        }
 
         const positions = {};
         layoutGraph.nodes().forEach((node) => {
@@ -667,12 +844,76 @@ class DevelopmentTrajectoryController {
         return positions;
     }
 
+    getLayoutOptions() {
+        const spacingFactor = this.layoutSpacing;
+        if (this.layoutName === 'grid') {
+            return {
+                name: 'grid',
+                fit: false,
+                avoidOverlap: true,
+                spacingFactor,
+                animate: false,
+            };
+        }
+        if (this.layoutName === 'circle') {
+            return {
+                name: 'circle',
+                fit: false,
+                avoidOverlap: true,
+                spacingFactor,
+                animate: false,
+            };
+        }
+        if (this.layoutName === 'breadthfirst') {
+            return {
+                name: 'breadthfirst',
+                fit: false,
+                directed: true,
+                spacingFactor,
+                animate: false,
+            };
+        }
+        if (this.layoutName === 'dagre') {
+            return {
+                name: 'dagre',
+                fit: false,
+                rankDir: 'LR',
+                nodeSep: Math.round(48 * spacingFactor),
+                edgeSep: Math.round(14 * spacingFactor),
+                rankSep: Math.round(86 * spacingFactor),
+                animate: false,
+            };
+        }
+        if (this.layoutName === 'cose') {
+            return {
+                name: 'cose',
+                fit: false,
+                animate: false,
+                randomize: false,
+                idealEdgeLength: Math.round(80 * spacingFactor),
+            };
+        }
+        return {
+            name: 'concentric',
+            fit: false,
+            avoidOverlap: true,
+            minNodeSpacing: Math.round(24 * spacingFactor),
+            spacingFactor,
+            animate: false,
+        };
+    }
+
+    computeEdgeWidth(count, compactMode) {
+        const baseScale = compactMode ? 1.9 : 2.2;
+        return Math.max(0.25, Math.log(Number(count || 0) + 1) * baseScale * this.edgeScaleFactor);
+    }
+
     getStageEdgeCount(stageIndex) {
         if (!this.currentData?.edges) return 0;
         return this.currentData.edges.filter((edge) => edge.stageValues[stageIndex] > 0).length;
     }
 
-    buildStageElements(stageIndex) {
+    buildStageElements(stageIndex, compactMode) {
         const activeNodes = new Set();
 
         const edgeElements = this.currentData.edges
@@ -687,6 +928,7 @@ class DevelopmentTrajectoryController {
                         source: edge.pre,
                         target: edge.post,
                         count: edge.stageValues[stageIndex],
+                        width: this.computeEdgeWidth(edge.stageValues[stageIndex], compactMode),
                         type: edge.type,
                     },
                 };
@@ -704,8 +946,8 @@ class DevelopmentTrajectoryController {
         return { nodeElements, edgeElements };
     }
 
-    applyStageElementsToGraph(graph, stageIndex, fitGraph = true) {
-        const { nodeElements, edgeElements } = this.buildStageElements(stageIndex);
+    applyStageElementsToGraph(graph, stageIndex, fitGraph = true, compactMode = false) {
+        const { nodeElements, edgeElements } = this.buildStageElements(stageIndex, compactMode);
 
         graph.batch(() => {
             graph.elements().remove();
@@ -734,7 +976,7 @@ class DevelopmentTrajectoryController {
 
     renderHeatmap(data) {
         if (!data.edges.length) {
-            this.renderEmptyHeatmap('No edges match the current selection and scope.');
+            this.renderEmptyHeatmap('No edges match the current selection and filters.');
             return;
         }
 
@@ -869,7 +1111,7 @@ class DevelopmentTrajectoryController {
 
     renderSmallMultiples(data) {
         this.stageGraphs.forEach((graph, stageIndex) => {
-            this.applyStageElementsToGraph(graph, stageIndex, true);
+            this.applyStageElementsToGraph(graph, stageIndex, true, true);
             const edgeCount = this.getStageEdgeCount(stageIndex);
             const summary = document.getElementById(`development-stage-summary-${stageIndex}`);
             if (summary) {
@@ -899,7 +1141,7 @@ class DevelopmentTrajectoryController {
         }
 
         const shouldFit = !this.sliderHasBeenFit;
-        this.applyStageElementsToGraph(this.sliderGraph, this.sliderStageIndex, shouldFit);
+        this.applyStageElementsToGraph(this.sliderGraph, this.sliderStageIndex, shouldFit, false);
         this.sliderHasBeenFit = true;
     }
 
@@ -935,14 +1177,14 @@ class DevelopmentTrajectoryController {
         this.stageGraphs.forEach((graph, stageIndex) => {
             graph.resize();
             if (this.currentData?.edges?.length) {
-                this.applyStageElementsToGraph(graph, stageIndex, true);
+                this.applyStageElementsToGraph(graph, stageIndex, true, true);
             }
         });
 
         if (this.sliderGraph) {
             this.sliderGraph.resize();
             if (this.currentData?.edges?.length) {
-                this.applyStageElementsToGraph(this.sliderGraph, this.sliderStageIndex, false);
+                this.applyStageElementsToGraph(this.sliderGraph, this.sliderStageIndex, false, false);
             }
         }
     }
@@ -950,7 +1192,9 @@ class DevelopmentTrajectoryController {
     renderNoSelectionState() {
         this.stopAutoplay();
         this.currentData = null;
+        this.latestResponseData = null;
         this.basePositions = {};
+        this.updateSelectionSummary();
         this.densityNoticeElement.classList.add('d-none');
 
         this.renderEmptyHeatmap('Select neurons or neuron classes to load trajectories.');
@@ -1035,6 +1279,10 @@ class DevelopmentTrajectoryController {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (typeof cytoscapeDagre === 'function') {
+        cytoscape.use(cytoscapeDagre);
+    }
+
     const controller = new DevelopmentTrajectoryController();
     try {
         await controller.init();

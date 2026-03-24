@@ -16,6 +16,15 @@
     white-space: nowrap;
 }
 
+.development-menu-spinner-slot {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 .development-selection-summary {
     color: #475569;
     font-size: 0.88rem;
@@ -23,6 +32,43 @@
 
 .development-density-notice {
     font-size: 0.88rem;
+}
+
+.development-view-switch-wrap {
+    margin-top: 0.2rem;
+    margin-bottom: 0.75rem;
+}
+
+.development-view-switch {
+    gap: 0.4rem;
+}
+
+.development-view-switch .nav-link {
+    border: 1px solid #cbd5e1;
+    border-radius: var(--bs-border-radius);
+    background: #f8fafc;
+    color: #334155;
+    font-size: 0.9rem;
+    padding: 0.33rem 0.78rem;
+}
+
+.development-view-switch .nav-link:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.development-view-switch .nav-link.active {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #ffffff;
+}
+
+.development-tab-content {
+    margin-top: 0;
+}
+
+.development-tab-content > .tab-pane > .row {
+    --bs-gutter-y: 0.5rem;
 }
 
 .development-panel {
@@ -147,6 +193,46 @@
     color: #64748b;
 }
 
+.settings-compact h6 {
+    margin-bottom: 0.35rem;
+}
+
+.settings-compact .form-check {
+    min-height: 1.4rem;
+}
+
+.settings-compact .form-check-label {
+    line-height: 1.25;
+}
+
+.settings-help {
+    font-size: 0.9rem;
+    color: var(--gray-700, #495057);
+    line-height: 1.2;
+}
+
+.settings-threshold-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.settings-threshold-item .input-group {
+    max-width: 140px;
+}
+
+.settings-threshold-item input[type="number"] {
+    min-width: 44px;
+}
+
+.settings-slider-group .form-label {
+    line-height: 1.2;
+}
+
+.settings-slider-group .form-range {
+    margin-top: 0;
+}
+
 .ts-wrapper .ts-dropdown .option .select_dataset_option {
     display: flex;
     flex-direction: column;
@@ -199,7 +285,15 @@
         margin-left: 0;
     }
 
+    .development-menu-spinner-slot {
+        width: auto;
+    }
+
     .development-stage-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-threshold-grid {
         grid-template-columns: 1fr;
     }
 
