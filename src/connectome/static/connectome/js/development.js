@@ -1168,6 +1168,7 @@ class DevelopmentTrajectoryController {
 
         const layoutGraph = cytoscape({
             headless: true,
+            styleEnabled: true,
             elements,
             style: [
                 {
@@ -1195,6 +1196,46 @@ class DevelopmentTrajectoryController {
             positions[node.id()] = { ...node.position() };
         });
 
+        const nodeIds = Object.keys(positions);
+        if (nodeIds.length > 1) {
+            let minX = Infinity;
+            let maxX = -Infinity;
+            let minY = Infinity;
+            let maxY = -Infinity;
+            nodeIds.forEach((nodeId) => {
+                const { x, y } = positions[nodeId];
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            });
+
+            const spread = Math.max(maxX - minX, maxY - minY);
+            const minSpread = Math.max(240, Math.sqrt(nodeIds.length) * 95) * spacingFactor;
+
+            if (!Number.isFinite(spread) || spread <= 0) {
+                const radius = minSpread / 2;
+                nodeIds.forEach((nodeId, index) => {
+                    const angle = (2 * Math.PI * index) / nodeIds.length;
+                    positions[nodeId] = {
+                        x: Math.cos(angle) * radius,
+                        y: Math.sin(angle) * radius,
+                    };
+                });
+            } else if (spread < minSpread) {
+                const centerX = (minX + maxX) / 2;
+                const centerY = (minY + maxY) / 2;
+                const scale = minSpread / spread;
+                nodeIds.forEach((nodeId) => {
+                    const { x, y } = positions[nodeId];
+                    positions[nodeId] = {
+                        x: (x - centerX) * scale,
+                        y: (y - centerY) * scale,
+                    };
+                });
+            }
+        }
+
         layoutGraph.destroy();
         return positions;
     }
@@ -1205,6 +1246,7 @@ class DevelopmentTrajectoryController {
                 name: 'grid',
                 fit: false,
                 avoidOverlap: true,
+                nodeDimensionsIncludeLabels: true,
                 avoidOverlapPadding: Math.round(8 * spacingFactor),
                 spacingFactor,
                 animate: false,
@@ -1215,6 +1257,7 @@ class DevelopmentTrajectoryController {
                 name: 'circle',
                 fit: false,
                 avoidOverlap: true,
+                nodeDimensionsIncludeLabels: true,
                 avoidOverlapPadding: Math.round(8 * spacingFactor),
                 spacingFactor,
                 animate: false,
@@ -1225,6 +1268,7 @@ class DevelopmentTrajectoryController {
                 name: 'breadthfirst',
                 fit: false,
                 directed: true,
+                nodeDimensionsIncludeLabels: true,
                 spacingFactor,
                 animate: false,
             };
@@ -1233,6 +1277,7 @@ class DevelopmentTrajectoryController {
             return {
                 name: 'dagre',
                 fit: false,
+                nodeDimensionsIncludeLabels: true,
                 rankDir: 'LR',
                 nodeSep: Math.round(48 * spacingFactor),
                 edgeSep: Math.round(14 * spacingFactor),
@@ -1244,6 +1289,7 @@ class DevelopmentTrajectoryController {
             return {
                 name: 'cose',
                 fit: false,
+                nodeDimensionsIncludeLabels: true,
                 animate: false,
                 randomize: false,
                 idealEdgeLength: Math.round(80 * spacingFactor),
@@ -1253,6 +1299,7 @@ class DevelopmentTrajectoryController {
             name: 'concentric',
             fit: false,
             avoidOverlap: true,
+            nodeDimensionsIncludeLabels: true,
             avoidOverlapPadding: Math.round(8 * spacingFactor),
             minNodeSpacing: Math.round(24 * spacingFactor),
             spacingFactor,
