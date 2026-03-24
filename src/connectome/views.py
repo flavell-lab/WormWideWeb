@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page, cache_control
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Q, Prefetch
 from .models import Neuron, NeuronClass, Dataset, Synapse
@@ -114,6 +115,7 @@ def connectome_witvliet_datasets(cache_key=None):
     return datasets_json
 
 
+@ensure_csrf_cookie
 @cache_page(60*60*24*30)
 def index(request):
     context = {}
@@ -121,6 +123,7 @@ def index(request):
     return render(request, "connectome/index.html", context)
 
 
+@ensure_csrf_cookie
 @cache_page(60*60*24*30)
 def explore(request):
     context = {'datasets_json': connectome_datasets()}
@@ -128,6 +131,7 @@ def explore(request):
     return render(request, "connectome/explore.html", context)
 
 
+@ensure_csrf_cookie
 @cache_page(60*60*24*30)
 def path(request):
     context = {'datasets_json': connectome_datasets()}
@@ -135,6 +139,7 @@ def path(request):
     return render(request, "connectome/path.html", context)
 
 
+@ensure_csrf_cookie
 @cache_page(60*60*24*30)
 def compare(request):
     context = {'datasets_json': connectome_datasets()}
@@ -142,6 +147,7 @@ def compare(request):
     return render(request, "connectome/compare.html", context)
 
 
+@ensure_csrf_cookie
 @cache_page(60*60*24*30)
 def development(request):
     context = {"datasets_json": connectome_witvliet_datasets()}
