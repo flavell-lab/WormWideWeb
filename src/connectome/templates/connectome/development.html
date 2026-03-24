@@ -18,31 +18,33 @@
           placeholder="Select neuron(s) or neuron class(es)">
       </div>
 
-      <button id="development-clear-neurons" class="btn btn-light btn-sm" type="button"
-        aria-label="Clear all selected neurons" data-bs-toggle="tooltip" title="Clear all selected neurons">
-        Clear
-      </button>
-
-      <div class="dropdown btn-group btn-group-sm">
-        <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="development-dropdownLayout"
-          data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select layout">
-          Layout
+      <div class="btn-group btn-group-sm" role="group" aria-label="Toolbar actions">
+        <button id="development-clear-neurons" class="btn btn-light btn-sm" type="button"
+          aria-label="Clear all selected neurons" data-bs-toggle="tooltip" title="Clear all selected neurons">
+          Clear
         </button>
-        <ul class="dropdown-menu" aria-labelledby="development-dropdownLayout" role="menu">
-          <li><a class="dropdown-item" href="#" role="menuitem" data-value="grid">Grid</a></li>
-          <li><a class="dropdown-item" href="#" role="menuitem" data-value="circle">Circle</a></li>
-          <li><a class="dropdown-item active" href="#" role="menuitem" data-value="concentric">Concentric</a></li>
-          <li><a class="dropdown-item" href="#" role="menuitem" data-value="breadthfirst">Hierarchy (BFS)</a></li>
-          <li><a class="dropdown-item" href="#" role="menuitem" data-value="dagre">Hierarchy (Dagre)</a></li>
-          <li><a class="dropdown-item" href="#" role="menuitem" data-value="cose">Compound Spring Embedder</a></li>
-        </ul>
-      </div>
 
-      <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse"
-        data-bs-target="#developmentCollapseConfig" aria-expanded="false" aria-controls="developmentCollapseConfig"
-        aria-label="More settings">
-        <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
-      </button>
+        <div class="btn-group btn-group-sm dropdown" role="group">
+          <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="development-dropdownLayout"
+            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Select layout">
+            Layout
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="development-dropdownLayout" role="menu">
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="grid">Grid</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="circle">Circle</a></li>
+            <li><a class="dropdown-item active" href="#" role="menuitem" data-value="concentric">Concentric</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="breadthfirst">Hierarchy (BFS)</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="dagre">Hierarchy (Dagre)</a></li>
+            <li><a class="dropdown-item" href="#" role="menuitem" data-value="cose">Compound Spring Embedder</a></li>
+          </ul>
+        </div>
+
+        <button class="btn btn-light btn-sm" type="button" data-bs-toggle="collapse"
+          data-bs-target="#developmentCollapseConfig" aria-expanded="false" aria-controls="developmentCollapseConfig"
+          aria-label="More settings">
+          <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+        </button>
+      </div>
 
       <span id="development-selection-summary" class="development-selection-summary ms-auto">No neurons selected</span>
       <div class="development-menu-spinner-slot">
