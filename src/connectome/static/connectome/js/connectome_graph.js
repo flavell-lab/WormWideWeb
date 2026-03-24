@@ -512,9 +512,11 @@ export class ConnectomeGraph {
             // request edges
             fetch(URL_CONNECTOME_EDGE, {
                 method: 'POST', // HTTP method
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json', // Tell the server it's JSON
-                    'X-CSRFToken': getCSRFToken() // Include CSRF token for security if needed
+                    'X-CSRFToken': getCSRFToken(), // Include CSRF token for security if needed
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 body: JSON.stringify(nodeDict) // Convert the JavaScript object to JSON
             })

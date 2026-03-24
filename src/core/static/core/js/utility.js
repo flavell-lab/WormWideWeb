@@ -95,14 +95,18 @@ export function debounce(func, delay) {
 // api
 //
 export function getCSRFToken() {
-    // const meta = document.querySelector('meta[name="csrf-token"]');
-    // return meta ? meta.getAttribute('content') : '';
+    const cookieString = document.cookie || '';
+    const tokenPrefix = 'csrftoken=';
+    const tokenPair = cookieString
+        .split(';')
+        .map((segment) => segment.trim())
+        .find((segment) => segment.startsWith(tokenPrefix));
 
-    const cookieValue = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-    return cookieValue || '';
+    if (!tokenPair) {
+        return '';
+    }
+
+    return decodeURIComponent(tokenPair.slice(tokenPrefix.length));
 }
 
 //

@@ -1731,9 +1731,11 @@ class DevelopmentTrajectoryController {
 
         const response = await fetch(URL_CONNECTOME_EDGE, {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest',
             },
             body: JSON.stringify(payload),
         });
