@@ -32,6 +32,16 @@ const STAGES = [
     { shortLabel: 'L3 27h', label: 'L3 (~27h after birth)' },
     { shortLabel: 'L4 50h', label: 'L4 (~50h, datasets 7+8 mean)' },
 ];
+const DATASET_COUNT_LABELS = [
+    'L1 (0h)',
+    'L1 (5h)',
+    'L1 (8h)',
+    'L1 (16h)',
+    'L2 (23h)',
+    'L3 (27h)',
+    'L4 (50h, dataset 7)',
+    'L4 (50h, dataset 8)',
+];
 
 const STORAGE = {
     selectedValues: 'connectome_development_selected_values',
@@ -68,6 +78,7 @@ const HEATMAP_COLORMAP_OPTIONS = [
 ];
 const HEATMAP_COLORMAP_VALUES = new Set(HEATMAP_COLORMAP_OPTIONS.map((option) => option.value));
 const DEFAULT_HEATMAP_COLORMAP = 'Viridis';
+const PLOTLY_C0 = '#1f77b4';
 
 const LARGE_EDGE_THRESHOLD = 450;
 const LARGE_NODE_THRESHOLD = 140;
@@ -94,12 +105,11 @@ function stageValueLabel(value) {
     return `${formatCount(value)} synapses`;
 }
 
-function edgeTypeLabel(edgeType) {
-    return edgeType === 'e' ? 'Electrical' : 'Chemical';
-}
-
 function buildEdgeLabel(edge) {
-    return `${edge.pre} -> ${edge.post} (${edgeTypeLabel(edge.type)})`;
+    if (edge.type === 'e') {
+        return `${edge.pre} - ${edge.post} (gap junction)`;
+    }
+    return `${edge.pre} \u2192 ${edge.post}`;
 }
 
 function formatNodeLabel(nodeId) {
@@ -762,8 +772,8 @@ class DevelopmentTrajectoryController {
     transformResponse(responseData) {
         const synapses = responseData?.synapses || [];
         const edges = synapses
-            .filter((synapse) => this.includeElectrical || synapse.type === 'c')
             .map((synapse) => {
+                const edgeType = String(synapse.type || '').toLowerCase();
                 const listCount = WITVLIET_DATASET_IDS.map((_, index) => Number(synapse.list_count?.[index] || 0));
                 const l4Mean = (listCount[6] + listCount[7]) / 2;
                 const stageValues = [
@@ -795,10 +805,10 @@ class DevelopmentTrajectoryController {
                 ];
 
                 return {
-                    key: `${synapse.pre}!${synapse.post}!${synapse.type}`,
+                    key: `${synapse.pre}!${synapse.post}!${edgeType}`,
                     pre: synapse.pre,
                     post: synapse.post,
-                    type: synapse.type,
+                    type: edgeType,
                     stageValues,
                     stageMins,
                     stageMaxs,
@@ -806,16 +816,19 @@ class DevelopmentTrajectoryController {
                     total: stageValues.reduce((acc, value) => acc + value, 0),
                 };
             })
+            .filter((edge) => edge.type === 'c' || edge.type === 'e')
+            .filter((edge) => this.includeElectrical || edge.type === 'c')
             .filter((edge) => {
                 const threshold = edge.type === 'e' ? this.thresholdElectrical : this.thresholdChemical;
                 if (threshold <= 0) return true;
                 return Math.max(...edge.stageValues) >= threshold;
             })
             .sort((edgeA, edgeB) => {
-                if (edgeB.total !== edgeA.total) {
-                    return edgeB.total - edgeA.total;
+                const preCompare = edgeA.pre.localeCompare(edgeB.pre);
+                if (preCompare !== 0) {
+                    return preCompare;
                 }
-                return buildEdgeLabel(edgeA).localeCompare(buildEdgeLabel(edgeB));
+                return edgeA.post.localeCompare(edgeB.post);
             });
 
         const nodeSet = new Set();
@@ -1035,11 +1048,15 @@ class DevelopmentTrajectoryController {
             colorscale: this.heatmapColormap,
             hovertemplate: '<b>%{y}</b><br>%{x}: %{z}<extra></extra>',
             colorbar: {
-                title: 'Synapse count',
+                tickfont: { size: 10 },
                 thickness: 10,
+                y: 0.5,
+                yanchor: 'middle',
+                lenmode: 'fraction',
+                len: 1,
             },
         }], {
-            margin: { t: 10, r: 8, b: 44, l: 210 },
+            margin: { t: 10, r: 92, b: 44, l: 210 },
             xaxis: {
                 title: 'Development stage',
                 tickmode: 'array',
@@ -1050,6 +1067,18 @@ class DevelopmentTrajectoryController {
                 automargin: true,
                 tickfont: { size: 10 },
             },
+            annotations: [{
+                text: 'Synapse count',
+                xref: 'paper',
+                yref: 'paper',
+                x: 1.14,
+                y: 0.5,
+                showarrow: false,
+                textangle: 90,
+                xanchor: 'center',
+                yanchor: 'middle',
+                font: { size: 10, color: '#334155' },
+            }],
             template: 'plotly_white',
         }, {
             displayModeBar: false,
@@ -1105,19 +1134,19 @@ class DevelopmentTrajectoryController {
                 customdata: stageHoverData,
                 name: buildEdgeLabel(edge),
                 line: {
-                    color: '#1d4ed8',
+                    color: PLOTLY_C0,
                     width: 2.8,
                 },
                 marker: {
                     size: 8,
-                    color: '#1d4ed8',
+                    color: PLOTLY_C0,
                 },
                 error_y: {
                     type: 'data',
                     symmetric: false,
                     array: errorUpper,
                     arrayminus: errorLower,
-                    color: '#1d4ed8',
+                    color: PLOTLY_C0,
                     thickness: 1.5,
                     width: 3,
                     visible: true,
@@ -1131,11 +1160,11 @@ class DevelopmentTrajectoryController {
                 y: [edge.listCount[6], edge.listCount[7]],
                 text: ['Dataset 7 raw', 'Dataset 8 raw'],
                 marker: {
-                    color: '#f59e0b',
+                    color: PLOTLY_C0,
                     size: 9,
                     symbol: ['circle-open', 'diamond-open'],
                     line: {
-                        color: '#92400e',
+                        color: PLOTLY_C0,
                         width: 1,
                     },
                 },
@@ -1143,7 +1172,7 @@ class DevelopmentTrajectoryController {
                 name: 'Datasets 7/8',
             },
         ], {
-            margin: { t: 18, r: 8, b: 40, l: 52 },
+            margin: { t: 18, r: 8, b: 40, l: 64 },
             xaxis: {
                 title: 'Stage',
                 tickmode: 'array',
@@ -1152,7 +1181,11 @@ class DevelopmentTrajectoryController {
                 fixedrange: true,
             },
             yaxis: {
-                title: 'Synapse count',
+                title: {
+                    text: 'Synapse count',
+                    standoff: 8,
+                },
+                automargin: true,
                 rangemode: 'tozero',
                 fixedrange: true,
             },
@@ -1165,13 +1198,15 @@ class DevelopmentTrajectoryController {
             responsive: true,
         });
 
+        const datasetCountRows = edge.listCount
+            .map((count, index) => (
+                `<div class="development-trend-stat"><span>${DATASET_COUNT_LABELS[index] || `Dataset ${index + 1}`}</span><span>${formatCount(count)}</span></div>`
+            ))
+            .join('');
+
         this.trendDetailsElement.innerHTML = `
             <div class="development-trend-title mb-2"><strong>${escapeHtml(buildEdgeLabel(edge))}</strong></div>
-            <div class="development-trend-stat"><span>L4 mean (7+8)</span><span>${stageValueLabel(edge.stageValues[6])}</span></div>
-            <div class="development-trend-stat"><span>Dataset 7 raw</span><span>${stageValueLabel(edge.listCount[6])}</span></div>
-            <div class="development-trend-stat"><span>Dataset 8 raw</span><span>${stageValueLabel(edge.listCount[7])}</span></div>
-            <div class="development-trend-stat"><span>L4 variability</span><span>${formatCount(edge.stageMins[6])} - ${formatCount(edge.stageMaxs[6])}</span></div>
-            <div class="development-trend-stat"><span>Total trajectory count</span><span>${stageValueLabel(edge.total)}</span></div>
+            ${datasetCountRows}
         `;
     }
 
