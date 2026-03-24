@@ -1,9 +1,12 @@
 import {
+    calculateLuminance,
     debounce,
     getCSRFToken,
     getLocalBool,
     getLocalJSON,
     getLocalStr,
+    isNodeRectangle,
+    parseRGB,
     setLocalBool,
     setLocalJSON,
     setLocalStr,
@@ -77,6 +80,15 @@ const HEATMAP_COLORMAP_OPTIONS = [
 const HEATMAP_COLORMAP_VALUES = new Set(HEATMAP_COLORMAP_OPTIONS.map((option) => option.value));
 const DEFAULT_HEATMAP_COLORMAP = 'Viridis';
 const PLOTLY_C0 = '#1f77b4';
+const TYPE_COLORS = Object.freeze({
+    u: 'rgb(210,210,210)',
+    b: 'rgb(75,75,75)',
+    s: 'rgb(51,117,56)',
+    i: 'rgb(148,203,236)',
+    m: 'rgb(126,41,84)',
+    n: 'rgb(220,205,125)',
+});
+const MAX_PIE_SLICES = 8;
 
 const LARGE_EDGE_THRESHOLD = 450;
 const LARGE_NODE_THRESHOLD = 140;
@@ -473,43 +485,249 @@ class DevelopmentTrajectoryController {
 
     createGraph(containerId, compactMode) {
         const container = document.getElementById(containerId);
-        return cytoscape({
+        const graph = cytoscape({
             container,
             elements: [],
             style: [
                 {
                     selector: 'node',
                     style: {
-                        width: compactMode ? 24 : 32,
-                        height: compactMode ? 24 : 32,
-                        label: 'data(label)',
-                        'font-size': compactMode ? 8.5 : 10,
+                        opacity: 1,
+                        'z-index': 1,
+                        height: 35,
+                        width: (node) => (isNodeRectangle(node) ? 70 : 35),
+                        label: 'data(id)',
+                        shape: (node) => (isNodeRectangle(node) ? 'round-rectangle' : 'ellipse'),
+                        'font-size': compactMode ? 10 : 12,
                         'text-wrap': 'wrap',
-                        'text-max-width': compactMode ? 40 : 60,
                         'text-halign': 'center',
                         'text-valign': 'center',
-                        'background-color': (node) => (node.data('active') ? '#0d6efd' : '#d1d5db'),
-                        'border-width': (node) => (node.data('active') ? 1.5 : 1),
-                        'border-color': (node) => (node.data('active') ? '#1d4ed8' : '#94a3b8'),
-                        color: (node) => (node.data('active') ? '#0f172a' : '#64748b'),
+                        'background-color': TYPE_COLORS.u,
+                        color: '#000000',
                     },
                 },
                 {
                     selector: 'edge',
                     style: {
+                        opacity: 1,
+                        'z-index': 1,
+                        'source-distance-from-node': 5,
+                        'target-distance-from-node': 5,
                         width: 'data(width)',
-                        'line-color': '#1f2937',
-                        'target-arrow-color': '#1f2937',
+                        'line-color': '#000000',
+                        'target-arrow-color': '#000000',
+                        'source-arrow-shape': 'none',
                         'target-arrow-shape': 'triangle',
                         'curve-style': 'bezier',
-                        opacity: 0.92,
                     },
                 },
             ],
             zoomingEnabled: true,
-            minZoom: 0.12,
-            maxZoom: 4,
+            minZoom: 0.1,
+            maxZoom: 3,
             wheelSensitivity: 0.2,
+        });
+
+        this.initGraphSelection(graph, compactMode);
+        return graph;
+    }
+
+    getNodeDisplayData(nodeId) {
+        const neurons = this.availableNeuronData?.neurons || {};
+        const neuronClasses = this.availableNeuronData?.neuron_classes || {};
+        const neuronData = neurons[nodeId];
+
+        if (neuronData) {
+            return {
+                id: nodeId,
+                cell_type: neuronData.cell_type || 'u',
+                cell_type_desc: neuronData.cell_type_desc || '',
+                neuron_class: neuronData.neuron_class || nodeId,
+            };
+        }
+
+        const classMembers = Array.isArray(neuronClasses[nodeId]) ? neuronClasses[nodeId] : [];
+        const representativeNeuron = classMembers.find((neuronName) => neurons[neuronName]);
+        if (representativeNeuron) {
+            const representativeData = neurons[representativeNeuron];
+            return {
+                id: nodeId,
+                cell_type: representativeData.cell_type || 'u',
+                cell_type_desc: representativeData.cell_type_desc || '',
+                neuron_class: nodeId,
+            };
+        }
+
+        return {
+            id: nodeId,
+            cell_type: 'u',
+            cell_type_desc: '',
+            neuron_class: nodeId,
+        };
+    }
+
+    getSelectedEdgeLabel(edgeData) {
+        const edgeLabel = edgeData?.edge_label || '';
+        const stageLabel = edgeData?.stage_label || 'Stage';
+        const count = formatCount(Number(edgeData?.count || 0));
+        return `${edgeLabel}\n${stageLabel}: ${count}`;
+    }
+
+    getTypeColorSpec(cellTypeRaw) {
+        const cellType = String(cellTypeRaw || 'u').toLowerCase();
+        if (['u', 'b'].includes(cellType)) {
+            return {
+                isPie: false,
+                colors: [TYPE_COLORS[cellType] || TYPE_COLORS.u],
+            };
+        }
+
+        const pieColors = cellType
+            .split('')
+            .map((typeCode) => TYPE_COLORS[typeCode])
+            .filter(Boolean);
+        if (!pieColors.length) {
+            return {
+                isPie: false,
+                colors: [TYPE_COLORS.u],
+            };
+        }
+
+        return {
+            isPie: true,
+            colors: pieColors,
+        };
+    }
+
+    getReadableNodeLabelColor(colors) {
+        const luminances = colors
+            .map((color) => parseRGB(color))
+            .filter(Boolean)
+            .map((rgb) => calculateLuminance(rgb.r, rgb.g, rgb.b));
+        if (!luminances.length) {
+            return '#000000';
+        }
+
+        return Math.min(...luminances) < 0.25 ? '#FFFFFF' : '#000000';
+    }
+
+    applyNodeTypeColors(graph) {
+        graph.nodes().forEach((node) => {
+            const { isPie, colors } = this.getTypeColorSpec(node.data('cell_type'));
+            const styleProps = {
+                'background-color': colors[0] || TYPE_COLORS.u,
+                color: this.getReadableNodeLabelColor(colors),
+            };
+
+            for (let index = 1; index <= MAX_PIE_SLICES; index += 1) {
+                styleProps[`pie-${index}-background-color`] = 'rgba(0,0,0,0)';
+                styleProps[`pie-${index}-background-size`] = '0%';
+            }
+
+            if (isPie && colors.length) {
+                const sliceSize = `${100 / colors.length}%`;
+                colors.slice(0, MAX_PIE_SLICES).forEach((color, index) => {
+                    styleProps[`pie-${index + 1}-background-color`] = color;
+                    styleProps[`pie-${index + 1}-background-size`] = sliceSize;
+                });
+            }
+
+            node.style(styleProps);
+        });
+    }
+
+    resetGraphSelectionStyles(graph) {
+        graph.edges().forEach((edge) => {
+            edge.style({
+                opacity: 1,
+                'z-index': 1,
+                label: '',
+                'text-background-opacity': 0,
+            });
+        });
+
+        graph.nodes().forEach((node) => {
+            node.style({
+                opacity: 1,
+                'z-index': 1,
+            });
+        });
+    }
+
+    initGraphSelection(graph, compactMode = false) {
+        graph.on('select', 'node', (event) => {
+            const selectedNode = event.target;
+            const connectedEdges = selectedNode.connectedEdges();
+            const connectedNodes = connectedEdges.connectedNodes();
+
+            graph.elements().style({
+                opacity: 0.1,
+                'z-index': 1,
+            });
+
+            selectedNode.style({
+                opacity: 1,
+                'z-index': 10,
+            });
+            connectedEdges.style({
+                opacity: 1,
+                'z-index': 5,
+            });
+            connectedNodes.style({
+                opacity: 1,
+                'z-index': 5,
+            });
+        });
+
+        graph.on('unselect', 'node', () => {
+            this.resetGraphSelectionStyles(graph);
+        });
+
+        graph.on('select', 'edge', (event) => {
+            const selectedEdge = event.target;
+
+            graph.edges().forEach((edge) => {
+                if (edge.id() === selectedEdge.id()) {
+                    edge.style({
+                        opacity: 1,
+                        'z-index': 15,
+                        'text-background-color': 'rgb(240,240,240)',
+                        'text-background-opacity': 0.9,
+                        'text-background-padding': '3px',
+                        'text-background-shape': 'roundrectangle',
+                        color: '#000',
+                        'font-size': compactMode ? '10px' : '12px',
+                        'text-wrap': 'wrap',
+                    });
+                    edge.style('label', this.getSelectedEdgeLabel(edge.data()));
+                } else {
+                    edge.style({
+                        opacity: 0.1,
+                        label: '',
+                        'text-background-opacity': 0,
+                        'z-index': 1,
+                    });
+                }
+            });
+
+            const connectedNodes = selectedEdge.connectedNodes();
+            graph.nodes().forEach((node) => {
+                if (connectedNodes.includes(node)) {
+                    node.style({
+                        opacity: 1,
+                        'z-index': 5,
+                    });
+                } else {
+                    node.style({
+                        opacity: 0.1,
+                        'z-index': 1,
+                    });
+                }
+            });
+        });
+
+        graph.on('unselect', 'edge', () => {
+            this.resetGraphSelectionStyles(graph);
         });
     }
 
@@ -927,6 +1145,7 @@ class DevelopmentTrajectoryController {
 
     buildStageElements(stageIndex, compactMode) {
         const activeNodes = new Set();
+        const stageLabel = stageHoverLabel(STAGES[stageIndex]);
 
         const edgeElements = this.currentData.edges
             .filter((edge) => edge.stageValues[stageIndex] > 0)
@@ -942,18 +1161,22 @@ class DevelopmentTrajectoryController {
                         count: edge.stageValues[stageIndex],
                         width: this.computeEdgeWidth(edge.stageValues[stageIndex], compactMode),
                         type: edge.type,
+                        edge_label: buildEdgeLabel(edge),
+                        stage_label: stageLabel,
                     },
                 };
             });
 
-        const nodeElements = this.currentData.nodes.map((nodeId) => ({
-            group: 'nodes',
-            data: {
-                id: nodeId,
-                label: formatNodeLabel(nodeId),
-                active: activeNodes.has(nodeId),
-            },
-        }));
+        const nodeElements = this.currentData.nodes.map((nodeId) => {
+            const nodeData = this.getNodeDisplayData(nodeId);
+            return {
+                group: 'nodes',
+                data: {
+                    ...nodeData,
+                    active: activeNodes.has(nodeId),
+                },
+            };
+        });
 
         return { nodeElements, edgeElements };
     }
@@ -966,6 +1189,7 @@ class DevelopmentTrajectoryController {
             graph.add(nodeElements);
             graph.add(edgeElements);
         });
+        this.applyNodeTypeColors(graph);
 
         graph.layout({
             name: 'preset',
