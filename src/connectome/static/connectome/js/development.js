@@ -176,6 +176,46 @@ function stageHoverLabel(stage) {
     return `${stagePart} (${hourPart || ''})`;
 }
 
+function wrapAnnotationText(message, maxCharsPerLine = 42) {
+    const source = String(message || '');
+    const normalized = source.replace(/\s+/g, ' ').trim();
+    if (!normalized.length) return '';
+
+    const sourceLines = source
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length);
+
+    const linesToWrap = sourceLines.length ? sourceLines : [normalized];
+    const wrappedLines = [];
+
+    linesToWrap.forEach((line) => {
+        const words = line.split(/\s+/).filter(Boolean);
+        let currentLine = '';
+
+        words.forEach((word) => {
+            if (!currentLine.length) {
+                currentLine = word;
+                return;
+            }
+
+            if ((currentLine.length + 1 + word.length) <= maxCharsPerLine) {
+                currentLine += ` ${word}`;
+                return;
+            }
+
+            wrappedLines.push(currentLine);
+            currentLine = word;
+        });
+
+        if (currentLine.length) {
+            wrappedLines.push(currentLine);
+        }
+    });
+
+    return wrappedLines.map((line) => escapeHtml(line)).join('<br>');
+}
+
 class DevelopmentTrajectoryController {
     constructor() {
         this.availableNeuronData = { neurons: {}, neuron_classes: {} };
@@ -2265,12 +2305,15 @@ class DevelopmentTrajectoryController {
             xaxis: { visible: false },
             yaxis: { visible: false },
             annotations: [{
-                text: message,
+                text: wrapAnnotationText(message, 38),
                 x: 0.5,
                 y: 0.5,
                 xref: 'paper',
                 yref: 'paper',
                 showarrow: false,
+                xanchor: 'center',
+                yanchor: 'middle',
+                align: 'center',
                 font: { size: 14, color: '#475569' },
             }],
             template: 'plotly_white',
