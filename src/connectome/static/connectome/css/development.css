@@ -175,6 +175,31 @@
     font-size: 0.84rem;
 }
 
+.development-trend-filter-item .ts-wrapper.form-select,
+.development-trend-filter-item .ts-wrapper.form-select-sm {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.development-trend-filter-item .ts-wrapper.form-select .ts-control,
+.development-trend-filter-item .ts-wrapper.form-select-sm .ts-control {
+    min-height: calc(1.5em + 0.5rem + 2px);
+    padding: 0 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: var(--bs-border-radius-sm);
+    display: flex;
+    align-items: center;
+    font-size: 0.84rem;
+    line-height: 1.2;
+}
+
+.development-trend-filter-item .ts-wrapper.single .ts-control .item,
+.development-trend-filter-item .ts-wrapper.single .ts-control input {
+    line-height: 1.2;
+}
+
 .development-panel-note {
     font-size: 0.82rem;
     color: #64748b;

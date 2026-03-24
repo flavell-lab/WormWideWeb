@@ -91,6 +91,7 @@ const HEATMAP_ROW_ORDER_OPTIONS = [
 const HEATMAP_ROW_ORDER_VALUES = new Set(HEATMAP_ROW_ORDER_OPTIONS.map((option) => option.value));
 const DEFAULT_HEATMAP_ROW_ORDER = 'pre_post';
 const PLOTLY_C0 = '#1f77b4';
+const TREND_FILTER_ALL_VALUE = '__trend_filter_all__';
 const TYPE_COLORS = Object.freeze({
     u: 'rgb(210,210,210)',
     b: 'rgb(75,75,75)',
@@ -186,6 +187,8 @@ class DevelopmentTrajectoryController {
 
         this.neuronSelector = null;
         this.neuronSelectorWasMouseSelect = false;
+        this.trendPreSelector = null;
+        this.trendPostSelector = null;
 
         this.stageGraphs = [];
         this.stageGraphsHasBeenFit = [];
@@ -557,33 +560,106 @@ class DevelopmentTrajectoryController {
     }
 
     initTrendFilterControls() {
+        const handlePreChange = (value) => {
+            this.trendPreFilter = this.normalizeTrendFilterValue(value);
+            if (this.currentData?.edges?.length) {
+                this.renderTrend(this.currentData);
+            } else {
+                this.syncTrendFilterControls(null);
+            }
+        };
+
+        const handlePostChange = (value) => {
+            this.trendPostFilter = this.normalizeTrendFilterValue(value);
+            if (this.currentData?.edges?.length) {
+                this.renderTrend(this.currentData);
+            } else {
+                this.syncTrendFilterControls(null);
+            }
+        };
+
         if (this.trendPreSelectElement) {
-            this.trendPreSelectElement.addEventListener('change', (event) => {
-                this.trendPreFilter = event.target.value || '';
-                if (this.currentData?.edges?.length) {
-                    this.renderTrend(this.currentData);
-                } else {
-                    this.syncTrendFilterControls(null);
-                }
-            });
+            if (typeof TomSelect === 'function') {
+                this.trendPreSelector = new TomSelect(this.trendPreSelectElement, {
+                    create: false,
+                    maxItems: 1,
+                    valueField: 'value',
+                    labelField: 'label',
+                    searchField: ['label'],
+                    options: [{ value: TREND_FILTER_ALL_VALUE, label: 'All' }],
+                    items: [TREND_FILTER_ALL_VALUE],
+                    plugins: {
+                        dropdown_input: {},
+                    },
+                    score(search) {
+                        const score = this.getScoreFunction(search);
+                        return (item) => (item.value === TREND_FILTER_ALL_VALUE ? 2 : score(item));
+                    },
+                    onChange: (value) => handlePreChange(value),
+                });
+            } else {
+                this.trendPreSelectElement.addEventListener('change', (event) => {
+                    handlePreChange(event.target.value || '');
+                });
+            }
         }
 
         if (this.trendPostSelectElement) {
-            this.trendPostSelectElement.addEventListener('change', (event) => {
-                this.trendPostFilter = event.target.value || '';
-                if (this.currentData?.edges?.length) {
-                    this.renderTrend(this.currentData);
-                } else {
-                    this.syncTrendFilterControls(null);
-                }
-            });
+            if (typeof TomSelect === 'function') {
+                this.trendPostSelector = new TomSelect(this.trendPostSelectElement, {
+                    create: false,
+                    maxItems: 1,
+                    valueField: 'value',
+                    labelField: 'label',
+                    searchField: ['label'],
+                    options: [{ value: TREND_FILTER_ALL_VALUE, label: 'All' }],
+                    items: [TREND_FILTER_ALL_VALUE],
+                    plugins: {
+                        dropdown_input: {},
+                    },
+                    score(search) {
+                        const score = this.getScoreFunction(search);
+                        return (item) => (item.value === TREND_FILTER_ALL_VALUE ? 2 : score(item));
+                    },
+                    onChange: (value) => handlePostChange(value),
+                });
+            } else {
+                this.trendPostSelectElement.addEventListener('change', (event) => {
+                    handlePostChange(event.target.value || '');
+                });
+            }
         }
 
         this.syncTrendFilterControls(null);
     }
 
-    setTrendSelectOptions(selectElement, options, selectedValue) {
+    normalizeTrendFilterValue(value) {
+        const normalized = Array.isArray(value) ? (value[0] || '') : (value || '');
+        if (!normalized || normalized === TREND_FILTER_ALL_VALUE) {
+            return '';
+        }
+        return normalized;
+    }
+
+    getTrendSelectorDisplayValue(value) {
+        return value || TREND_FILTER_ALL_VALUE;
+    }
+
+    setTrendSelectOptions(selectElement, selectControl, options, selectedValue) {
         if (!selectElement) return;
+
+        if (selectControl) {
+            const normalizedOptions = [
+                { value: TREND_FILTER_ALL_VALUE, label: 'All' },
+                ...options.map((value) => ({ value, label: value })),
+            ];
+            selectControl.clear(true);
+            selectControl.clearOptions();
+            normalizedOptions.forEach((option) => selectControl.addOption(option));
+            selectControl.refreshOptions(false);
+            selectControl.setValue(this.getTrendSelectorDisplayValue(selectedValue), true);
+            return;
+        }
 
         const optionHtml = ['<option value="">All</option>', ...options.map((value) => (
             `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`
@@ -650,14 +726,36 @@ class DevelopmentTrajectoryController {
         this.trendPreFilter = filterState.preValue;
         this.trendPostFilter = filterState.postValue;
 
-        this.setTrendSelectOptions(this.trendPreSelectElement, filterState.preOptions, this.trendPreFilter);
-        this.setTrendSelectOptions(this.trendPostSelectElement, filterState.postOptions, this.trendPostFilter);
+        this.setTrendSelectOptions(
+            this.trendPreSelectElement,
+            this.trendPreSelector,
+            filterState.preOptions,
+            this.trendPreFilter,
+        );
+        this.setTrendSelectOptions(
+            this.trendPostSelectElement,
+            this.trendPostSelector,
+            filterState.postOptions,
+            this.trendPostFilter,
+        );
 
         const hasEdges = Boolean(data?.edges?.length);
-        if (this.trendPreSelectElement) {
+        if (this.trendPreSelector) {
+            if (hasEdges) {
+                this.trendPreSelector.enable();
+            } else {
+                this.trendPreSelector.disable();
+            }
+        } else if (this.trendPreSelectElement) {
             this.trendPreSelectElement.disabled = !hasEdges;
         }
-        if (this.trendPostSelectElement) {
+        if (this.trendPostSelector) {
+            if (hasEdges) {
+                this.trendPostSelector.enable();
+            } else {
+                this.trendPostSelector.disable();
+            }
+        } else if (this.trendPostSelectElement) {
             this.trendPostSelectElement.disabled = !hasEdges;
         }
     }
