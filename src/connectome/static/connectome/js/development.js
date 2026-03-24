@@ -43,6 +43,7 @@ const STORAGE = {
     layout: 'connectome_development_layout',
     layoutSpacing: 'connectome_development_layout_spacing',
     edgeScale: 'connectome_development_edge_scale',
+    heatmapColormap: 'connectome_development_heatmap_colormap',
     sliderStage: 'connectome_development_slider_stage',
 };
 
@@ -56,6 +57,17 @@ const LAYOUT_OPTIONS = [
 ];
 const LAYOUT_VALUES = new Set(LAYOUT_OPTIONS.map((option) => option.value));
 const DEFAULT_LAYOUT = 'concentric';
+
+const HEATMAP_COLORMAP_OPTIONS = [
+    { value: 'Viridis', label: 'Viridis' },
+    { value: 'RdBu', label: 'RdBu (divergent)' },
+    { value: 'Spectral', label: 'Spectral (divergent)' },
+    { value: 'PRGn', label: 'PRGn (divergent)' },
+    { value: 'Cividis', label: 'Cividis' },
+    { value: 'Plasma', label: 'Plasma' },
+];
+const HEATMAP_COLORMAP_VALUES = new Set(HEATMAP_COLORMAP_OPTIONS.map((option) => option.value));
+const DEFAULT_HEATMAP_COLORMAP = 'Viridis';
 
 const LARGE_EDGE_THRESHOLD = 450;
 const LARGE_NODE_THRESHOLD = 140;
@@ -117,6 +129,20 @@ function normalizeLayout(value) {
     return LAYOUT_VALUES.has(value) ? value : DEFAULT_LAYOUT;
 }
 
+function normalizeHeatmapColormap(value) {
+    return HEATMAP_COLORMAP_VALUES.has(value) ? value : DEFAULT_HEATMAP_COLORMAP;
+}
+
+function stageTickLabel(stage) {
+    const [stagePart, hourPart] = stage.shortLabel.split(' ');
+    return `${stagePart}<br>(${hourPart || ''})`;
+}
+
+function stageHoverLabel(stage) {
+    const [stagePart, hourPart] = stage.shortLabel.split(' ');
+    return `${stagePart} (${hourPart || ''})`;
+}
+
 class DevelopmentTrajectoryController {
     constructor() {
         this.availableNeuronData = { neurons: {}, neuron_classes: {} };
@@ -144,6 +170,7 @@ class DevelopmentTrajectoryController {
         this.layoutName = normalizeLayout(getLocalStr(STORAGE.layout, DEFAULT_LAYOUT));
         this.layoutSpacing = parseClampedFloat(getLocalStr(STORAGE.layoutSpacing, '1'), 1, 0.25, 1.5);
         this.edgeScaleFactor = parseClampedFloat(getLocalStr(STORAGE.edgeScale, '1'), 1, 0.1, 3.0);
+        this.heatmapColormap = normalizeHeatmapColormap(getLocalStr(STORAGE.heatmapColormap, DEFAULT_HEATMAP_COLORMAP));
         this.sliderStageIndex = clamp(parseInt(getLocalStr(STORAGE.sliderStage, '0'), 10) || 0, 0, STAGES.length - 1);
 
         this.autoplayTimer = null;
@@ -200,6 +227,7 @@ class DevelopmentTrajectoryController {
         this.thresholdElectricalPlusButton = document.getElementById('development-plus-e');
         this.layoutSpacingElement = document.getElementById('development-sliderSpacing');
         this.edgeScaleElement = document.getElementById('development-sliderEdgeScale');
+        this.heatmapColormapElement = document.getElementById('development-heatmap-cmap');
         this.clearButton = document.getElementById('development-clear-neurons');
     }
 
@@ -340,6 +368,9 @@ class DevelopmentTrajectoryController {
     initRenderControls() {
         this.layoutSpacingElement.value = String(this.layoutSpacing);
         this.edgeScaleElement.value = String(this.edgeScaleFactor);
+        if (this.heatmapColormapElement) {
+            this.heatmapColormapElement.value = this.heatmapColormap;
+        }
 
         this.layoutSpacingElement.addEventListener('input', (event) => {
             const spacing = parseClampedFloat(event.target.value, this.layoutSpacing, 0.25, 1.5);
@@ -358,6 +389,17 @@ class DevelopmentTrajectoryController {
             setLocalStr(STORAGE.edgeScale, String(factor));
             this.scheduleRescaleEdges();
         });
+
+        if (this.heatmapColormapElement) {
+            this.heatmapColormapElement.addEventListener('change', (event) => {
+                this.heatmapColormap = normalizeHeatmapColormap(event.target.value);
+                this.heatmapColormapElement.value = this.heatmapColormap;
+                setLocalStr(STORAGE.heatmapColormap, this.heatmapColormap);
+                if (this.currentData?.edges?.length) {
+                    this.renderHeatmap(this.currentData);
+                }
+            });
+        }
     }
 
     relayoutCurrentGraphs() {
@@ -980,24 +1022,29 @@ class DevelopmentTrajectoryController {
             return;
         }
 
+        const stageTickLabels = STAGES.map((stage) => stageTickLabel(stage));
+        const stageHoverLabels = STAGES.map((stage) => stageHoverLabel(stage));
         const yLabels = data.edges.map((edge) => buildEdgeLabel(edge));
         const zValues = data.edges.map((edge) => edge.stageValues);
 
         Plotly.react(this.heatmapElement, [{
             type: 'heatmap',
-            x: STAGES.map((stage) => stage.shortLabel),
+            x: stageHoverLabels,
             y: yLabels,
             z: zValues,
-            colorscale: 'Blues',
+            colorscale: this.heatmapColormap,
             hovertemplate: '<b>%{y}</b><br>%{x}: %{z}<extra></extra>',
             colorbar: {
-                title: 'Count',
+                title: 'Synapse count',
                 thickness: 10,
             },
         }], {
             margin: { t: 10, r: 8, b: 44, l: 210 },
             xaxis: {
                 title: 'Development stage',
+                tickmode: 'array',
+                tickvals: stageHoverLabels,
+                ticktext: stageTickLabels,
             },
             yaxis: {
                 automargin: true,
@@ -1034,16 +1081,28 @@ class DevelopmentTrajectoryController {
         const edgeIndex = this.resolveSelectedEdgeIndex(this.selectedEdgeIndex);
         const edge = data.edges[edgeIndex];
         this.selectedEdgeIndex = edgeIndex;
+        const stageTickLabels = STAGES.map((stage) => stageTickLabel(stage));
+        const stageHoverData = STAGES.map((stage, index) => [
+            stageHoverLabel(stage),
+            formatCount(edge.stageValues[index]),
+        ]);
+        const stageValuesX = STAGES.map((_, index) => index);
+        const l4Index = STAGES.length - 1;
+        const errorUpper = new Array(STAGES.length).fill(null);
+        const errorLower = new Array(STAGES.length).fill(null);
 
         const l4Upper = edge.stageMaxs[6] - edge.stageValues[6];
         const l4Lower = edge.stageValues[6] - edge.stageMins[6];
+        errorUpper[l4Index] = l4Upper;
+        errorLower[l4Index] = l4Lower;
 
         Plotly.react(this.trendElement, [
             {
                 type: 'scatter',
                 mode: 'lines+markers',
-                x: STAGES.map((stage) => stage.shortLabel),
+                x: stageValuesX,
                 y: edge.stageValues,
+                customdata: stageHoverData,
                 name: buildEdgeLabel(edge),
                 line: {
                     color: '#1d4ed8',
@@ -1056,19 +1115,19 @@ class DevelopmentTrajectoryController {
                 error_y: {
                     type: 'data',
                     symmetric: false,
-                    array: [0, 0, 0, 0, 0, 0, l4Upper],
-                    arrayminus: [0, 0, 0, 0, 0, 0, l4Lower],
+                    array: errorUpper,
+                    arrayminus: errorLower,
                     color: '#1d4ed8',
                     thickness: 1.5,
                     width: 3,
                     visible: true,
                 },
-                hovertemplate: '%{x}: %{y}<extra></extra>',
+                hovertemplate: '%{customdata[0]}: %{customdata[1]}<extra></extra>',
             },
             {
                 type: 'scatter',
                 mode: 'markers',
-                x: ['L4 50h', 'L4 50h'],
+                x: [l4Index, l4Index],
                 y: [edge.listCount[6], edge.listCount[7]],
                 text: ['Dataset 7 raw', 'Dataset 8 raw'],
                 marker: {
@@ -1087,15 +1146,22 @@ class DevelopmentTrajectoryController {
             margin: { t: 18, r: 8, b: 40, l: 52 },
             xaxis: {
                 title: 'Stage',
+                tickmode: 'array',
+                tickvals: stageValuesX,
+                ticktext: stageTickLabels,
+                fixedrange: true,
             },
             yaxis: {
-                title: 'Raw synapse count',
+                title: 'Synapse count',
                 rangemode: 'tozero',
+                fixedrange: true,
             },
+            dragmode: false,
             template: 'plotly_white',
             showlegend: false,
         }, {
             displayModeBar: false,
+            scrollZoom: false,
             responsive: true,
         });
 

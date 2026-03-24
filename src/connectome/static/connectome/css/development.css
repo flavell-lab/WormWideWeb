@@ -233,6 +233,14 @@
     margin-top: 0;
 }
 
+.settings-select-group .form-label {
+    line-height: 1.2;
+}
+
+.settings-select-group .form-select {
+    max-width: 220px;
+}
+
 .ts-wrapper .ts-dropdown .option .select_dataset_option {
     display: flex;
     flex-direction: column;
