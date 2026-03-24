@@ -3,12 +3,10 @@ import {
     debounce,
     getCSRFToken,
     getLocalBool,
-    getLocalJSON,
     getLocalStr,
     isNodeRectangle,
     parseRGB,
     setLocalBool,
-    setLocalJSON,
     setLocalStr,
 } from '/static/core/js/utility.js';
 import { URL_CONNECTOME_EDGE } from '/static/core/js/constants.js';
@@ -47,7 +45,6 @@ const DATASET_COUNT_LABELS = [
 ];
 
 const STORAGE = {
-    selectedValues: 'connectome_development_selected_values',
     showIndividualNeuron: 'connectome_development_show_individual_neuron',
     showConnectedNeuron: 'connectome_development_show_connected_neuron',
     thresholdChemical: 'connectome_development_threshold_chemical',
@@ -241,7 +238,6 @@ class DevelopmentTrajectoryController {
         this.applyCitation();
 
         await this.loadAvailableNeuronOptions();
-        this.restoreSelection();
 
         this.syncManifestFromSelector();
         this.updateSelectionSummary();
@@ -305,7 +301,6 @@ class DevelopmentTrajectoryController {
 
         this.clearButton.addEventListener('click', () => {
             this.neuronSelector.clear();
-            this.persistSelection();
             this.syncManifestFromSelector();
             this.updateSelectionSummary();
             this.renderNoSelectionState();
@@ -569,14 +564,12 @@ class DevelopmentTrajectoryController {
                     }
                 }
 
-                this.persistSelection();
                 this.syncManifestFromSelector();
                 this.updateSelectionSummary();
                 this.scheduleRefresh();
             },
             onItemRemove: (value) => {
                 this.handleNeuronRemove(value);
-                this.persistSelection();
                 this.syncManifestFromSelector();
                 this.updateSelectionSummary();
                 this.scheduleRefresh();
@@ -914,25 +907,6 @@ class DevelopmentTrajectoryController {
         });
 
         this.neuronSelector.refreshOptions(false);
-    }
-
-    restoreSelection() {
-        const savedSelection = getLocalJSON(STORAGE.selectedValues, []);
-        if (!Array.isArray(savedSelection) || !savedSelection.length) {
-            return;
-        }
-
-        const availableValues = new Set(Object.keys(this.neuronSelector.options));
-        const filteredSelection = savedSelection.filter((value) => availableValues.has(value));
-        if (!filteredSelection.length) {
-            return;
-        }
-
-        this.neuronSelector.setValue(filteredSelection);
-    }
-
-    persistSelection() {
-        setLocalJSON(STORAGE.selectedValues, toArray(this.neuronSelector.getValue()));
     }
 
     handleNeuronAdd(value) {
