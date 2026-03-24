@@ -16,18 +16,81 @@
     white-space: nowrap;
 }
 
-.development-menu-spinner-slot {
-    width: 1.5rem;
-    height: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
 .development-selection-summary {
     color: #475569;
     font-size: 0.88rem;
+}
+
+.development-loading-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.85rem;
+    position: fixed;
+    top: 5.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1055;
+    margin: 0;
+    padding: 0.2rem 0.35rem;
+    pointer-events: none;
+}
+
+.development-loading-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.72rem 0.95rem;
+    border-radius: 0.75rem;
+    border: 1px solid #bfdbfe;
+    background: #ffffff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
+.development-loading-spinner {
+    width: 1.55rem;
+    height: 1.55rem;
+    border-width: 0.2rem;
+}
+
+.development-loading-title {
+    font-size: 0.93rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #0f172a;
+}
+
+.development-loading-detail {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    color: #475569;
+}
+
+.development-loading-track {
+    width: min(360px, 76%);
+    height: 0.34rem;
+    border-radius: 999px;
+    background: #dbeafe;
+    overflow: hidden;
+}
+
+.development-loading-bar {
+    width: 42%;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2563eb 0%, #3b82f6 70%, #60a5fa 100%);
+    animation: development-loading-progress 1.15s ease-in-out infinite;
+}
+
+@keyframes development-loading-progress {
+    from {
+        transform: translateX(-135%);
+    }
+
+    to {
+        transform: translateX(270%);
+    }
 }
 
 .development-density-notice {
@@ -293,10 +356,6 @@
 
     #development-stage-summary {
         margin-left: 0;
-    }
-
-    .development-menu-spinner-slot {
-        width: auto;
     }
 
     .development-stage-grid {

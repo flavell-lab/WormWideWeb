@@ -258,7 +258,7 @@ class DevelopmentTrajectoryController {
         this.trendDetailsElement = document.getElementById('development-trend-details');
         this.stageGridElement = document.getElementById('development-stage-grid');
         this.selectionSummaryElement = document.getElementById('development-selection-summary');
-        this.spinnerElement = document.getElementById('development-spinner');
+        this.loadingStatusElement = document.getElementById('development-loading-status');
         this.densityNoticeElement = document.getElementById('development-density-notice');
         this.stageSliderElement = document.getElementById('development-stage-slider');
         this.stageLabelElement = document.getElementById('development-stage-label');
@@ -997,6 +997,10 @@ class DevelopmentTrajectoryController {
     }
 
     updateSelectionSummary() {
+        if (!this.selectionSummaryElement) {
+            return;
+        }
+
         const selectedCount = Object.keys(this.manifest).length;
         if (!selectedCount) {
             this.selectionSummaryElement.textContent = 'No neurons selected';
@@ -1008,12 +1012,16 @@ class DevelopmentTrajectoryController {
     }
 
     setLoading(isLoading) {
+        if (!this.loadingStatusElement) {
+            return;
+        }
+
         if (isLoading) {
             this.loadingCount += 1;
         } else {
             this.loadingCount = Math.max(0, this.loadingCount - 1);
         }
-        this.spinnerElement.style.display = this.loadingCount > 0 ? 'inline-block' : 'none';
+        this.loadingStatusElement.style.display = this.loadingCount > 0 ? 'flex' : 'none';
     }
 
     async refresh() {

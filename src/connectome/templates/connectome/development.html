@@ -44,13 +44,13 @@
           aria-label="More settings">
           <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
         </button>
-      </div>
 
-      <span id="development-selection-summary" class="development-selection-summary ms-auto">No neurons selected</span>
-      <div class="development-menu-spinner-slot">
-        <div id="development-spinner" class="spinner-border spinner-border-sm" role="status" style="display:none">
-          <span class="visually-hidden">Loading...</span>
-        </div>
+        <a id="development-citation-info" class="btn btn-light btn-sm" href="/about/#witvliet" target="_blank"
+          rel="noopener noreferrer"
+          data-bs-toggle="tooltip" data-bs-title="Witvliet et al., 2021 (developmental datasets citation details)"
+          aria-label="Connectome citation information">
+          <i class="bi bi-info-circle" aria-hidden="true"></i>
+        </a>
       </div>
     </div>
 
@@ -126,6 +126,19 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="development-loading-status" class="development-loading-status" role="status" aria-live="polite" style="display:none">
+    <div class="development-loading-panel">
+      <div class="spinner-border text-primary development-loading-spinner" role="status" aria-hidden="true"></div>
+      <div class="development-loading-text">
+        <div class="development-loading-title">Loading developmental connectome...</div>
+        <div class="development-loading-detail">Preparing trajectories and network views</div>
+      </div>
+    </div>
+    <div class="development-loading-track" aria-hidden="true">
+      <div class="development-loading-bar"></div>
     </div>
   </div>
 
