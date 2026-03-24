@@ -147,6 +147,22 @@
     min-height: 310px;
 }
 
+.development-trend-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.development-trend-filter-item .form-label {
+    font-size: 0.75rem;
+    color: #475569;
+    line-height: 1.2;
+}
+
+.development-trend-filter-item .form-select {
+    font-size: 0.84rem;
+}
+
 .development-panel-note {
     font-size: 0.82rem;
     color: #64748b;

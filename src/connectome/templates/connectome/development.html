@@ -178,6 +178,20 @@
         <div class="col-xl-4">
           <div class="card card-body development-panel">
             <h6 class="mb-2">Selected Edge Trend</h6>
+            <div class="development-trend-filters mb-2">
+              <div class="development-trend-filter-item">
+                <label for="development-trend-pre" class="form-label mb-1">Pre</label>
+                <select id="development-trend-pre" class="form-select form-select-sm" aria-label="Select pre-synaptic neuron">
+                  <option value="">All</option>
+                </select>
+              </div>
+              <div class="development-trend-filter-item">
+                <label for="development-trend-post" class="form-label mb-1">Post</label>
+                <select id="development-trend-post" class="form-select form-select-sm" aria-label="Select post-synaptic neuron">
+                  <option value="">All</option>
+                </select>
+              </div>
+            </div>
             <div id="development-trend" class="development-plot development-trend-plot"></div>
             <div id="development-trend-details" class="development-trend-details"></div>
           </div>

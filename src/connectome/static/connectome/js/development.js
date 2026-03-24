@@ -183,6 +183,8 @@ class DevelopmentTrajectoryController {
         this.selectedEdgeIndex = null;
         this.lastRequestToken = 0;
         this.loadingCount = 0;
+        this.trendPreFilter = '';
+        this.trendPostFilter = '';
 
         this.showIndividualNeuron = getLocalBool(STORAGE.showIndividualNeuron, false);
         this.showConnectedNeuron = getLocalBool(STORAGE.showConnectedNeuron, true);
@@ -252,6 +254,8 @@ class DevelopmentTrajectoryController {
         this.heatmapElement = document.getElementById('development-heatmap');
         this.trendElement = document.getElementById('development-trend');
         this.trendDetailsElement = document.getElementById('development-trend-details');
+        this.trendPreSelectElement = document.getElementById('development-trend-pre');
+        this.trendPostSelectElement = document.getElementById('development-trend-post');
         this.stageGridElement = document.getElementById('development-stage-grid');
         this.selectionSummaryElement = document.getElementById('development-selection-summary');
         this.loadingStatusElement = document.getElementById('development-loading-status');
@@ -280,6 +284,7 @@ class DevelopmentTrajectoryController {
 
     initControls() {
         this.initNeuronSelector();
+        this.initTrendFilterControls();
         this.initLayoutControls();
         this.initThresholdControls();
         this.initRenderControls();
@@ -517,6 +522,187 @@ class DevelopmentTrajectoryController {
     isGraphContainerVisible(graph) {
         const container = graph?.container?.();
         return Boolean(container && container.offsetParent !== null && container.clientWidth > 0 && container.clientHeight > 0);
+    }
+
+    initTrendFilterControls() {
+        if (this.trendPreSelectElement) {
+            this.trendPreSelectElement.addEventListener('change', (event) => {
+                this.trendPreFilter = event.target.value || '';
+                if (this.currentData?.edges?.length) {
+                    this.renderTrend(this.currentData);
+                } else {
+                    this.syncTrendFilterControls(null);
+                }
+            });
+        }
+
+        if (this.trendPostSelectElement) {
+            this.trendPostSelectElement.addEventListener('change', (event) => {
+                this.trendPostFilter = event.target.value || '';
+                if (this.currentData?.edges?.length) {
+                    this.renderTrend(this.currentData);
+                } else {
+                    this.syncTrendFilterControls(null);
+                }
+            });
+        }
+
+        this.syncTrendFilterControls(null);
+    }
+
+    setTrendSelectOptions(selectElement, options, selectedValue) {
+        if (!selectElement) return;
+
+        const optionHtml = ['<option value="">All</option>', ...options.map((value) => (
+            `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`
+        ))];
+        selectElement.innerHTML = optionHtml.join('');
+        selectElement.value = selectedValue || '';
+    }
+
+    computeTrendFilterState(data, preValue, postValue) {
+        if (!data?.edges?.length) {
+            return {
+                preValue: '',
+                postValue: '',
+                preOptions: [],
+                postOptions: [],
+            };
+        }
+
+        let nextPre = preValue || '';
+        let nextPost = postValue || '';
+
+        for (let i = 0; i < 2; i += 1) {
+            const preOptions = [...new Set(
+                data.edges
+                    .filter((edge) => !nextPost || edge.post === nextPost)
+                    .map((edge) => edge.pre)
+            )].sort((a, b) => a.localeCompare(b));
+            if (nextPre && !preOptions.includes(nextPre)) {
+                nextPre = '';
+            }
+
+            const postOptions = [...new Set(
+                data.edges
+                    .filter((edge) => !nextPre || edge.pre === nextPre)
+                    .map((edge) => edge.post)
+            )].sort((a, b) => a.localeCompare(b));
+            if (nextPost && !postOptions.includes(nextPost)) {
+                nextPost = '';
+            }
+        }
+
+        const finalPreOptions = [...new Set(
+            data.edges
+                .filter((edge) => !nextPost || edge.post === nextPost)
+                .map((edge) => edge.pre)
+        )].sort((a, b) => a.localeCompare(b));
+
+        const finalPostOptions = [...new Set(
+            data.edges
+                .filter((edge) => !nextPre || edge.pre === nextPre)
+                .map((edge) => edge.post)
+        )].sort((a, b) => a.localeCompare(b));
+
+        return {
+            preValue: nextPre,
+            postValue: nextPost,
+            preOptions: finalPreOptions,
+            postOptions: finalPostOptions,
+        };
+    }
+
+    syncTrendFilterControls(data) {
+        const filterState = this.computeTrendFilterState(data, this.trendPreFilter, this.trendPostFilter);
+        this.trendPreFilter = filterState.preValue;
+        this.trendPostFilter = filterState.postValue;
+
+        this.setTrendSelectOptions(this.trendPreSelectElement, filterState.preOptions, this.trendPreFilter);
+        this.setTrendSelectOptions(this.trendPostSelectElement, filterState.postOptions, this.trendPostFilter);
+
+        const hasEdges = Boolean(data?.edges?.length);
+        if (this.trendPreSelectElement) {
+            this.trendPreSelectElement.disabled = !hasEdges;
+        }
+        if (this.trendPostSelectElement) {
+            this.trendPostSelectElement.disabled = !hasEdges;
+        }
+    }
+
+    getTrendFilteredEntries(data) {
+        return data.edges
+            .map((edge, index) => ({ edge, index }))
+            .filter(({ edge }) => {
+                if (this.trendPreFilter && edge.pre !== this.trendPreFilter) {
+                    return false;
+                }
+                if (this.trendPostFilter && edge.post !== this.trendPostFilter) {
+                    return false;
+                }
+                return true;
+            });
+    }
+
+    buildTrendSeriesFromEdge(edge) {
+        return {
+            label: buildEdgeLabel(edge),
+            listCount: [...edge.listCount],
+            stageValues: [...edge.stageValues],
+            stageMins: [...edge.stageMins],
+            stageMaxs: [...edge.stageMaxs],
+            edgeCount: 1,
+            isAggregated: false,
+        };
+    }
+
+    buildTrendSeriesFromEntries(entries) {
+        const summedCounts = new Array(WITVLIET_DATASET_IDS.length).fill(0);
+        entries.forEach(({ edge }) => {
+            edge.listCount.forEach((count, index) => {
+                summedCounts[index] += Number(count || 0);
+            });
+        });
+
+        const stageValues = [
+            summedCounts[0],
+            summedCounts[1],
+            summedCounts[2],
+            summedCounts[3],
+            summedCounts[4],
+            summedCounts[5],
+            (summedCounts[6] + summedCounts[7]) / 2,
+        ];
+        const stageMins = [
+            summedCounts[0],
+            summedCounts[1],
+            summedCounts[2],
+            summedCounts[3],
+            summedCounts[4],
+            summedCounts[5],
+            Math.min(summedCounts[6], summedCounts[7]),
+        ];
+        const stageMaxs = [
+            summedCounts[0],
+            summedCounts[1],
+            summedCounts[2],
+            summedCounts[3],
+            summedCounts[4],
+            summedCounts[5],
+            Math.max(summedCounts[6], summedCounts[7]),
+        ];
+
+        const preLabel = this.trendPreFilter || 'All';
+        const postLabel = this.trendPostFilter || 'All';
+        return {
+            label: `${preLabel} \u2192 ${postLabel}`,
+            listCount: summedCounts,
+            stageValues,
+            stageMins,
+            stageMaxs,
+            edgeCount: entries.length,
+            isAggregated: true,
+        };
     }
 
     getSliderRenderPositions() {
@@ -1483,31 +1669,63 @@ class DevelopmentTrajectoryController {
             if (rowIndex === -1) return;
 
             this.selectedEdgeIndex = rowIndex;
+            const selectedEdge = this.currentData?.edges?.[rowIndex];
+            if (selectedEdge) {
+                this.trendPreFilter = selectedEdge.pre;
+                this.trendPostFilter = selectedEdge.post;
+            }
             this.renderTrend(this.currentData);
         });
     }
 
     renderTrend(data) {
+        this.syncTrendFilterControls(data);
+
         if (!data.edges.length) {
             this.renderEmptyTrend('Select neurons to inspect edge trajectories.');
             return;
         }
 
-        const edgeIndex = this.resolveSelectedEdgeIndex(this.selectedEdgeIndex);
-        const edge = data.edges[edgeIndex];
-        this.selectedEdgeIndex = edgeIndex;
+        const filteredEntries = this.getTrendFilteredEntries(data);
+        if (!filteredEntries.length) {
+            this.renderEmptyTrend('No edges match the selected Pre/Post filters.');
+            return;
+        }
+
+        const shouldAggregate = !this.trendPreFilter || !this.trendPostFilter;
+        let trendSeries = null;
+        if (shouldAggregate) {
+            trendSeries = this.buildTrendSeriesFromEntries(filteredEntries);
+            this.selectedEdgeIndex = null;
+        } else {
+            let selectedEntry = null;
+            if (this.trendPreFilter && this.trendPostFilter) {
+                selectedEntry = filteredEntries.find(({ edge }) => (
+                    edge.pre === this.trendPreFilter && edge.post === this.trendPostFilter
+                )) || null;
+            }
+            if (!selectedEntry && this.selectedEdgeIndex !== null) {
+                selectedEntry = filteredEntries.find(({ index }) => index === this.selectedEdgeIndex) || null;
+            }
+            if (!selectedEntry) {
+                selectedEntry = filteredEntries[0];
+            }
+
+            trendSeries = this.buildTrendSeriesFromEdge(selectedEntry.edge);
+            this.selectedEdgeIndex = selectedEntry.index;
+        }
         const stageTickLabels = STAGES.map((stage) => stageTickLabel(stage));
         const stageHoverData = STAGES.map((stage, index) => [
             stageHoverLabel(stage),
-            formatCount(edge.stageValues[index]),
+            formatCount(trendSeries.stageValues[index]),
         ]);
         const stageValuesX = STAGES.map((_, index) => index);
         const l4Index = STAGES.length - 1;
         const errorUpper = new Array(STAGES.length).fill(null);
         const errorLower = new Array(STAGES.length).fill(null);
 
-        const l4Upper = edge.stageMaxs[6] - edge.stageValues[6];
-        const l4Lower = edge.stageValues[6] - edge.stageMins[6];
+        const l4Upper = trendSeries.stageMaxs[6] - trendSeries.stageValues[6];
+        const l4Lower = trendSeries.stageValues[6] - trendSeries.stageMins[6];
         errorUpper[l4Index] = l4Upper;
         errorLower[l4Index] = l4Lower;
 
@@ -1516,9 +1734,9 @@ class DevelopmentTrajectoryController {
                 type: 'scatter',
                 mode: 'lines+markers',
                 x: stageValuesX,
-                y: edge.stageValues,
+                y: trendSeries.stageValues,
                 customdata: stageHoverData,
-                name: buildEdgeLabel(edge),
+                name: trendSeries.label,
                 line: {
                     color: PLOTLY_C0,
                     width: 2.8,
@@ -1543,7 +1761,7 @@ class DevelopmentTrajectoryController {
                 type: 'scatter',
                 mode: 'markers',
                 x: [l4Index, l4Index],
-                y: [edge.listCount[6], edge.listCount[7]],
+                y: [trendSeries.listCount[6], trendSeries.listCount[7]],
                 text: ['Dataset 7 raw', 'Dataset 8 raw'],
                 marker: {
                     color: PLOTLY_C0,
@@ -1584,14 +1802,19 @@ class DevelopmentTrajectoryController {
             responsive: true,
         });
 
-        const datasetCountRows = edge.listCount
+        const datasetCountRows = trendSeries.listCount
             .map((count, index) => (
                 `<div class="development-trend-stat"><span>${DATASET_COUNT_LABELS[index] || `Dataset ${index + 1}`}</span><span>${formatCount(count)}</span></div>`
             ))
             .join('');
 
+        const aggregateNote = trendSeries.isAggregated
+            ? `<div class="small text-muted mb-2">Summed across ${trendSeries.edgeCount} edge${trendSeries.edgeCount === 1 ? '' : 's'}</div>`
+            : '';
+
         this.trendDetailsElement.innerHTML = `
-            <div class="development-trend-title mb-2"><strong>${escapeHtml(buildEdgeLabel(edge))}</strong></div>
+            <div class="development-trend-title mb-2"><strong>${escapeHtml(trendSeries.label)}</strong></div>
+            ${aggregateNote}
             ${datasetCountRows}
         `;
     }
@@ -1730,6 +1953,9 @@ class DevelopmentTrajectoryController {
         this.basePositionsSlider = {};
         this.stageGraphsHasBeenFit = STAGES.map(() => false);
         this.sliderUserPositions = {};
+        this.trendPreFilter = '';
+        this.trendPostFilter = '';
+        this.syncTrendFilterControls(null);
         this.updateSelectionSummary();
         this.densityNoticeElement.classList.add('d-none');
 
