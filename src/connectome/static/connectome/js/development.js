@@ -43,6 +43,9 @@ const DATASET_COUNT_LABELS = [
     'L4 (50h, dataset 7)',
     'L4 (50h, dataset 8)',
 ];
+const DATASET_EXPORT_COLUMN_LABELS = DATASET_COUNT_LABELS.map(
+    (label, index) => `Dataset ${index + 1} - ${label}`,
+);
 
 const STORAGE = {
     showIndividualNeuron: 'connectome_development_show_individual_neuron',
@@ -140,6 +143,14 @@ function escapeHtml(value) {
     const div = document.createElement('div');
     div.textContent = value;
     return div.innerHTML;
+}
+
+function escapeCsvField(value) {
+    const text = value === null || value === undefined ? '' : String(value);
+    if (!/[",\n]/.test(text)) {
+        return text;
+    }
+    return `"${text.replace(/"/g, '""')}"`;
 }
 
 function parsePositiveInt(value, fallback = 0) {
@@ -334,6 +345,8 @@ class DevelopmentTrajectoryController {
         this.heatmapColormapElement = document.getElementById('development-heatmap-cmap');
         this.heatmapRowOrderElement = document.getElementById('development-heatmap-row-order');
         this.clearButton = document.getElementById('development-clear-neurons');
+        this.downloadMenuButton = document.getElementById('development-download-menu-button');
+        this.downloadOptionElements = [...document.querySelectorAll('.development-download-option')];
     }
 
     initTooltips() {
@@ -346,6 +359,7 @@ class DevelopmentTrajectoryController {
         this.initTrendFilterControls();
         this.initLayoutControls();
         this.initThresholdControls();
+        this.initDownloadMenu();
         this.initRenderControls();
 
         this.showIndividualElement.checked = this.showIndividualNeuron;
@@ -379,6 +393,114 @@ class DevelopmentTrajectoryController {
         });
 
         this.sliderPlayButton.addEventListener('click', () => this.toggleAutoplay());
+        this.updateDownloadAvailability();
+    }
+
+    initDownloadMenu() {
+        if (!this.downloadOptionElements?.length) {
+            return;
+        }
+
+        this.downloadOptionElements.forEach((optionButton) => {
+            optionButton.addEventListener('click', () => {
+                const format = (optionButton.dataset.format || '').toLowerCase();
+                if (format === 'json') {
+                    this.downloadTrajectoryJSON();
+                    return;
+                }
+                if (format === 'csv') {
+                    this.downloadTrajectoryCSV();
+                }
+            });
+        });
+    }
+
+    updateDownloadAvailability() {
+        const hasEdgeData = Boolean(this.currentData?.edges?.length);
+        if (this.downloadMenuButton) {
+            this.downloadMenuButton.disabled = !hasEdgeData;
+        }
+        if (this.downloadOptionElements?.length) {
+            this.downloadOptionElements.forEach((optionButton) => {
+                optionButton.disabled = !hasEdgeData;
+            });
+        }
+    }
+
+    getTrajectoryExportRows() {
+        if (!this.currentData?.edges?.length) {
+            return [];
+        }
+
+        return this.currentData.edges.map((edge) => ({
+            pre: edge.pre,
+            post: edge.post,
+            datasetCounts: WITVLIET_DATASET_IDS.map((_, index) => Number(edge.listCount?.[index] || 0)),
+        }));
+    }
+
+    downloadTextContent(content, fileName, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    downloadTrajectoryJSON() {
+        const rows = this.getTrajectoryExportRows();
+        if (!rows.length) {
+            alert('No trajectory data to download.');
+            return;
+        }
+
+        const payload = {
+            datasets: WITVLIET_DATASET_IDS.map((datasetId, index) => ({
+                dataset_id: datasetId,
+                column_label: DATASET_EXPORT_COLUMN_LABELS[index],
+            })),
+            synapses: rows.map((row) => ({
+                pre: row.pre,
+                post: row.post,
+                dataset_counts: row.datasetCounts,
+            })),
+        };
+
+        this.downloadTextContent(
+            JSON.stringify(payload, null, 2),
+            'wormwideweb development trajectories.json',
+            'application/json',
+        );
+    }
+
+    downloadTrajectoryCSV() {
+        const rows = this.getTrajectoryExportRows();
+        if (!rows.length) {
+            alert('No trajectory data to download.');
+            return;
+        }
+
+        const header = ['pre', 'post', ...DATASET_EXPORT_COLUMN_LABELS];
+        const csvLines = [header.map((value) => escapeCsvField(value)).join(',')];
+
+        rows.forEach((row) => {
+            const values = [
+                row.pre,
+                row.post,
+                ...row.datasetCounts.map((value) => formatCount(value)),
+            ];
+            csvLines.push(values.map((value) => escapeCsvField(value)).join(','));
+        });
+
+        this.downloadTextContent(
+            csvLines.join('\n'),
+            'wormwideweb development trajectories.csv',
+            'text/csv;charset=utf-8',
+        );
     }
 
     initLayoutControls() {
@@ -1498,6 +1620,7 @@ class DevelopmentTrajectoryController {
         if (!this.latestResponseData) return;
 
         this.currentData = this.transformResponse(this.latestResponseData);
+        this.updateDownloadAvailability();
         this.selectedEdgeIndex = this.resolveSelectedEdgeIndex(this.selectedEdgeIndex);
         this.basePositionsSmall = this.computeBasePositions(this.currentData, this.layoutSpacingSmall);
         this.basePositionsSlider = this.computeBasePositions(this.currentData, this.layoutSpacingSlider);
@@ -2243,6 +2366,7 @@ class DevelopmentTrajectoryController {
         this.stopAutoplay();
         this.currentData = null;
         this.latestResponseData = null;
+        this.updateDownloadAvailability();
         this.basePositionsSmall = {};
         this.basePositionsSlider = {};
         this.stageGraphsHasBeenFit = STAGES.map(() => false);
