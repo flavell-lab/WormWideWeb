@@ -373,10 +373,11 @@ def get_edge_response_data(data):
                     return neuron_class
 
     def get_synapse_key(pre_val, post_val, syn_type):
-        # For type 'e', sort the labels to ensure consistency, since gap junctions are bidrectional
+        # Tuple keys avoid delimiter parsing and are safe for any label values.
+        # For type 'e', sort labels to ensure consistency (gap junctions are bidirectional).
         if syn_type == "e":
-            return f"{min(pre_val, post_val)}!{max(pre_val, post_val)}!{syn_type}"
-        return f"{pre_val}!{post_val}!{syn_type}"
+            return (min(pre_val, post_val), max(pre_val, post_val), syn_type)
+        return (pre_val, post_val, syn_type)
 
     # Precompute dataset indices.
     dataset_index = {dataset: idx for idx, dataset in enumerate(datasets)}
@@ -423,7 +424,7 @@ def get_edge_response_data(data):
     }
 
     for syn_key in sorted(collect_synapses.keys()):
-        pre, post, syn_type = syn_key.split("!")
+        pre, post, syn_type = syn_key
         list_count = collect_synapses[syn_key]
         return_dict["synapses"].append({
             "pre": pre,
