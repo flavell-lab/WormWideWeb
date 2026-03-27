@@ -18,14 +18,33 @@ from connectome.models import Dataset as ConnectomeDataset
 from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
 from core.models import JSONCache
 
-ACTIVITY_CACHE_TTL_LONG = 60 * 60 * 24 * 30
+ACTIVITY_CACHE_TTL_LONG = 60 * 60 * 24 * 14
 ACTIVITY_CACHE_TTL_MEDIUM = 60 * 60 * 24 * 14
-ACTIVITY_CACHE_TTL_SHORT = 60 * 60 * 24 * 7
-ACTIVITY_REPLAY_CACHE_TTL = 60 * 60 * 24
-ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY = "activity_replay_connectome_degree_index_v3"
-ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX = "activity_replay_behavior_corr_v1_"
-ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX = "activity_replay_v3_"
-PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX = "plot_multiple_data_"
+ACTIVITY_CACHE_TTL_SHORT = 60 * 60 * 12
+ACTIVITY_REPLAY_CACHE_TTL = ACTIVITY_CACHE_TTL_SHORT
+ACTIVITY_PAGE_CACHE_TTL = 60 * 60 * 6
+ACTIVITY_DATA_PAGE_CACHE_TTL = 60 * 60 * 12
+ACTIVITY_ENCODING_TABLE_CACHE_TTL = 60 * 60 * 24
+ACTIVITY_NEURAL_TRACE_HTTP_CACHE_TTL = 60 * 60 * 24 * 3
+ACTIVITY_ENCODING_BEHAVIOR_HTTP_CACHE_TTL = 60 * 60 * 24 * 7
+ACTIVITY_PLOT_MULTIPLE_CACHE_TTL = 60 * 30
+ACTIVITY_CACHE_VERSION = "v1"
+
+
+def _activity_cache_key(*parts):
+    return "activity_" + ACTIVITY_CACHE_VERSION + "_" + "_".join(
+        str(part) for part in parts
+    )
+
+
+ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY = _activity_cache_key(
+    "replay_connectome_degree_index"
+)
+ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX = _activity_cache_key(
+    "replay_behavior_corr"
+) + "_"
+ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX = _activity_cache_key("replay_payload") + "_"
+PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX = _activity_cache_key("plot_multiple_data") + "_"
 
 
 def _dedupe_int_list(values):
@@ -58,21 +77,21 @@ def _validate_plot_multiple_payload(data):
     return normalized, None
 
 
-@cache_page(60*60*24*30)
+@cache_page(ACTIVITY_PAGE_CACHE_TTL)
 def index(request):
     context = {}
     
     return render(request, "activity/index.html", context)
 
 
-@cache_page(60*60*24*30)
+@cache_page(ACTIVITY_PAGE_CACHE_TTL)
 def index_encoding(request):
     context = {}
 
     return render(request, "activity/index_encoding.html", context)    
 
 
-@cache_page(60*60*24*30)
+@cache_page(ACTIVITY_PAGE_CACHE_TTL)
 def encoding_table(request):
     context = {}
 
@@ -84,7 +103,7 @@ def encoding_connectome(request):
     Render the encoding connectome page using cached connectome dataset data.
     If the data is not in cache, fetch it and store it.
     """
-    cache_key = "encoding_connectome_data"
+    cache_key = _activity_cache_key("encoding_connectome_data")
     encoding_data = cache.get(cache_key)
     if encoding_data is None:
         datasets_json = connectome_datasets()
@@ -103,7 +122,7 @@ def dataset(request):
     Optimizes queries by fetching papers and dataset types in bulk,
     and caches the resulting JSON structures.
     """
-    cache_key = "dataset_data"
+    cache_key = _activity_cache_key("dataset_data")
     context = cache.get(cache_key)
     if context is None:
         # Build list of datasets with required fields.
@@ -164,7 +183,7 @@ def dataset(request):
     return render(request, "activity/dataset.html", context)
 
 
-@cache_page(60*60*24)
+@cache_page(ACTIVITY_DATA_PAGE_CACHE_TTL)
 def get_all_dataset(request):
     datasets = GCaMPDataset.objects.all().values("dataset_id", "dataset_type", "n_neuron",
                                                  "n_labeled", "max_t", "avg_timestep")
@@ -172,21 +191,21 @@ def get_all_dataset(request):
     return JsonResponse(list(datasets), safe=False)
 
 
-@cache_page(60*60*24)
+@cache_page(ACTIVITY_DATA_PAGE_CACHE_TTL)
 def get_find_neuron_data(request):
     data = get_object_or_404(JSONCache, name="neuropal_match").json
 
     return JsonResponse(json.loads(data))
 
 
-@cache_page(60*60*24*30)
+@cache_page(ACTIVITY_PAGE_CACHE_TTL)
 def find_neuron(request):
     context = {}
 
     return render(request, "activity/find_neuron.html", context)
 
 
-@cache_page(60 * 60 * 24)
+@cache_page(ACTIVITY_DATA_PAGE_CACHE_TTL)
 def signal_propagation_replay(request):
     activity_datasets = [
         {
@@ -268,7 +287,8 @@ def _aggregate_replay_traces(dataset):
     idx_values = _dedupe_int_list(idx_values)
 
     trace_cache_key_map = {
-        f"{dataset.dataset_id}_{idx_neuron}": idx_neuron for idx_neuron in idx_values
+        _activity_cache_key("trace", dataset.dataset_id, idx_neuron): idx_neuron
+        for idx_neuron in idx_values
     }
     cached_traces = cache.get_many(list(trace_cache_key_map.keys()))
     trace_by_idx = {}
@@ -294,7 +314,9 @@ def _aggregate_replay_traces(dataset):
                 "dataset_id": dataset.dataset_id,
             }
             trace_by_idx[neuron.idx_neuron] = trace_entry
-            new_cache_entries[f"{dataset.dataset_id}_{neuron.idx_neuron}"] = trace_entry
+            new_cache_entries[
+                _activity_cache_key("trace", dataset.dataset_id, neuron.idx_neuron)
+            ] = trace_entry
         if new_cache_entries:
             cache.set_many(new_cache_entries, timeout=ACTIVITY_CACHE_TTL_MEDIUM)
 
@@ -972,9 +994,9 @@ def get_signal_replay_data(request):
 
     cache_key = (
         f"{ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX}"
-        f"{activity_dataset_id}|{connectome_dataset_id}|"
-        f"{int(include_electrical)}|{int(show_connected)}|"
-        f"{min_synapse_chemical}|{min_synapse_electrical}"
+        f"{activity_dataset_id}_{connectome_dataset_id}_"
+        f"{int(include_electrical)}_{int(show_connected)}_"
+        f"{min_synapse_chemical}_{min_synapse_electrical}"
     )
     cached_payload = cache.get(cache_key)
     if cached_payload is not None:
@@ -1002,7 +1024,7 @@ def get_signal_replay_data(request):
 
 
 def get_neural_trace_data(dataset_id, idx_neuron):
-    cache_key = f"{dataset_id}_{idx_neuron}"
+    cache_key = _activity_cache_key("trace", dataset_id, idx_neuron)
     neuron = cache.get(cache_key)
     if neuron is None:
         neuron = (
@@ -1019,7 +1041,7 @@ def get_neural_trace_data(dataset_id, idx_neuron):
     return neuron
 
 
-@cache_control(public=True, max_age=1*24*3600)
+@cache_control(public=True, max_age=ACTIVITY_NEURAL_TRACE_HTTP_CACHE_TTL)
 def get_neural_trace(request, dataset_id, idx_neuron):
     neuron = get_neural_trace_data(dataset_id, idx_neuron)
     if neuron is None:
@@ -1030,7 +1052,7 @@ def get_neural_trace(request, dataset_id, idx_neuron):
 """
 get all encoding from 
 """
-@cache_page(60*60*24*30)
+@cache_page(ACTIVITY_ENCODING_TABLE_CACHE_TTL)
 def get_all_dataset_encoding(request):
     data = get_object_or_404(JSONCache, name="atanas_kim_2023_all_encoding_dict").json
 
@@ -1056,7 +1078,7 @@ def get_dataset_encoding(dataset):
 
 
 def get_encoding_data(dataset_id):
-    cache_key = f"{dataset_id}_encoding"
+    cache_key = _activity_cache_key("encoding", dataset_id)
     encoding = cache.get(cache_key)
     if encoding is None:
         dataset = get_object_or_404(GCaMPDataset, dataset_id=dataset_id)
@@ -1069,12 +1091,12 @@ def get_encoding_data(dataset_id):
 """
 get encoding data of a dataset
 """
-@cache_control(public=True, max_age=60*60*24*7)
+@cache_control(public=True, max_age=ACTIVITY_ENCODING_BEHAVIOR_HTTP_CACHE_TTL)
 def get_encoding(request, dataset_id):
     return JsonResponse(get_encoding_data(dataset_id))
 
 def get_behavior_data(dataset_id):
-    cache_key = f"{dataset_id}_behavior"
+    cache_key = _activity_cache_key("behavior", dataset_id)
     data = cache.get(cache_key)
     if data is None:
         dataset = get_object_or_404(
@@ -1095,14 +1117,14 @@ def get_behavior_data(dataset_id):
     return data
 
 
-@cache_control(public=True, max_age=60*60*24*7)
+@cache_control(public=True, max_age=ACTIVITY_ENCODING_BEHAVIOR_HTTP_CACHE_TTL)
 def get_behavior(request, dataset_id):
 
     return JsonResponse(get_behavior_data(dataset_id))
 
 
 def get_dataset_neuron_data(dataset):
-    cache_key = f"{dataset.dataset_id}_dataset_neuron_data"
+    cache_key = _activity_cache_key("dataset_neuron_data", dataset.dataset_id)
     neuron_data = cache.get(cache_key)
     if neuron_data is None:
         qs = dataset.neurons.select_related("neuron_class").all()
@@ -1151,7 +1173,9 @@ def plot_dataset(request, dataset_id):
             return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
 
         # Map each neuron index to its cache key.
-        cache_key_map = {f"{dataset_id}_{idx}": idx for idx in list_idx_neuron}
+        cache_key_map = {
+            _activity_cache_key("trace", dataset_id, idx): idx for idx in list_idx_neuron
+        }
         
         # Retrieve cached traces.
         cached_traces = cache.get_many(list(cache_key_map.keys()))
@@ -1183,13 +1207,14 @@ def plot_dataset(request, dataset_id):
             }
             # Cache the new traces in bulk.
             cache.set_many({
-                f"{dataset_id}_{neuron.idx_neuron}": trace_data for neuron_idx,
+                _activity_cache_key("trace", dataset_id, neuron.idx_neuron): trace_data for neuron_idx,
                 trace_data in new_traces.items() for neuron in neurons if neuron.idx_neuron == neuron_idx
             }, timeout=ACTIVITY_CACHE_TTL_MEDIUM)
 
         # Convert cached keys back to neuron indices.
         cached_traces_parsed = {
-            int(key.split("_")[-1]): value for key, value in cached_traces.items()
+            cache_key_map[key]: value for key, value in cached_traces.items()
+            if key in cache_key_map
         }
 
         # Merge cached and newly fetched traces.
@@ -1366,7 +1391,11 @@ def plot_multiple_data(request):
         # Generate a unique token and store the data in the cache.
         token = uuid.uuid4().hex
         cache_key = PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX + token
-        cache.set(cache_key, normalized_data, timeout=600)  # Store for 10 minutes (adjust as needed).
+        cache.set(
+            cache_key,
+            normalized_data,
+            timeout=ACTIVITY_PLOT_MULTIPLE_CACHE_TTL,
+        )
 
         # Build the redirect URL with the token as a GET parameter.
         url = reverse("activity-plot_multiple") + f"?token={token}"

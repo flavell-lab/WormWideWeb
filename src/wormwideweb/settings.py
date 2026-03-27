@@ -149,12 +149,16 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [
 
 WSGI_APPLICATION = 'wormwideweb.wsgi.application'
 
+CACHE_KEY_VERSION = os.environ.get("DJ_CACHE_VERSION", "v1")
+CACHE_KEY_PREFIX = f"wormwideweb_{CACHE_KEY_VERSION}"
+
 if bool(int(os.environ.get("DJ_USE_REDIS", 0))):
     redis_uri = _require_env("DJ_REDIS_URI")
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
             "LOCATION": redis_uri,
+            "KEY_PREFIX": CACHE_KEY_PREFIX,
         }
     }
 else:
@@ -162,6 +166,7 @@ else:
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',  # In-memory cache
             'LOCATION': 'unique-snowflake',
+            'KEY_PREFIX': CACHE_KEY_PREFIX,
         }
     }
 

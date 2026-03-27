@@ -6,13 +6,16 @@ from django.views.decorators.http import require_GET
 from connectome.views import connectome_datasets
 import json
 
-@cache_page(60*60*24*30)
+CORE_PAGE_CACHE_TTL = 60 * 60 * 6
+
+
+@cache_page(CORE_PAGE_CACHE_TTL)
 def index(request):
     context = {}
     
     return render(request, "core/index.html",context)
 
-@cache_page(60*60*24*30)
+@cache_page(CORE_PAGE_CACHE_TTL)
 def about(request):
     context = {
         "connectome_data": json.loads(connectome_datasets())

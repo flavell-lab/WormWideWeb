@@ -57,6 +57,7 @@ Env variables:
 - `DJ_CSRF_TRUSTED_ORIGINS` (optional): space separated full origins (with scheme), e.g. `https://wormwideweb.org https://*.run.app`. If unset, it is derived from `DJ_ALLOWED_HOSTS`.
 - `DJ_USE_REDIS`: `0` or `1`. Set it to `0` for local development (fallback to local memory caching).  
 - `DJ_REDIS_URI`: Redis instance URI e.g. `redis://x.x.x.x:6379`
+- `DJ_CACHE_VERSION` (optional): cache key version suffix. Bump this to invalidate all cached entries safely.
 
 Secret keys (KEEP THESE SECRET):  
 Be careful not to print these or write into a file in the deployment image. On GCP, the secrets are managed by GCP Secret Manager, so there's no need to bake them into the image.  

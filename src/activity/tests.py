@@ -6,8 +6,10 @@ from django.http import Http404
 from django.test import RequestFactory, SimpleTestCase
 
 from activity.views import (
+    ACTIVITY_PLOT_MULTIPLE_CACHE_TTL,
     ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX,
     ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY,
+    PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX,
     _compute_activity_behavior_correlation_index,
     _compute_connectome_full_degree_index,
     _get_activity_behavior_correlation_index,
@@ -63,9 +65,9 @@ class PlotMultipleDataTests(SimpleTestCase):
         self.assertEqual(body["status"], "success")
         self.assertTrue(body["redirect"].endswith("token=abc123"))
         mock_cache_set.assert_called_once_with(
-            "plot_multiple_data_abc123",
+            f"{PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX}abc123",
             {"dataset-a": [3, 2, 1]},
-            timeout=600,
+            timeout=ACTIVITY_PLOT_MULTIPLE_CACHE_TTL,
         )
 
 
@@ -163,7 +165,7 @@ class SignalReplayViewTests(SimpleTestCase):
         )
         mock_cache_set.assert_called_once()
         cache_key = mock_cache_set.call_args[0][0]
-        self.assertIn("|1|0|2|3", cache_key)
+        self.assertTrue(cache_key.endswith("_1_0_2_3"))
 
     @patch("activity.views.cache.set")
     @patch("activity.views.cache.get", return_value=None)

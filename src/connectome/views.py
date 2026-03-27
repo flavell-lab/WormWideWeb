@@ -13,7 +13,19 @@ from collections import defaultdict
 import connectome.graph_data 
 
 CONNECTOME_CACHE_TTL = 60 * 60 * 24 * 30
-CONNECTOME_DATASETS_CACHE_KEY = "connectome_datasets_json"
+CONNECTOME_PAGE_CACHE_TTL = 60 * 60 * 6
+CONNECTOME_AVAILABLE_NEURONS_HTTP_CACHE_TTL = 60 * 60 * 24 * 30
+CONNECTOME_CACHE_VERSION = "v1"
+
+
+def _connectome_cache_key(*parts):
+    return "connectome_" + CONNECTOME_CACHE_VERSION + "_" + "_".join(
+        str(part) for part in parts
+    )
+
+
+CONNECTOME_DATASETS_CACHE_KEY = _connectome_cache_key("datasets_json")
+CONNECTOME_WITVLIET_DATASETS_CACHE_KEY = _connectome_cache_key("witvliet_datasets_json")
 WITVLIET_DATASET_IDS = [
     "witvliet_2020_1",
     "witvliet_2020_2",
@@ -27,12 +39,7 @@ WITVLIET_DATASET_IDS = [
 
 
 def _edge_cache_key(dataset_id, neuron_or_class):
-    dataset_id = str(dataset_id)
-    neuron_or_class = str(neuron_or_class)
-    return (
-        f"edge_{len(dataset_id)}_{dataset_id}_"
-        f"{len(neuron_or_class)}_{neuron_or_class}"
-    )
+    return _connectome_cache_key("edge", dataset_id, neuron_or_class)
 
 
 def _dedupe_string_list(values):
@@ -97,7 +104,7 @@ def connectome_datasets(cache_key=None):
 
 
 def connectome_witvliet_datasets(cache_key=None):
-    cache_key = cache_key or "connectome_witvliet_datasets_json"
+    cache_key = cache_key or CONNECTOME_WITVLIET_DATASETS_CACHE_KEY
     datasets_json = cache.get(cache_key)
     if datasets_json is None:
         datasets = Dataset.objects.filter(dataset_id__in=WITVLIET_DATASET_IDS).values(
@@ -122,7 +129,7 @@ def connectome_witvliet_datasets(cache_key=None):
 
 
 @ensure_csrf_cookie
-@cache_page(60*60*24*30)
+@cache_page(CONNECTOME_PAGE_CACHE_TTL)
 def index(request):
     context = {}
     
@@ -130,7 +137,7 @@ def index(request):
 
 
 @ensure_csrf_cookie
-@cache_page(60*60*24*30)
+@cache_page(CONNECTOME_PAGE_CACHE_TTL)
 def explore(request):
     context = {'datasets_json': connectome_datasets()}
 
@@ -138,7 +145,7 @@ def explore(request):
 
 
 @ensure_csrf_cookie
-@cache_page(60*60*24*30)
+@cache_page(CONNECTOME_PAGE_CACHE_TTL)
 def path(request):
     context = {'datasets_json': connectome_datasets()}
 
@@ -146,7 +153,7 @@ def path(request):
 
 
 @ensure_csrf_cookie
-@cache_page(60*60*24*30)
+@cache_page(CONNECTOME_PAGE_CACHE_TTL)
 def compare(request):
     context = {'datasets_json': connectome_datasets()}
 
@@ -154,14 +161,14 @@ def compare(request):
 
 
 @ensure_csrf_cookie
-@cache_page(60*60*24*30)
+@cache_page(CONNECTOME_PAGE_CACHE_TTL)
 def development(request):
     context = {"datasets_json": connectome_witvliet_datasets()}
 
     return render(request, "connectome/development.html", context)
 
 
-@cache_control(public=True, max_age=60*60*24*90)
+@cache_control(public=True, max_age=CONNECTOME_AVAILABLE_NEURONS_HTTP_CACHE_TTL)
 def available_neurons(request):
     """
     Return a JSON response with available neurons and neuron classes for each dataset
@@ -181,7 +188,7 @@ def available_neurons(request):
 
     # For each dataset, try to get its available neurons from cache; if not, query and cache.
     for dataset_id in dataset_ids:
-        cache_key = f"available_neurons_{dataset_id}"
+        cache_key = _connectome_cache_key("available_neurons", dataset_id)
         dataset_result = cache.get(cache_key)
         if dataset_result is None:
             # Prepare querysets with only needed fields.
