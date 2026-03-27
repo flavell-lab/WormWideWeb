@@ -63,7 +63,7 @@ class PlotMultipleDataTests(SimpleTestCase):
         self.assertEqual(body["status"], "success")
         self.assertTrue(body["redirect"].endswith("token=abc123"))
         mock_cache_set.assert_called_once_with(
-            "plot_multiple_data:abc123",
+            "plot_multiple_data_abc123",
             {"dataset-a": [3, 2, 1]},
             timeout=600,
         )

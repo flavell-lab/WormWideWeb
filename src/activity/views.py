@@ -22,9 +22,10 @@ ACTIVITY_CACHE_TTL_LONG = 60 * 60 * 24 * 30
 ACTIVITY_CACHE_TTL_MEDIUM = 60 * 60 * 24 * 14
 ACTIVITY_CACHE_TTL_SHORT = 60 * 60 * 24 * 7
 ACTIVITY_REPLAY_CACHE_TTL = 60 * 60 * 24
-ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY = "activity_replay_connectome_degree_index:v3"
-ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX = "activity_replay_behavior_corr:v1:"
-ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX = "activity_replay:v3:"
+ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY = "activity_replay_connectome_degree_index_v3"
+ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX = "activity_replay_behavior_corr_v1_"
+ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX = "activity_replay_v3_"
+PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX = "plot_multiple_data_"
 
 
 def _dedupe_int_list(values):
@@ -1250,7 +1251,7 @@ def plot_multiple(request):
         return render(request, "activity/plot_multiple.html", {"list_dataset_meta": [], "plots": "{}"})
     
     # Retrieve the input data from cache using the token.
-    cache_key = "plot_multiple_data:" + token
+    cache_key = PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX + token
     data = cache.get(cache_key)
     if not data:
         # Token not found or expired.
@@ -1364,7 +1365,7 @@ def plot_multiple_data(request):
 
         # Generate a unique token and store the data in the cache.
         token = uuid.uuid4().hex
-        cache_key = "plot_multiple_data:" + token
+        cache_key = PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX + token
         cache.set(cache_key, normalized_data, timeout=600)  # Store for 10 minutes (adjust as needed).
 
         # Build the redirect URL with the token as a GET parameter.

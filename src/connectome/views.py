@@ -27,7 +27,12 @@ WITVLIET_DATASET_IDS = [
 
 
 def _edge_cache_key(dataset_id, neuron_or_class):
-    return f"{dataset_id}!{neuron_or_class}"
+    dataset_id = str(dataset_id)
+    neuron_or_class = str(neuron_or_class)
+    return (
+        f"edge_{len(dataset_id)}_{dataset_id}_"
+        f"{len(neuron_or_class)}_{neuron_or_class}"
+    )
 
 
 def _dedupe_string_list(values):
