@@ -13,6 +13,7 @@ from collections import defaultdict
 import connectome.graph_data 
 
 CONNECTOME_CACHE_TTL = 60 * 60 * 24 * 30
+CONNECTOME_DATASETS_CACHE_KEY = "connectome_datasets_json"
 WITVLIET_DATASET_IDS = [
     "witvliet_2020_1",
     "witvliet_2020_2",
@@ -79,7 +80,7 @@ def _validate_get_edges_payload(data):
 
 
 def connectome_datasets(cache_key=None):
-    cache_key = cache_key or "connectome_datasets_json"
+    cache_key = cache_key or CONNECTOME_DATASETS_CACHE_KEY
     datasets_json = cache.get(cache_key)
     if datasets_json is None:
         datasets = Dataset.objects.all()

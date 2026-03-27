@@ -205,9 +205,7 @@ def signal_propagation_replay(request):
 
     context = {
         "activity_datasets": json.dumps(activity_datasets, cls=DjangoJSONEncoder),
-        "connectome_datasets": connectome_datasets(
-            cache_key="activity_replay_connectome_datasets_json"
-        ),
+        "connectome_datasets": connectome_datasets(),
     }
     return render(request, "activity/replay.html", context)
 

@@ -5,7 +5,13 @@ import networkx as nx
 from django.test import Client, RequestFactory, SimpleTestCase, override_settings
 
 import connectome.graph_data
-from connectome.views import development, find_paths, get_edges
+from connectome.views import (
+    CONNECTOME_DATASETS_CACHE_KEY,
+    connectome_datasets,
+    development,
+    find_paths,
+    get_edges,
+)
 
 
 def _empty_response():
@@ -152,3 +158,14 @@ class DevelopmentViewTests(SimpleTestCase):
         self.assertIn(b"connectome-development-datasets", response.content)
         self.assertIn(b"witvliet_2020_1", response.content)
         mock_connectome_witvliet_datasets.assert_called_once_with()
+
+
+class ConnectomeDatasetsCacheTests(SimpleTestCase):
+    @patch("connectome.views.cache.get")
+    def test_connectome_datasets_uses_shared_default_cache_key(self, mock_cache_get):
+        mock_cache_get.return_value = "[]"
+
+        result = connectome_datasets()
+
+        self.assertEqual(result, "[]")
+        mock_cache_get.assert_called_once_with(CONNECTOME_DATASETS_CACHE_KEY)
