@@ -1,0 +1,10 @@
+# Never send env files to Docker build context.
+config/default.env
+config/*.env
+.env
+.env.*
+
+# Git and local noise.
+.git
+.gitignore
+.DS_Store
