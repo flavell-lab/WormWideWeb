@@ -1,20 +1,28 @@
 #!/usr/bin/env bash
 # for building, not baked into the image/runtime.
+# This script intentionally avoids production secrets.
+set -euo pipefail
 
 # Where to write your environment variables:
 OUTFILE="config/default.env"
 
-# Fetch secrets from GCP Secret Manager
-SECRET_KEY="$(gcloud secrets versions access latest --secret=DJ_SECRET_KEY)"
-SECRET_KEY_BACKUP="$(gcloud secrets versions access latest --secret=DJ_SECRET_KEY_BACKUP)"
+# Build-only Django key.
+# You can override with DJ_BUILD_SECRET_KEY if needed.
+BUILD_SECRET_KEY="${DJ_BUILD_SECRET_KEY:-}"
+if [ -z "$BUILD_SECRET_KEY" ]; then
+  BUILD_SECRET_KEY="$(python3 - <<'PY'
+import secrets
+print(secrets.token_urlsafe(64))
+PY
+)"
+fi
 
 # Write everything to the env file
 cat <<EOF > "$OUTFILE"
 DJ_DEBUG=0
 DJ_DB_BUILD=1
-DJ_SECRET_KEY="$SECRET_KEY"
-DJ_SECRET_KEY_BACKUP="$SECRET_KEY_BACKUP"
+DJ_SECRET_KEY="$BUILD_SECRET_KEY"
 DJ_ALLOWED_HOSTS="localhost .run.app wormwideweb.org"
 EOF
 
-echo "Variables have been written to $OUTFILE."
+echo "Build-only variables written to $OUTFILE (no production secrets)."
