@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # for building, not baked into the image/runtime.
 # This script intentionally avoids production secrets.
-set -euo pipefail
+set -eu
+# Enable pipefail when supported (bash/zsh); ignore on shells without it.
+(set -o pipefail) 2>/dev/null && set -o pipefail || true
 
 # Where to write your environment variables:
 OUTFILE="config/default.env"
