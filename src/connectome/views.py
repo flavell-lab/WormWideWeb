@@ -3,6 +3,7 @@ import networkx as nx
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.exceptions import ImproperlyConfigured
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -10,7 +11,7 @@ from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Q, Prefetch
 from .models import Neuron, NeuronClass, Dataset, Synapse
 from collections import defaultdict
-import connectome.graph_data 
+from connectome import graph_data
 
 CONNECTOME_CACHE_TTL = 60 * 60 * 24 * 30
 CONNECTOME_PAGE_CACHE_TTL = 60 * 60 * 6
@@ -464,11 +465,12 @@ def find_paths(request):
     Higher edge count means shorter path. Option to exclude electrical synapses.
     Return paths with edge details.
     """
-    if connectome.graph_data.GRAPH_OBJECTS is None:
-        # Handle the case where initialization failed
+    try:
+        dataset_graphs = graph_data.get_graph_objects()
+    except ImproperlyConfigured:
         return JsonResponse({'error': 'Graph precompute data is not available'}, status=400)
-
-    dataset_graphs = connectome.graph_data.GRAPH_OBJECTS
+    except Exception:
+        return JsonResponse({'error': 'Graph precompute data is not available'}, status=400)
 
     dataset = request.GET.get('dataset')
     start_neuron = request.GET.get('start')
