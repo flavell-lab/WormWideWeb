@@ -189,7 +189,7 @@ else:
             'OPTIONS': {
                 'uri': True,
                 'timeout': 20,
-                'init_command': 'PRAGMA synchronous = OFF; PRAGMA cache_size = 102400; PRAGMA temp_store = MEMORY;'
+                'init_command': 'PRAGMA synchronous = OFF; PRAGMA cache_size = -65536; PRAGMA temp_store = MEMORY;'
             },
         }
     }
