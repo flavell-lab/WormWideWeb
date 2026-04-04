@@ -316,7 +316,7 @@ def import_gcamp_data(self, path_json, checksum, paper_id, neuron_class_name_map
         timestamp_confocal=truncate_floats_in_list(timing["timestamp_confocal"]),
 
         n_neuron=metadata["n_neuron"],
-        n_labeled=len(data.get("labels", [])),
+        n_labeled=len(data.get("label", [])),
 
         behavior=data_behavior,
         truncated_behavior=data_behavior_truncated,
