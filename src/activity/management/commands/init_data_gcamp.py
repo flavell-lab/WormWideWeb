@@ -290,9 +290,9 @@ def import_gcamp_data(self, path_json, checksum, paper_id, neuron_class_name_map
             i_b += 1
 
     # Add reversal events if present
-    if "reversal_events" in data:
-        data_behavior["reversal_events"] = data["reversal_events"]
-        data_behavior_truncated["reversal_events"] = data["reversal_events"]
+    if "reversal_events" in behavior:
+        data_behavior["reversal_events"] = behavior["reversal_events"]
+        data_behavior_truncated["reversal_events"] = behavior["reversal_events"]
 
     # encoding
     data_encoding = {}
@@ -311,7 +311,7 @@ def import_gcamp_data(self, path_json, checksum, paper_id, neuron_class_name_map
         dataset_name=metadata["uid"],
         dataset_meta=data["metadata"] if "meta" in data else {},
         
-        avg_timestep=timing["mean_timestep"],
+        avg_timestep=timing["mean_timestep"] / 60,
         max_t=timing["max_t"],
         timestamp_confocal=truncate_floats_in_list(timing["timestamp_confocal"]),
 
