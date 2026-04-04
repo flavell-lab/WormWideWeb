@@ -13,7 +13,6 @@ PATH_CONFIG_GCAMP_NEURON_MAP = ["config", "gcamp_neuron_name_map_manual.json"]
 PATH_CONFIG_GCAMP_CLASS_MAP = ["config", "gcamp_neuron_class_name_map_manual.json"]
 PATH_PAPER = ["activity", "papers.json"]
 PATH_TYPE = ["activity", "dataset_types.json"]
-PATH_CHECKSUM = ["config", "data_checksum.json"]
 
 '''
 
@@ -170,7 +169,7 @@ def process_dv(dv):
 Import functions
 
 '''
-def check_list_lengths(self, list_trace_array, list_trace_original, pumping, head_curvature, body_curvature, angular_velocity, velocity):
+def check_list_lengths(self, list_trace_array, list_trace_original, pumping, head_curvature, angular_velocity, velocity):
     if not list_trace_array:
         raise ValueError("list_trace_array is empty.")
 
@@ -199,7 +198,6 @@ def check_list_lengths(self, list_trace_array, list_trace_original, pumping, hea
     other_lists = {
         'pumping': pumping,
         'head_curvature': head_curvature,
-        'body_curvature': body_curvature,
         'angular_velocity': angular_velocity,
         'velocity': velocity
     }
@@ -222,22 +220,28 @@ def import_gcamp_data(self, path_json, checksum, paper_id, neuron_class_name_map
     neuron_class_cache = {nc.name: nc for nc in NeuronClass.objects.all()}
 
     data = load_json(self, path_json)
+    gcamp = data["gcamp"]
+    behavior = data["behavior"]
+    timing = data["timing"]
+    labels = data.get("label", None)
+    encoding = data.get("encoding", None)
+    metadata = data["metadata"]
+
     # import neurons
-    list_trace_array = data["trace_array"]
-    list_trace_original = data["trace_original"]
+    list_trace_array = gcamp["trace_array"]
+    list_trace_original = gcamp["trace_array_original"]
     
-    pumping = data.get("pumping", None)
-    head_curvature = data["head_curvature"]
-    body_curvature = data["body_curvature"]
-    angular_velocity = data["angular_velocity"]
-    velocity = data["velocity"]
+    pumping = behavior.get("pumping", None)
+    head_curvature = behavior["head_angle"]
+    angular_velocity = behavior["angular_velocity"]
+    velocity = behavior["velocity"]
 
     expected_length = check_list_lengths(self, list_trace_array, list_trace_original,
-                                         pumping, head_curvature, body_curvature, angular_velocity, velocity)
+                                         pumping, head_curvature, angular_velocity, velocity)
 
-    if data["max_t"] != expected_length:
-        self.stdout.write(self.style.WARNING(f"max_t ({data['max_t']}) does not match the expected length ({expected_length}). Using determined value of {expected_length}."))
-        data["max_t"] = expected_length
+    if timing["max_t"] != expected_length:
+        self.stdout.write(self.style.WARNING(f"max_t ({timing['max_t']}) does not match the expected length ({expected_length}). Using determined value of {expected_length}."))
+        timing["max_t"] = expected_length
 
     cor_trace = {
         "neuron": correlation_matrix_to_dict(np.around(np.corrcoef(list_trace_array), 3)),
@@ -292,42 +296,33 @@ def import_gcamp_data(self, path_json, checksum, paper_id, neuron_class_name_map
 
     # encoding
     data_encoding = {}
-    if "neuron_categorization" in data:
-        data_encoding["ranges"] = data.get("ranges", {}),
+    if encoding is not None:
+        data_encoding["ranges"] = encoding.get("ranges", {}),
         list_key = ["neuron_categorization", "encoding_changing_neurons", "rel_enc_str_v", "rel_enc_str_θh", "rel_enc_str_P",
                     "forwardness", "dorsalness", "feedingness", "tau_vals"]
         for key in list_key:
-            if key in data:
-                data_encoding[key] = data[key]
-    # neuron_categorization = data.get("neuron_categorization", {}),
-    # encoding_change = data.get("encoding_changing_neurons", []),
-    # rel_enc_str_v = truncate_floats_in_list(data["rel_enc_str_v"]) if "rel_enc_str_v" in data else [],
-    # rel_enc_str_θh = truncate_floats_in_list(data["rel_enc_str_θh"]) if "rel_enc_str_θh" in data else [],
-    # rel_enc_str_P = truncate_floats_in_list(data["rel_enc_str_P"]) if "rel_enc_str_P" in data else [],
-    # forwardness = truncate_floats_in_list(data["forwardness"]) if "forwardness" in data else [],
-    # dorsalness = truncate_floats_in_list(data["dorsalness"]) if "dorsalness" in data else [],
-    # feedingness = truncate_floats_in_list(data["feedingness"]) if "feedingness" in data else [],
-    # tau_vals = truncate_floats_in_list(data["tau_vals"]) if "tau_vals" in data else [],
+            if key in encoding:
+                data_encoding[key] = encoding[key]
 
     paper, q_created = GCaMPPaper.objects.get_or_create(paper_id=paper_id)
     dataset = GCaMPDataset.objects.create(
         paper=paper,
-        dataset_id=paper.paper_id + "-" + data["uid"],
-        dataset_name=data["uid"],
-        dataset_meta=data["meta"] if "meta" in data else {},
+        dataset_id=paper.paper_id + "-" + metadata["uid"],
+        dataset_name=metadata["uid"],
+        dataset_meta=data["metadata"] if "meta" in data else {},
         
-        avg_timestep=data["avg_timestep"],
-        max_t=data["max_t"],
-        timestamp_confocal=truncate_floats_in_list(data["timestamp_confocal"]),
+        avg_timestep=timing["mean_timestep"],
+        max_t=timing["max_t"],
+        timestamp_confocal=truncate_floats_in_list(timing["timestamp_confocal"]),
 
-        n_neuron=data["num_neurons"],
-        n_labeled=len(data.get("labeled", [])),
+        n_neuron=metadata["n_neuron"],
+        n_labeled=len(data.get("labels", [])),
 
         behavior=data_behavior,
         truncated_behavior=data_behavior_truncated,
         encoding=data_encoding,
 
-        events=data["events"] if "events" in data else {},
+        events=timing.get("event", {}),
 
         neuron_cor=cor_trace,
 
@@ -335,7 +330,7 @@ def import_gcamp_data(self, path_json, checksum, paper_id, neuron_class_name_map
     )
 
     # add dataset type
-    for type in data["dataset_type"]:
+    for type in metadata["dataset_type"]:
         # Construct the type_id
         type_id = f"{paper.paper_id}-{type}"
 
@@ -354,12 +349,12 @@ def import_gcamp_data(self, path_json, checksum, paper_id, neuron_class_name_map
     for i in range(0,len(list_trace_array)):
         idx_neuron = i + 1
         idx_neuron_str = str(idx_neuron)
-        if "labeled" in data and idx_neuron_str in data["labeled"]:
-            label_ = data["labeled"][idx_neuron_str]
+        if labels is not None and idx_neuron_str in labels:
+            label_ = labels[idx_neuron_str]
             neuron_name = map_neuron_name(label_["label"], neuron_name_map)
             neuron_class_name = map_neuron_name(label_["neuron_class"], neuron_class_name_map)
             if neuron_class_name not in neuron_class_cache:
-                self.stdout.write(self.style.WARNING(f"Neuron class {neuron_class_name} does not exist. dataset: {data["uid"]} idx_neuron: {idx_neuron}"))
+                self.stdout.write(self.style.WARNING(f"Neuron class {neuron_class_name} does not exist. dataset: {metadata["uid"]} idx_neuron: {idx_neuron}"))
                 
             neuron_class = neuron_class_cache[neuron_class_name]
             lr = process_lr(label_["LR"])
@@ -394,6 +389,9 @@ def import_all_paper(self):
     n = 0
     n_fail = 0
     for paper in papers:
+        if "skip" in paper and paper["skip"]:
+            self.stdout.write(self.style.NOTICE(f"Skipping paper {paper['paper_id']}"))
+            continue
         try:
             GCaMPPaper.objects.create(paper_id=paper["paper_id"], title_short=paper["title_short"], title_full=paper["title_full"])
             n += 1
@@ -407,9 +405,15 @@ def import_all_paper(self):
 def import_all_type(self):
     path_type = get_dataset_path(PATH_TYPE)
     types = load_json(self, path_type)
+    path_paper_json = get_dataset_path(PATH_PAPER)
+    papers = {paper["paper_id"]: paper for paper in load_json(self, path_paper_json)}
 
     n = 0
     for paper_id in types.keys():
+        if paper_id != "common" and "skip" in papers[paper_id] and papers[paper_id]["skip"]:
+            self.stdout.write(self.style.NOTICE(f"Skipping dataset types for paper {paper_id}"))
+            continue
+
         paper = GCaMPPaper.objects.get(paper_id=paper_id) if paper_id != "common" else None
         for type_ in types[paper_id]:
             if paper:
@@ -428,10 +432,6 @@ def import_all_gcamp(self):
     path_json = get_dataset_path(PATH_CONFIG_GCAMP_CLASS_MAP)
     neuron_class_name_map = load_json(self, path_json)
 
-    path_checksumn = get_dataset_path(PATH_CHECKSUM)
-    with open(path_checksumn, 'r') as file:
-        dict_checksum = json.load(file)
-
     n = 0
     for paper_ in papers:
         paper_id = paper_[0]
@@ -443,7 +443,6 @@ def import_all_gcamp(self):
             # try:
             filepath = get_dataset_path(["activity", "data", paper_id, filename])
             checksum = sha256(filepath)
-            assert checksum == dict_checksum[paper_id][filename], f"GCaMP checksum error for {paper_id} {filename}"
 
             import_gcamp_data(self, filepath, checksum, paper_id, neuron_class_name_map, neuron_name_map)
             n = n + 1
