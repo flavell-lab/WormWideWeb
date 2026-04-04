@@ -13,7 +13,7 @@ PATH_NEURONS = ["connectome", "connectome_neurons.csv"]
 PATH_NEURONS_REPLACEMENT = ["config", "connectome_neurons_replacement.csv"]
 PATH_CONNECTOME_DIR = ["connectome", "connectome"]
 PATH_NEURON_CLASS_SPLIT = ["config", "connectome_neuron_class_split.csv"]
-PATH_CHECKSUM = ["config", "data_checksum.json"]
+PATH_CHECKSUM = ["connectome", "connectome_checksum.csv"]
 INITIAL_DATA_DIR = Path(__file__).resolve().parents[4] / "initial_data"
 
 def get_dataset_path(list_part):
@@ -36,8 +36,7 @@ class Command(BaseCommand):
     # dataset
     def import_dataset(self):
         path_checksum = get_dataset_path(PATH_CHECKSUM)
-        with open(path_checksum, 'r') as file:
-            dict_checksum = json.load(file)["connectome"]
+        dict_checksum = {row[0]: row[1] for row in load_csv(path_checksum)}
 
         with transaction.atomic():
             t1 = time.time_ns()
