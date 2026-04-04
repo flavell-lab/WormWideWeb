@@ -205,8 +205,7 @@ class Command(BaseCommand):
 
             # Checksum
             path_checksum = get_dataset_path(PATH_CHECKSUM)
-            with open(path_checksum, 'r') as file:
-                dict_checksum = json.load(file)["connectome"]
+            dict_checksum = {row[0]: row[1] for row in load_csv(path_checksum)}
 
             # Process each connectome dataset
             total_synapses = 0
