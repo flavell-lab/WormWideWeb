@@ -52,6 +52,20 @@
         {{ dataset_sha256 }}
       </code>
       </p>
+
+      {% if dataset_checksums %}
+      <div class="mb-2">
+        <h6 class="mb-2">Source File Checksums</h6>
+        {% for checksum in dataset_checksums %}
+        <p class="mb-1">
+          {{ checksum.key }}
+          <code class="bg-light text-dark px-2 py-1 rounded text-monospace d-inline w-auto">
+            {{ checksum.value }}
+          </code>
+        </p>
+        {% endfor %}
+      </div>
+      {% endif %}
                   
       <div class="row mt-3">
         <div class="col-lg-6 mt-3 mt-lg-0">

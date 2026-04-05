@@ -271,6 +271,24 @@ def _is_valid_named_neuron(name):
     return True
 
 
+def _extract_checksum_fields(metadata):
+    if not isinstance(metadata, dict):
+        return []
+
+    checksum_keywords = ("checksum", "sha", "blake", "md5", "hash")
+    checksum_fields = []
+
+    for key, value in metadata.items():
+        if not isinstance(key, str) or not isinstance(value, str):
+            continue
+
+        key_lower = key.lower()
+        if any(keyword in key_lower for keyword in checksum_keywords) and value.strip():
+            checksum_fields.append({"key": key, "value": value})
+
+    return checksum_fields
+
+
 def _aggregate_replay_traces(dataset):
     traces_by_name = defaultdict(list)
     idx_by_name = defaultdict(list)
@@ -1252,6 +1270,7 @@ def plot_dataset(request, dataset_id):
         "dataset_id": dataset_id,
         "dataset_sha256": dataset.dataset_sha256,
         "dataset_name": dataset.dataset_name,
+        "dataset_checksums": _extract_checksum_fields(dataset.dataset_meta),
         "data": json.dumps(data, cls=DjangoJSONEncoder),
         "datasets_json": datasets_json,
         "show_connectome": "common-neuropal" in data["dataset_type"],
