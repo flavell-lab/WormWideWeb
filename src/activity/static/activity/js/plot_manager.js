@@ -108,6 +108,11 @@ export class NeuronBehaviorPlot {
 
         // Initialize the plot promise chain
         this.lastPlotPromise = Promise.resolve();
+
+        // URL synchronization controls (used to avoid noisy updates during bulk hydration)
+        this.isURLSyncPaused = false;
+        this.pendingNeuronURLSync = false;
+        this.pendingBehaviorURLSync = false;
     }
 
     /**
@@ -471,9 +476,43 @@ export class NeuronBehaviorPlot {
     }
 
     /**
+     * Pauses or resumes URL synchronization.
+     */
+    setURLSyncPaused(isPaused) {
+        this.isURLSyncPaused = Boolean(isPaused);
+    }
+
+    /**
+     * Flushes any deferred URL update.
+     */
+    flushURLSync() {
+        if (!this.pendingNeuronURLSync && !this.pendingBehaviorURLSync) return;
+        try {
+            const url = new URL(window.location.href);
+            if (this.pendingNeuronURLSync) {
+                url.searchParams.set("n", encodeURIComponent(this.listIdxPlot.join('-')));
+            }
+            if (this.pendingBehaviorURLSync) {
+                url.searchParams.set("b", encodeURIComponent(this.listBehaviorShort.join('-')));
+            }
+            window.history.replaceState(null, "", url);
+        } catch (error) {
+            console.error("Error updating URL:", error);
+        } finally {
+            this.pendingNeuronURLSync = false;
+            this.pendingBehaviorURLSync = false;
+        }
+    }
+
+    /**
      * Updates the URL with the current list of plotted neurons
      */
     updateURLNeuron(listIdxPlotStr) {
+        if (this.isURLSyncPaused) {
+            this.pendingNeuronURLSync = true;
+            return;
+        }
+
         try {
             const url = new URL(window.location.href);
             url.searchParams.set("n", encodeURIComponent(listIdxPlotStr));
@@ -487,6 +526,11 @@ export class NeuronBehaviorPlot {
      * Updates the URL with the current list of plotted behaviors
      */
     updateURLBehavior(listBehaviorSelected) {
+        if (this.isURLSyncPaused) {
+            this.pendingBehaviorURLSync = true;
+            return;
+        }
+
         try {
             const url = new URL(window.location.href);
             url.searchParams.set("b", encodeURIComponent(listBehaviorSelected));

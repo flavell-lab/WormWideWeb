@@ -333,6 +333,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     */
     const currentUrl = new URL(window.location.href);
     const urlParams = new URLSearchParams(currentUrl.search);
+    const hasInitialSelections = urlParams.has("b") || urlParams.has("n");
+
+    // Avoid frequent URL rewrites while hydrating many selections from URL params.
+    if (hasInitialSelections) {
+        plotManager.setURLSyncPaused(true);
+    }
 
     // behaviors
     const behaviorsUrl = urlParams.get("b")
@@ -360,6 +366,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('No valid neurons found in URL parameter "n"');
         }
     }
+
+    if (hasInitialSelections) {
+        try {
+            await plotManager.lastPlotPromise;
+        } finally {
+            plotManager.setURLSyncPaused(false);
+            plotManager.flushURLSync();
+        }
+    }
+
     updateCircuitReplayButton();
 
     /*
