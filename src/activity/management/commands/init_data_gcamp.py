@@ -122,10 +122,10 @@ def calculate_cor_behavior(list_trace_array, data):
     """
     # If no keys specified, use all keys from data
 
-    keys = ["velocity", "head_curvature", "pumping", "angular_velocity"]
+    keys = ["velocity", "head_angle", "pumping", "angular_velocity"]
     key_conversion = {
         "velocity": "v",
-        "head_curvature": "hc",
+        "head_angle": "hc",
         "pumping": "f",
         "angular_velocity": "av",
     }
@@ -314,7 +314,7 @@ def import_gcamp_data(
         "neuron": correlation_matrix_to_dict(
             np.around(np.corrcoef(list_trace_array), 3)
         ),
-        "behavior": calculate_cor_behavior(list_trace_array, data),
+        "behavior": calculate_cor_behavior(list_trace_array, behavior),
     }
 
     # behavior data
