@@ -1,10 +1,13 @@
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
+from django.core.cache import cache
 from django.http import Http404
-from django.test import RequestFactory, SimpleTestCase
+from django.test import RequestFactory, SimpleTestCase, TestCase
 
+from activity.models import GCaMPDataset, GCaMPEventStyle, GCaMPPaper
 from activity.views import (
     ACTIVITY_PLOT_MULTIPLE_CACHE_TTL,
     ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX,
@@ -14,6 +17,7 @@ from activity.views import (
     _compute_connectome_full_degree_index,
     _get_activity_behavior_correlation_index,
     _get_connectome_full_degree_index,
+    get_behavior_data,
     get_neural_trace,
     get_signal_replay_data,
     plot_multiple_data,
@@ -397,3 +401,98 @@ class BehaviorCorrelationIndexTests(SimpleTestCase):
         self.assertEqual(result, {"A": {"v": 0.7}})
         mock_compute_index.assert_not_called()
         mock_cache_set.assert_not_called()
+
+
+class BehaviorEventStyleTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.paper = GCaMPPaper.objects.create(
+            paper_id="atanas_kim_2023",
+            title_full="Atanas full",
+            title_short="Atanas short",
+        )
+        self.dataset = GCaMPDataset.objects.create(
+            paper=self.paper,
+            dataset_id="atanas_kim_2023-demo",
+            dataset_name="demo",
+            dataset_meta={},
+            dataset_sha256="a" * 64,
+            avg_timestep=0.1,
+            max_t=10,
+            n_neuron=1,
+            n_labeled=0,
+            behavior={},
+            truncated_behavior={
+                "traces": {
+                    "v": {
+                        "i": 0,
+                        "name_short": "v",
+                        "name": "Velocity",
+                        "unit": "0.1 mm/s",
+                        "data": [0.1, 0.2, 0.3],
+                    }
+                }
+            },
+            events={"heat": [3], "missingEvent": [7]},
+            neuron_cor={},
+        )
+
+        GCaMPEventStyle.objects.create(
+            event_id="heat",
+            color="rgba(0,0,255,1)",
+            width=1,
+            paper=None,
+        )
+        GCaMPEventStyle.objects.create(
+            event_id="heat",
+            color="rgba(255,128,0,1)",
+            width=4,
+            paper=self.paper,
+        )
+
+    def test_get_behavior_data_merges_common_and_paper_styles_with_fallback(self):
+        payload = get_behavior_data(self.dataset.dataset_id)
+
+        self.assertIn("data", payload)
+        self.assertEqual(payload["data"]["events"], {"heat": [3], "missingEvent": [7]})
+        self.assertIn("event_style", payload["data"])
+        self.assertEqual(
+            payload["data"]["event_style"]["heat"],
+            {"color": "rgba(255,128,0,1)", "width": 4.0},
+        )
+        self.assertEqual(
+            payload["data"]["event_style"]["missingEvent"],
+            {"color": "rgba(255,0,0,1)", "width": 2},
+        )
+
+    def test_get_behavior_view_includes_event_style(self):
+        response = self.client.get(
+            f"/activity/api/data/{self.dataset.dataset_id}/behavior/"
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertIn("event_style", body["data"])
+        self.assertIn("behavior", body["data"])
+        self.assertIn("events", body["data"])
+
+
+class FrontendEventStyleRegressionTests(SimpleTestCase):
+    def test_plot_manager_reads_event_style_from_behavior_api(self):
+        repo_root = Path(__file__).resolve().parents[2]
+        content = (
+            repo_root
+            / "src/activity/static/activity/js/plot_manager.js"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("remoteBehavior?.data?.event_style", content)
+        self.assertNotIn('"heat": {', content)
+
+    def test_plot_multiple_reads_event_style_from_behavior_api(self):
+        repo_root = Path(__file__).resolve().parents[2]
+        content = (
+            repo_root
+            / "src/activity/static/activity/js/views/plot_multiple.js"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("fetchedData.data.event_style", content)
+        self.assertNotIn("const styleEvent = {", content)

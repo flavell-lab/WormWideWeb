@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
+from .models import (
+    GCaMPDataset,
+    GCaMPNeuron,
+    GCaMPPaper,
+    GCaMPDatasetType,
+    GCaMPEventStyle,
+)
 
 
 # Register your models here.
@@ -22,3 +28,4 @@ admin.site.register(GCaMPDataset, GCaMPDatasetAdmin)
 admin.site.register(GCaMPNeuron, GCaMPNeuronAdmin)
 admin.site.register(GCaMPPaper)
 admin.site.register(GCaMPDatasetType)
+admin.site.register(GCaMPEventStyle)

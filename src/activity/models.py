@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from connectome.models import NeuronClass
 
 
@@ -39,6 +40,38 @@ class GCaMPDatasetType(models.Model):
     class Meta:
         verbose_name = "GCaMP Dataset Type"
         verbose_name_plural = "GCaMP Dataset Types"
+
+
+class GCaMPEventStyle(models.Model):
+    def __str__(self) -> str:
+        if self.paper:
+            return f"{self.paper.paper_id}:{self.event_id}"
+        return f"common:{self.event_id}"
+
+    event_id = models.CharField(max_length=100)
+    color = models.CharField(max_length=50, default="rgba(255,0,0,1)")
+    width = models.FloatField(default=2.0)
+    paper = models.ForeignKey(
+        GCaMPPaper,
+        on_delete=models.CASCADE,
+        related_name="event_styles",
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = "GCaMP Event Style"
+        verbose_name_plural = "GCaMP Event Styles"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["paper", "event_id"], name="unique_event_style_per_paper"
+            ),
+            models.UniqueConstraint(
+                fields=["event_id"],
+                condition=Q(paper__isnull=True),
+                name="unique_common_event_style",
+            ),
+        ]
 
 
 class GCaMPDataset(models.Model):

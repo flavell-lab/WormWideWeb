@@ -219,6 +219,11 @@ export function findTrace(plot, traceId) {
 *   Events
 */
 export function initEvent(plot, plotElementId, events, styleEvent, avgTimestep) {
+    const defaultEventStyle = {
+        color: "rgba(255,0,0,1)",
+        width: 2
+    };
+
     if (!plot.layout) {
         plot.layout = {};
     }
@@ -227,9 +232,27 @@ export function initEvent(plot, plotElementId, events, styleEvent, avgTimestep) 
         plot.layout.shapes = [];
     }
     
-    // Iterate over reversal events and add to shapes
+    if (!events || typeof events !== "object") {
+        Plotly.react(plotElementId, plot.data, plot.layout);
+        return;
+    }
+
+    // Iterate over events and add to shapes
     for (let eventKey in events) {
         let eventArray = events[eventKey]
+        if (!Array.isArray(eventArray)) {
+            continue;
+        }
+
+        const eventStyle = styleEvent?.[eventKey] || defaultEventStyle;
+        const eventColor = (
+            typeof eventStyle.color === "string" && eventStyle.color.length > 0
+        ) ? eventStyle.color : defaultEventStyle.color;
+        const parsedWidth = Number(eventStyle.width);
+        const eventWidth = Number.isFinite(parsedWidth)
+            ? parsedWidth
+            : defaultEventStyle.width;
+
         for (let i = 0; i < eventArray.length; i++) {
             let x_ = eventArray[i] * avgTimestep;
 
@@ -242,8 +265,8 @@ export function initEvent(plot, plotElementId, events, styleEvent, avgTimestep) 
             dict_["name"] = `event_${eventKey}_${i}`
             dict_["visible"] = true
             dict_["line"] =  {
-                "color": styleEvent[eventKey]["color"],
-                "width": styleEvent[eventKey]["width"]
+                "color": eventColor,
+                "width": eventWidth
             }
 
             // add to the plot shape

@@ -7,13 +7,6 @@ import {
 } from '../plot_data.js';
 import { getDatasetTypePill } from '/static/core/js/utility.js';
 
-const styleEvent = {
-    "heat": {
-        "color": 'rgba(255,0,0,1)',
-        "width": 2
-    }
-}
-
 /**
  * Utility to hide multiple traces at once in a Plotly plot.
  * @param {HTMLElement} plotElement - The Plotly div element.
@@ -67,7 +60,11 @@ async function fetchBehavior(url) {
         // Parse the response body as JSON
         const fetchedData = await response.json();
 
-        return [fetchedData.data.behavior, fetchedData.data.events];
+        return [
+            fetchedData.data.behavior,
+            fetchedData.data.events,
+            fetchedData.data.event_style || {}
+        ];
     } catch (error) {
       // Re-throw the error to be handled by the caller
       throw new Error(`Failed to fetch JSON data: ${error.message}`);
@@ -139,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 2C. Plot behaviors
             const behaviorURL = `/activity/api/data/${dataset.dataset_id}/behavior/`
-            const [behaviorData, events] = await fetchBehavior(behaviorURL);
+            const [behaviorData, events, styleEvent] = await fetchBehavior(behaviorURL);
             
             const nonVelocityTraceIndices = [];
             Object.keys(behaviorData.traces).forEach((key, idx) => {

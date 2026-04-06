@@ -136,10 +136,29 @@ Certain types such as NeuroPAL, which are common across multiple papers, should 
     ]
 }
 ```
-#### 3. add the dataset files
+#### 3. add event styles to `event_styles.json`
+Define styles for event markers in the same paper-scoped format used by `dataset_types.json`.  
+
+```json
+{
+    "common": [],
+
+    "atanas_kim_2023": [
+        {"id": "heat", "color": "rgba(255,0,0,1)", "width": 2}
+    ],
+
+    "dag_nwabudike_kang_2023": [
+        {"id": "patchEncounter", "color": "rgba(255,0,0,1)", "width": 2}
+    ]
+}
+```
+
+`id` must match the key under `timing.event` in the dataset JSON files.
+
+#### 4. add the dataset files
 Add the individual dataset files from the paper `paper_id` to the following location:  
 `initial_data/activity/data/${paper_id}/$file`  
 Make sure that `paper_id` matches the `paper_id` in `dataset_types.json` and `papers.json`.  
 
-#### 4. add the checksum data
+#### 5. add the checksum data
 Compute the file's SHA256 checksum and add it to `config/data_checksum.json`.  

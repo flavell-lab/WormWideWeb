@@ -41,16 +41,7 @@ export class NeuronBehaviorPlot {
 
         // Style configurations
         this.colorReversal = 'rgba(255, 0, 0, 0.15)';
-        this.styleEvent = {
-            "heat": {
-                "color": 'rgba(255,0,0,1)',
-                "width": 2
-            },
-            "patchEncounter": {
-                "color": 'rgba(255,0,0,1)',
-                "width": 2
-            }
-        };
+        this.styleEvent = {};
 
         // Initialize switches
         this.switchShowReversal = {
@@ -97,7 +88,13 @@ export class NeuronBehaviorPlot {
                 initReversal(this.plot, this.plotElementId, this.reversals, this.colorReversal, this.avgTimestep)
                 toggleReversal(this, this.switchShowReversal.value);
 
-                initEvent(this.plot, this.plotElementId, this.events, this.styleEvent, this.avgTimestep)
+                initEvent(
+                    this.plot,
+                    this.plotElementId,
+                    this.events,
+                    this.styleEvent,
+                    this.avgTimestep
+                )
                 toggleEvent(this, this.switchShowEvent.value);
                 if (Object.keys(this.events).length == 0) {
                     const switchShowEvent = document.getElementById("switchShowEvent");
@@ -148,10 +145,11 @@ export class NeuronBehaviorPlot {
             }
 
             this.behavior = this.data.behavior.traces
+            this.styleEvent = remoteBehavior?.data?.event_style || {};
 
             // Reversals
             this.reversals = behavior["reversal_events"] || [];
-            this.events = data["events"] || {};
+            this.events = remoteBehavior?.data?.events || {};
 
             // Return so that .then() can know we completed successfully
             return true;

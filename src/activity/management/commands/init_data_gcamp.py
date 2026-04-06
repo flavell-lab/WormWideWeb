@@ -1,6 +1,12 @@
 from django.core.management.base import BaseCommand
 from connectome.models import NeuronClass
-from activity.models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
+from activity.models import (
+    GCaMPDataset,
+    GCaMPNeuron,
+    GCaMPPaper,
+    GCaMPDatasetType,
+    GCaMPEventStyle,
+)
 import numpy as np
 from scipy.stats import pearsonr
 import time
@@ -13,6 +19,7 @@ PATH_CONFIG_GCAMP_NEURON_MAP = ["config", "gcamp_neuron_name_map_manual.json"]
 PATH_CONFIG_GCAMP_CLASS_MAP = ["config", "gcamp_neuron_class_name_map_manual.json"]
 PATH_PAPER = ["activity", "papers.json"]
 PATH_TYPE = ["activity", "dataset_types.json"]
+PATH_EVENT_STYLE = ["activity", "event_styles.json"]
 
 """
 
@@ -531,6 +538,81 @@ def import_all_type(self):
     self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} dataset types"))
 
 
+def import_all_event_style(self):
+    path_event_style = get_dataset_path(PATH_EVENT_STYLE)
+    event_styles = load_json(self, path_event_style)
+    path_paper_json = get_dataset_path(PATH_PAPER)
+    papers = {paper["paper_id"]: paper for paper in load_json(self, path_paper_json)}
+
+    n = 0
+    for paper_id, styles in event_styles.items():
+        if not isinstance(styles, list):
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Invalid event style format for '{paper_id}'. Expected a list."
+                )
+            )
+            continue
+
+        if paper_id == "common":
+            paper = None
+        else:
+            paper_meta = papers.get(paper_id)
+            if paper_meta is None:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Skipping event styles for unknown paper '{paper_id}'."
+                    )
+                )
+                continue
+
+            if paper_meta.get("skip"):
+                self.stdout.write(
+                    self.style.NOTICE(
+                        f"Skipping event styles for skipped paper '{paper_id}'."
+                    )
+                )
+                continue
+            paper = GCaMPPaper.objects.get(paper_id=paper_id)
+
+        for style in styles:
+            if not isinstance(style, dict):
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Skipping invalid event style entry for '{paper_id}': {style}"
+                    )
+                )
+                continue
+
+            event_id = style.get("id")
+            color = style.get("color")
+            width = style.get("width")
+
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or not isinstance(color, str)
+                or not color
+                or not isinstance(width, (int, float))
+            ):
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Skipping malformed event style for '{paper_id}': {style}"
+                    )
+                )
+                continue
+
+            GCaMPEventStyle.objects.create(
+                event_id=event_id,
+                color=color,
+                width=float(width),
+                paper=paper,
+            )
+            n += 1
+
+    self.stdout.write(self.style.SUCCESS(f"Successfully imported {n} event styles"))
+
+
 def import_all_gcamp(self):
     t1 = time.time_ns()
     papers = GCaMPPaper.objects.values_list("paper_id")
@@ -579,4 +661,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         import_all_paper(self)
         import_all_type(self)
+        import_all_event_style(self)
         import_all_gcamp(self)

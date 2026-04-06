@@ -15,7 +15,13 @@ from django.views.decorators.http import require_GET, require_POST
 
 from connectome.views import connectome_datasets, get_edge_response_data
 from connectome.models import Dataset as ConnectomeDataset
-from .models import GCaMPDataset, GCaMPNeuron, GCaMPPaper, GCaMPDatasetType
+from .models import (
+    GCaMPDataset,
+    GCaMPNeuron,
+    GCaMPPaper,
+    GCaMPDatasetType,
+    GCaMPEventStyle,
+)
 from core.models import JSONCache
 
 ACTIVITY_CACHE_TTL_LONG = 60 * 60 * 24 * 14
@@ -28,6 +34,7 @@ ACTIVITY_ENCODING_TABLE_CACHE_TTL = 60 * 60 * 24
 ACTIVITY_NEURAL_TRACE_HTTP_CACHE_TTL = 60 * 60 * 24 * 3
 ACTIVITY_ENCODING_BEHAVIOR_HTTP_CACHE_TTL = 60 * 60 * 24 * 7
 ACTIVITY_PLOT_MULTIPLE_CACHE_TTL = 60 * 30
+DEFAULT_EVENT_STYLE = {"color": "rgba(255,0,0,1)", "width": 2}
 
 
 def _activity_cache_key(*parts):
@@ -1137,18 +1144,60 @@ def get_encoding(request, dataset_id):
     return JsonResponse(get_encoding_data(dataset_id))
 
 
+def _resolve_dataset_event_styles(dataset, events):
+    if not isinstance(events, dict) or not events:
+        return {}
+
+    event_keys = list(events.keys())
+    styles = {}
+
+    common_styles = GCaMPEventStyle.objects.filter(
+        paper=None, event_id__in=event_keys
+    ).values("event_id", "color", "width")
+    for style in common_styles:
+        styles[style["event_id"]] = {
+            "color": style["color"],
+            "width": style["width"],
+        }
+
+    if dataset.paper_id is not None:
+        paper_styles = GCaMPEventStyle.objects.filter(
+            paper_id=dataset.paper_id, event_id__in=event_keys
+        ).values("event_id", "color", "width")
+        for style in paper_styles:
+            styles[style["event_id"]] = {
+                "color": style["color"],
+                "width": style["width"],
+            }
+
+    for event_key in event_keys:
+        if event_key not in styles:
+            styles[event_key] = dict(DEFAULT_EVENT_STYLE)
+
+    return styles
+
+
 def get_behavior_data(dataset_id):
     cache_key = _activity_cache_key("behavior", dataset_id)
     data = cache.get(cache_key)
     if data is None:
         dataset = get_object_or_404(
-            GCaMPDataset.objects.only(
-                "truncated_behavior", "events", "avg_timestep", "max_t"
+            GCaMPDataset.objects.select_related("paper").only(
+                "truncated_behavior",
+                "events",
+                "avg_timestep",
+                "max_t",
+                "paper",
             ),
             dataset_id=dataset_id,
         )
+        event_style = _resolve_dataset_event_styles(dataset, dataset.events)
         data = {
-            "data": {"behavior": dataset.truncated_behavior, "events": dataset.events},
+            "data": {
+                "behavior": dataset.truncated_behavior,
+                "events": dataset.events,
+                "event_style": event_style,
+            },
             "dataset_id": dataset_id,
             "avg_timestep": dataset.avg_timestep,
             "max_t": dataset.max_t,
