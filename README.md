@@ -159,6 +159,3 @@ Define styles for event markers in the same paper-scoped format used by `dataset
 Add the individual dataset files from the paper `paper_id` to the following location:  
 `initial_data/activity/data/${paper_id}/$file`  
 Make sure that `paper_id` matches the `paper_id` in `dataset_types.json` and `papers.json`.  
-
-#### 5. add the checksum data
-Compute the file's SHA256 checksum and add it to `config/data_checksum.json`.  
