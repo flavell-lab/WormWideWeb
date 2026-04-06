@@ -45,9 +45,8 @@
     <div class="card card-body">
       <h5>Dataset Info</h5>
       <p>{{ dataset_note|default:"No additional note/info available." }}</p>
-      
       <p>
-      JSON SHA256 checksum 
+      JSON checksum (SHA-256)
       <code class="bg-light text-dark px-2 py-1 rounded text-monospace d-inline w-auto">
         {{ dataset_sha256 }}
       </code>
@@ -56,6 +55,7 @@
       {% if dataset_checksums %}
       <div class="mb-2">
         <h6 class="mb-2">Source File Checksums</h6>
+        <p>Checksums use SHA-256 unless otherwise specified (e.g., BLAKE3).</p>
         {% for checksum in dataset_checksums %}
         <p class="mb-1">
           {{ checksum.key }}
