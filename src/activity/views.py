@@ -31,17 +31,15 @@ ACTIVITY_PLOT_MULTIPLE_CACHE_TTL = 60 * 30
 
 
 def _activity_cache_key(*parts):
-    return "activity_" + "_".join(
-        str(part) for part in parts
-    )
+    return "activity_" + "_".join(str(part) for part in parts)
 
 
 ACTIVITY_REPLAY_CONNECTOME_DEGREE_CACHE_KEY = _activity_cache_key(
     "replay_connectome_degree_index"
 )
-ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX = _activity_cache_key(
-    "replay_behavior_corr"
-) + "_"
+ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX = (
+    _activity_cache_key("replay_behavior_corr") + "_"
+)
 ACTIVITY_REPLAY_PAYLOAD_CACHE_KEY_PREFIX = _activity_cache_key("replay_payload") + "_"
 PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX = _activity_cache_key("plot_multiple_data") + "_"
 
@@ -58,18 +56,18 @@ def _dedupe_int_list(values):
 
 def _validate_plot_multiple_payload(data):
     if not isinstance(data, dict):
-        return None, 'Data must be a JSON object.'
+        return None, "Data must be a JSON object."
     if not data:
-        return None, 'Data must contain at least one dataset.'
+        return None, "Data must contain at least one dataset."
 
     normalized = {}
     for dataset_id, neuron_ids in data.items():
         if not isinstance(dataset_id, str) or not dataset_id:
-            return None, f'Invalid dataset_id: {dataset_id}'
+            return None, f"Invalid dataset_id: {dataset_id}"
         if not isinstance(neuron_ids, list):
-            return None, f'Invalid neuron_ids for dataset_id {dataset_id}.'
+            return None, f"Invalid neuron_ids for dataset_id {dataset_id}."
         if not all(isinstance(n, int) and n > 0 for n in neuron_ids):
-            return None, f'Invalid neuron_ids for dataset_id {dataset_id}.'
+            return None, f"Invalid neuron_ids for dataset_id {dataset_id}."
 
         normalized[dataset_id] = _dedupe_int_list(neuron_ids)
 
@@ -79,7 +77,7 @@ def _validate_plot_multiple_payload(data):
 @cache_page(ACTIVITY_PAGE_CACHE_TTL)
 def index(request):
     context = {}
-    
+
     return render(request, "activity/index.html", context)
 
 
@@ -87,14 +85,14 @@ def index(request):
 def index_encoding(request):
     context = {}
 
-    return render(request, "activity/index_encoding.html", context)    
+    return render(request, "activity/index_encoding.html", context)
 
 
 @cache_page(ACTIVITY_PAGE_CACHE_TTL)
 def encoding_table(request):
     context = {}
 
-    return render(request, "activity/encoding.html", context)    
+    return render(request, "activity/encoding.html", context)
 
 
 def encoding_connectome(request):
@@ -153,7 +151,9 @@ def dataset(request):
 
         # Optimize fetching papers in one query.
         paper_ids = GCaMPDataset.objects.values_list("paper", flat=True).distinct()
-        papers = GCaMPPaper.objects.filter(pk__in=paper_ids).only("paper_id", "title_short")
+        papers = GCaMPPaper.objects.filter(pk__in=paper_ids).only(
+            "paper_id", "title_short"
+        )
         dataset_papers = {
             paper.paper_id: {
                 "paper_id": paper.paper_id,
@@ -168,7 +168,9 @@ def dataset(request):
                 paper.paper_id: [dtype.type_id for dtype in paper.dataset_types.all()]
                 for paper in GCaMPPaper.objects.all()
             },
-            "common": [dt.type_id for dt in GCaMPDatasetType.objects.filter(paper=None)],
+            "common": [
+                dt.type_id for dt in GCaMPDatasetType.objects.filter(paper=None)
+            ],
         }
 
         context = {
@@ -184,9 +186,10 @@ def dataset(request):
 
 @cache_page(ACTIVITY_DATA_PAGE_CACHE_TTL)
 def get_all_dataset(request):
-    datasets = GCaMPDataset.objects.all().values("dataset_id", "dataset_type", "n_neuron",
-                                                 "n_labeled", "max_t", "avg_timestep")
-    
+    datasets = GCaMPDataset.objects.all().values(
+        "dataset_id", "dataset_type", "n_neuron", "n_labeled", "max_t", "avg_timestep"
+    )
+
     return JsonResponse(list(datasets), safe=False)
 
 
@@ -213,8 +216,7 @@ def signal_propagation_replay(request):
             "paper_title": dataset.paper.title_short if dataset.paper else "",
         }
         for dataset in (
-            GCaMPDataset.objects
-            .filter(dataset_type__type_id__icontains="neuropal")
+            GCaMPDataset.objects.filter(dataset_type__type_id__icontains="neuropal")
             .distinct()
             .select_related("paper")
             .only("dataset_id", "dataset_name", "paper__title_short")
@@ -248,9 +250,7 @@ def _parse_int_query(value, default, field_name, min_value=None, max_value=None)
         try:
             parsed = int(value)
         except ValueError as error:
-            raise ValueError(
-                f"Invalid integer for '{field_name}': {value}"
-            ) from error
+            raise ValueError(f"Invalid integer for '{field_name}': {value}") from error
 
     if min_value is not None and parsed < min_value:
         raise ValueError(f"'{field_name}' must be >= {min_value}.")
@@ -318,11 +318,9 @@ def _aggregate_replay_traces(dataset):
             missing_indices.append(idx_neuron)
 
     if missing_indices:
-        missing_neurons = (
-            GCaMPNeuron.objects
-            .filter(dataset=dataset, idx_neuron__in=missing_indices)
-            .only("idx_neuron", "trace")
-        )
+        missing_neurons = GCaMPNeuron.objects.filter(
+            dataset=dataset, idx_neuron__in=missing_indices
+        ).only("idx_neuron", "trace")
         new_cache_entries = {}
         for neuron in missing_neurons:
             trace_entry = {
@@ -371,7 +369,9 @@ def _aggregate_replay_traces(dataset):
         if np.isnan(mean_trace).all():
             continue
 
-        representative_idx = min(idx_by_name[neuron_name]) if idx_by_name[neuron_name] else None
+        representative_idx = (
+            min(idx_by_name[neuron_name]) if idx_by_name[neuron_name] else None
+        )
         aggregated[neuron_name] = {
             "trace": np.nan_to_num(
                 mean_trace,
@@ -569,8 +569,7 @@ def _compute_activity_behavior_correlation_index(activity_dataset, traces_by_nam
 
 def _get_activity_behavior_correlation_index(activity_dataset, traces_by_name=None):
     cache_key = (
-        f"{ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX}"
-        f"{activity_dataset.dataset_id}"
+        f"{ACTIVITY_REPLAY_BEHAVIOR_CORR_CACHE_KEY_PREFIX}{activity_dataset.dataset_id}"
     )
     cached = cache.get(cache_key)
     if cached is not None:
@@ -622,7 +621,9 @@ def _compute_connectome_full_degree_index():
         if not dataset_id:
             continue
         directed_graph = directed_graph_by_dataset.setdefault(dataset_id, nx.DiGraph())
-        undirected_graph = undirected_graph_by_dataset.setdefault(dataset_id, nx.Graph())
+        undirected_graph = undirected_graph_by_dataset.setdefault(
+            dataset_id, nx.Graph()
+        )
         if neuron_name:
             directed_graph.add_node(neuron_name)
             undirected_graph.add_node(neuron_name)
@@ -647,7 +648,9 @@ def _compute_connectome_full_degree_index():
         )
 
         directed_graph = directed_graph_by_dataset.setdefault(dataset_id, nx.DiGraph())
-        undirected_graph = undirected_graph_by_dataset.setdefault(dataset_id, nx.Graph())
+        undirected_graph = undirected_graph_by_dataset.setdefault(
+            dataset_id, nx.Graph()
+        )
         for synapse in edge_response.get("synapses", []):
             pre_name = synapse.get("pre")
             post_name = synapse.get("post")
@@ -689,14 +692,20 @@ def _compute_connectome_full_degree_index():
         undirected_graph = undirected_graph_by_dataset.get(dataset_id, nx.Graph())
 
         pagerank = {node: 0.0 for node in directed_graph.nodes}
-        if directed_graph.number_of_nodes() > 0 and directed_graph.number_of_edges() > 0:
+        if (
+            directed_graph.number_of_nodes() > 0
+            and directed_graph.number_of_edges() > 0
+        ):
             try:
                 pagerank = nx.pagerank(directed_graph, weight="weight")
             except Exception:
                 pass
 
         eigenvector = {node: 0.0 for node in undirected_graph.nodes}
-        if undirected_graph.number_of_nodes() > 0 and undirected_graph.number_of_edges() > 0:
+        if (
+            undirected_graph.number_of_nodes() > 0
+            and undirected_graph.number_of_edges() > 0
+        ):
             try:
                 eigenvector = nx.eigenvector_centrality(
                     undirected_graph,
@@ -840,7 +849,9 @@ def _build_signal_replay_payload(
         synapse_count = synapse.get("count")
         if not pre_name or not post_name:
             continue
-        if (not show_connected) and (pre_name not in matched_set or post_name not in matched_set):
+        if (not show_connected) and (
+            pre_name not in matched_set or post_name not in matched_set
+        ):
             continue
         try:
             synapse_count = float(synapse_count)
@@ -895,14 +906,18 @@ def _build_signal_replay_payload(
 
     behavior = _extract_behavior_traces(activity_dataset, min_len)
     behavior_keys = list(behavior.get("traces", {}).keys())
-    connected_only_names = sorted(name for name in visible_node_names if name not in matched_set)
+    connected_only_names = sorted(
+        name for name in visible_node_names if name not in matched_set
+    )
 
     nodes = []
     for name in sorted(visible_node_names):
         has_activity = name in normalized_traces
         trace = normalized_traces.get(name, np.zeros(min_len, dtype=float))
         full_metrics = connectome_metric_map.get(name, {})
-        node_behavior_corr = behavior_corr_by_neuron.get(name, {}) if has_activity else {}
+        node_behavior_corr = (
+            behavior_corr_by_neuron.get(name, {}) if has_activity else {}
+        )
         filtered_behavior_corr = {
             behavior_key: float(node_behavior_corr.get(behavior_key, 0.0))
             for behavior_key in behavior_keys
@@ -925,12 +940,16 @@ def _build_signal_replay_payload(
                 "degree_in_full": degree_in_full,
                 "degree_out_full": degree_out_full,
                 "degree_total_full": degree_total_full,
-                "pagerank_centrality": float(full_metrics.get("pagerank_centrality", 0.0)),
+                "pagerank_centrality": float(
+                    full_metrics.get("pagerank_centrality", 0.0)
+                ),
                 "eigenvector_centrality": float(
                     full_metrics.get("eigenvector_centrality", 0.0)
                 ),
                 "behavior_correlations": filtered_behavior_corr,
-                "representative_idx_neuron": traces_by_name[name]["representative_idx_neuron"]
+                "representative_idx_neuron": traces_by_name[name][
+                    "representative_idx_neuron"
+                ]
                 if has_activity
                 else None,
             }
@@ -1045,8 +1064,9 @@ def get_neural_trace_data(dataset_id, idx_neuron):
     neuron = cache.get(cache_key)
     if neuron is None:
         neuron = (
-            GCaMPNeuron.objects
-            .filter(dataset__dataset_id=dataset_id, idx_neuron=idx_neuron)
+            GCaMPNeuron.objects.filter(
+                dataset__dataset_id=dataset_id, idx_neuron=idx_neuron
+            )
             .values("trace", "idx_neuron")
             .first()
         )
@@ -1069,6 +1089,8 @@ def get_neural_trace(request, dataset_id, idx_neuron):
 """
 get all encoding from 
 """
+
+
 @cache_page(ACTIVITY_ENCODING_TABLE_CACHE_TTL)
 def get_all_dataset_encoding(request):
     data = get_object_or_404(JSONCache, name="atanas_kim_2023_all_encoding_dict").json
@@ -1088,7 +1110,7 @@ def get_dataset_encoding(dataset):
         "forwardness": encoding["forwardness"],
         "feedingness": encoding["feedingness"],
         "encoding_changing_neurons": encoding["encoding_changing_neurons"],
-        "tau_vals": encoding["tau_vals"]
+        "tau_vals": encoding["tau_vals"],
     }
 
     return data
@@ -1108,26 +1130,28 @@ def get_encoding_data(dataset_id):
 """
 get encoding data of a dataset
 """
+
+
 @cache_control(public=True, max_age=ACTIVITY_ENCODING_BEHAVIOR_HTTP_CACHE_TTL)
 def get_encoding(request, dataset_id):
     return JsonResponse(get_encoding_data(dataset_id))
+
 
 def get_behavior_data(dataset_id):
     cache_key = _activity_cache_key("behavior", dataset_id)
     data = cache.get(cache_key)
     if data is None:
         dataset = get_object_or_404(
-            GCaMPDataset.objects.only("truncated_behavior", "events", "avg_timestep", "max_t"),
-            dataset_id=dataset_id
+            GCaMPDataset.objects.only(
+                "truncated_behavior", "events", "avg_timestep", "max_t"
+            ),
+            dataset_id=dataset_id,
         )
         data = {
-            "data": {
-                "behavior": dataset.truncated_behavior,
-                "events": dataset.events
-            },
+            "data": {"behavior": dataset.truncated_behavior, "events": dataset.events},
             "dataset_id": dataset_id,
             "avg_timestep": dataset.avg_timestep,
-            "max_t": dataset.max_t
+            "max_t": dataset.max_t,
         }
         cache.set(cache_key, data, timeout=ACTIVITY_CACHE_TTL_MEDIUM)
 
@@ -1147,10 +1171,12 @@ def get_dataset_neuron_data(dataset):
         qs = dataset.neurons.select_related("neuron_class").all()
         neuron_data = {
             neuron.idx_neuron: {
-                "name": f"{neuron.idx_neuron} ({neuron.neuron_name})" if neuron.neuron_name else str(neuron.idx_neuron),
+                "name": f"{neuron.idx_neuron} ({neuron.neuron_name})"
+                if neuron.neuron_name
+                else str(neuron.idx_neuron),
                 "label": neuron.neuron_name,
                 "class": neuron.neuron_class.name if neuron.neuron_class else "",
-                "idx_neuron": neuron.idx_neuron
+                "idx_neuron": neuron.idx_neuron,
             }
             for neuron in qs
         }
@@ -1162,17 +1188,27 @@ def get_dataset_neuron_data(dataset):
 def plot_dataset(request, dataset_id):
     # Fetch dataset with related objects
     dataset_fields = (
-        'dataset_id', 'dataset_name', 'avg_timestep', 'max_t', 'neuron_cor', 'encoding', 'events', 'paper', 'dataset_meta'
+        "dataset_id",
+        "dataset_name",
+        "avg_timestep",
+        "max_t",
+        "neuron_cor",
+        "encoding",
+        "events",
+        "paper",
+        "dataset_meta",
     )
-    dataset_type_fields = ('type_id', 'description', 'name', 'color_background')
+    dataset_type_fields = ("type_id", "description", "name", "color_background")
 
     # Build a queryset that only selects the necessary fields.
     dataset_qs = (
-        GCaMPDataset.objects
-        .only(*dataset_fields)
-        .select_related('paper')
+        GCaMPDataset.objects.only(*dataset_fields)
+        .select_related("paper")
         .prefetch_related(
-            Prefetch('dataset_type', queryset=GCaMPDatasetType.objects.only(*dataset_type_fields))
+            Prefetch(
+                "dataset_type",
+                queryset=GCaMPDatasetType.objects.only(*dataset_type_fields),
+            )
         )
     )
 
@@ -1185,52 +1221,64 @@ def plot_dataset(request, dataset_id):
     neuron_str = request.GET.get("n")
     if neuron_str:
         try:
-            list_idx_neuron = [int(x) for x in neuron_str.split('-')]
+            list_idx_neuron = [int(x) for x in neuron_str.split("-")]
         except ValueError:
             return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
 
         # Map each neuron index to its cache key.
         cache_key_map = {
-            _activity_cache_key("trace", dataset_id, idx): idx for idx in list_idx_neuron
+            _activity_cache_key("trace", dataset_id, idx): idx
+            for idx in list_idx_neuron
         }
-        
+
         # Retrieve cached traces.
         cached_traces = cache.get_many(list(cache_key_map.keys()))
-        
+
         # Identify indices that were not found in cache.
         missing_indices = [
             idx for key, idx in cache_key_map.items() if key not in cached_traces
         ]
-        
+
         new_traces = {}
         if missing_indices:
             # Batch query to fetch missing neurons with only the needed fields.
             neurons = list(
-                GCaMPNeuron.objects.filter(dataset=dataset, idx_neuron__in=missing_indices)
-                .only('idx_neuron', 'trace')
+                GCaMPNeuron.objects.filter(
+                    dataset=dataset, idx_neuron__in=missing_indices
+                ).only("idx_neuron", "trace")
             )
             # Validate that all requested neurons were returned.
             if len(neurons) != len(missing_indices):
-                return HttpResponseBadRequest("Invalid neurons or error loading neurons.")
-            
+                return HttpResponseBadRequest(
+                    "Invalid neurons or error loading neurons."
+                )
+
             # Create a mapping of neuron index to its trace data.
             new_traces = {
                 neuron.idx_neuron: {
                     "trace": neuron.trace,
                     "idx_neuron": neuron.idx_neuron,
-                    "dataset_id": dataset_id
+                    "dataset_id": dataset_id,
                 }
                 for neuron in neurons
             }
             # Cache the new traces in bulk.
-            cache.set_many({
-                _activity_cache_key("trace", dataset_id, neuron.idx_neuron): trace_data for neuron_idx,
-                trace_data in new_traces.items() for neuron in neurons if neuron.idx_neuron == neuron_idx
-            }, timeout=ACTIVITY_CACHE_TTL_MEDIUM)
+            cache.set_many(
+                {
+                    _activity_cache_key(
+                        "trace", dataset_id, neuron.idx_neuron
+                    ): trace_data
+                    for neuron_idx, trace_data in new_traces.items()
+                    for neuron in neurons
+                    if neuron.idx_neuron == neuron_idx
+                },
+                timeout=ACTIVITY_CACHE_TTL_MEDIUM,
+            )
 
         # Convert cached keys back to neuron indices.
         cached_traces_parsed = {
-            cache_key_map[key]: value for key, value in cached_traces.items()
+            cache_key_map[key]: value
+            for key, value in cached_traces.items()
             if key in cache_key_map
         }
 
@@ -1254,7 +1302,7 @@ def plot_dataset(request, dataset_id):
                 "background-color": dtype.color_background,
             }
             for dtype in dataset.dataset_type.all()
-        }
+        },
     }
     if dataset.events:
         data["events"] = dataset.events
@@ -1273,7 +1321,7 @@ def plot_dataset(request, dataset_id):
         "data": json.dumps(data, cls=DjangoJSONEncoder),
         "datasets_json": datasets_json,
         "show_connectome": "common-neuropal" in data["dataset_type"],
-        "show_encoding": bool(encoding)
+        "show_encoding": bool(encoding),
     }
 
     # dataset note
@@ -1291,37 +1339,53 @@ def plot_multiple(request):
     token = request.GET.get("token")
     if not token:
         # No token provided; return an empty page.
-        return render(request, "activity/plot_multiple.html", {"list_dataset_meta": [], "plots": "{}"})
-    
+        return render(
+            request,
+            "activity/plot_multiple.html",
+            {"list_dataset_meta": [], "plots": "{}"},
+        )
+
     # Retrieve the input data from cache using the token.
     cache_key = PLOT_MULTIPLE_DATA_CACHE_KEY_PREFIX + token
     data = cache.get(cache_key)
     if not data:
         # Token not found or expired.
-        return render(request, "activity/plot_multiple.html", {"list_dataset_meta": [], "plots": "{}"})
-    
+        return render(
+            request,
+            "activity/plot_multiple.html",
+            {"list_dataset_meta": [], "plots": "{}"},
+        )
+
     dataset_ids = list(data.keys())
-    
+
     # Prefetch dataset types with limited fields.
-    dt_qs = GCaMPDatasetType.objects.only('type_id', 'description', 'name', 'color_background')
+    dt_qs = GCaMPDatasetType.objects.only(
+        "type_id", "description", "name", "color_background"
+    )
     datasets_qs = (
         GCaMPDataset.objects.filter(dataset_id__in=dataset_ids)
-        .select_related('paper')
-        .prefetch_related(Prefetch('dataset_type', queryset=dt_qs))
-        .only('dataset_id', 'dataset_name', 'avg_timestep', 'max_t', 'paper__paper_id', 'paper__title_short')
+        .select_related("paper")
+        .prefetch_related(Prefetch("dataset_type", queryset=dt_qs))
+        .only(
+            "dataset_id",
+            "dataset_name",
+            "avg_timestep",
+            "max_t",
+            "paper__paper_id",
+            "paper__title_short",
+        )
     )
     # Map dataset_id to dataset instance.
     dataset_map = {ds.dataset_id: ds for ds in datasets_qs}
-    
+
     # Batch query neurons across all requested datasets.
     all_required_idx = {idx for idx_list in data.values() for idx in idx_list}
     neurons_qs = (
         GCaMPNeuron.objects.filter(
-            dataset__dataset_id__in=dataset_ids,
-            idx_neuron__in=all_required_idx
+            dataset__dataset_id__in=dataset_ids, idx_neuron__in=all_required_idx
         )
-        .select_related('dataset')
-        .only('dataset__dataset_id', 'idx_neuron', 'neuron_name', 'trace')
+        .select_related("dataset")
+        .only("dataset__dataset_id", "idx_neuron", "neuron_name", "trace")
     )
     # Group neurons by dataset_id and their index.
     neurons_grouped = defaultdict(dict)
@@ -1359,36 +1423,37 @@ def plot_multiple(request):
             if not neuron:
                 continue  # Optionally handle missing neurons.
             neuron_name = neuron.neuron_name
-            trace_data.append({
-                "idx_neuron": idx_neuron,
-                "trace": neuron.trace,
-                "name": neuron_name
-            })
+            trace_data.append(
+                {"idx_neuron": idx_neuron, "trace": neuron.trace, "name": neuron_name}
+            )
             if neuron_name not in colors:
                 colors[neuron_name] = len(colors)
 
-        plots.append({
-            "dataset_type": [dtype.type_id for dtype in dtypes],
-            "dataset_id": dataset.dataset_id,
-            "dataset_name": dataset.dataset_name,
-            "trace_data": trace_data,
-            "avg_timestep": dataset.avg_timestep,
-            "max_t": dataset.max_t
-        })
-        list_dataset_meta.append({
-            "paper_id": dataset.paper.paper_id,
-            "paper_title_short": dataset.paper.title_short,
-            "dataset_id": dataset.dataset_id,
-            "dataset_name": dataset.dataset_name,
-        })
+        plots.append(
+            {
+                "dataset_type": [dtype.type_id for dtype in dtypes],
+                "dataset_id": dataset.dataset_id,
+                "dataset_name": dataset.dataset_name,
+                "trace_data": trace_data,
+                "avg_timestep": dataset.avg_timestep,
+                "max_t": dataset.max_t,
+            }
+        )
+        list_dataset_meta.append(
+            {
+                "paper_id": dataset.paper.paper_id,
+                "paper_title_short": dataset.paper.title_short,
+                "dataset_id": dataset.dataset_id,
+                "dataset_name": dataset.dataset_name,
+            }
+        )
 
     context = {
         "list_dataset_meta": list_dataset_meta,
-        "plots": json.dumps({
-            "dataset_types": dataset_types,
-            "data": plots,
-            "colors": colors
-        }, cls=DjangoJSONEncoder)
+        "plots": json.dumps(
+            {"dataset_types": dataset_types, "data": plots, "colors": colors},
+            cls=DjangoJSONEncoder,
+        ),
     }
     return render(request, "activity/plot_multiple.html", context)
 
@@ -1404,7 +1469,9 @@ def plot_multiple_data(request):
         data = json.loads(request.body)
         normalized_data, validation_error = _validate_plot_multiple_payload(data)
         if validation_error:
-            return JsonResponse({'status': 'error', 'message': validation_error}, status=400)
+            return JsonResponse(
+                {"status": "error", "message": validation_error}, status=400
+            )
 
         # Generate a unique token and store the data in the cache.
         token = uuid.uuid4().hex
@@ -1417,10 +1484,12 @@ def plot_multiple_data(request):
 
         # Build the redirect URL with the token as a GET parameter.
         url = reverse("activity-plot_multiple") + f"?token={token}"
-        return JsonResponse({'status': 'success', 'redirect': url}, status=200)
+        return JsonResponse({"status": "success", "redirect": url}, status=200)
 
     except json.JSONDecodeError:
-        return JsonResponse({'status': 'error', 'message': 'Invalid JSON.'}, status=400)
+        return JsonResponse({"status": "error", "message": "Invalid JSON."}, status=400)
     except Exception:
         # Optionally log the exception.
-        return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred.'}, status=500)
+        return JsonResponse(
+            {"status": "error", "message": "An unexpected error occurred."}, status=500
+        )

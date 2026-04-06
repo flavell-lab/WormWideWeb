@@ -19,9 +19,7 @@ CONNECTOME_AVAILABLE_NEURONS_HTTP_CACHE_TTL = 60 * 60 * 24 * 30
 
 
 def _connectome_cache_key(*parts):
-    return "connectome_" + "_".join(
-        str(part) for part in parts
-    )
+    return "connectome_" + "_".join(str(part) for part in parts)
 
 
 CONNECTOME_DATASETS_CACHE_KEY = _connectome_cache_key("datasets_json")
@@ -56,7 +54,13 @@ def _validate_get_edges_payload(data):
     if not isinstance(data, dict):
         return None, "Payload must be a JSON object."
 
-    required = ["datasets", "neurons", "classes", "show_individual_neuron", "show_connected_neuron"]
+    required = [
+        "datasets",
+        "neurons",
+        "classes",
+        "show_individual_neuron",
+        "show_connected_neuron",
+    ]
     missing = [key for key in required if key not in data]
     if missing:
         return None, f"Missing required field(s): {', '.join(missing)}."
@@ -96,8 +100,20 @@ def connectome_datasets(cache_key=None):
     datasets_json = cache.get(cache_key)
     if datasets_json is None:
         datasets = Dataset.objects.all()
-        datasets_json = json.dumps(list(datasets.values(
-            'name', 'dataset_id', 'dataset_type', 'description','animal_visual_time','citation','dataset_sha256')), cls=DjangoJSONEncoder)
+        datasets_json = json.dumps(
+            list(
+                datasets.values(
+                    "name",
+                    "dataset_id",
+                    "dataset_type",
+                    "description",
+                    "animal_visual_time",
+                    "citation",
+                    "dataset_sha256",
+                )
+            ),
+            cls=DjangoJSONEncoder,
+        )
         cache.set(cache_key, datasets_json, timeout=CONNECTOME_CACHE_TTL)
 
     return datasets_json
@@ -132,14 +148,14 @@ def connectome_witvliet_datasets(cache_key=None):
 @cache_page(CONNECTOME_PAGE_CACHE_TTL)
 def index(request):
     context = {}
-    
+
     return render(request, "connectome/index.html", context)
 
 
 @ensure_csrf_cookie
 @cache_page(CONNECTOME_PAGE_CACHE_TTL)
 def explore(request):
-    context = {'datasets_json': connectome_datasets()}
+    context = {"datasets_json": connectome_datasets()}
 
     return render(request, "connectome/explore.html", context)
 
@@ -147,7 +163,7 @@ def explore(request):
 @ensure_csrf_cookie
 @cache_page(CONNECTOME_PAGE_CACHE_TTL)
 def path(request):
-    context = {'datasets_json': connectome_datasets()}
+    context = {"datasets_json": connectome_datasets()}
 
     return render(request, "connectome/path.html", context)
 
@@ -155,7 +171,7 @@ def path(request):
 @ensure_csrf_cookie
 @cache_page(CONNECTOME_PAGE_CACHE_TTL)
 def compare(request):
-    context = {'datasets_json': connectome_datasets()}
+    context = {"datasets_json": connectome_datasets()}
 
     return render(request, "connectome/compare.html", context)
 
@@ -175,13 +191,13 @@ def available_neurons(request):
     specified by the "datasets" GET parameter. Instead of caching every combination,
     the results are cached per dataset_id.
     """
-    datasets_str = request.GET.get('datasets')
+    datasets_str = request.GET.get("datasets")
     if not datasets_str:
         return HttpResponse("Error: datasets parameter not found", status=400)
-    
+
     # Get the list of dataset IDs from the request.
-    dataset_ids = _dedupe_string_list(datasets_str.split(','))
-    
+    dataset_ids = _dedupe_string_list(datasets_str.split(","))
+
     # Final union dictionaries.
     final_neurons = {}
     final_neuron_classes = {}
@@ -192,41 +208,38 @@ def available_neurons(request):
         dataset_result = cache.get(cache_key)
         if dataset_result is None:
             # Prepare querysets with only needed fields.
-            neuron_qs = (
-                Neuron.objects
-                .only('name', 'cell_type', 'neuron_class__name', 'cell_type_desc')
-                .select_related('neuron_class')
-            )
-            neuron_class_qs = (
-                NeuronClass.objects
-                .only('name')
-                .prefetch_related(Prefetch('neurons', queryset=Neuron.objects.only('name')))
+            neuron_qs = Neuron.objects.only(
+                "name", "cell_type", "neuron_class__name", "cell_type_desc"
+            ).select_related("neuron_class")
+            neuron_class_qs = NeuronClass.objects.only("name").prefetch_related(
+                Prefetch("neurons", queryset=Neuron.objects.only("name"))
             )
             # Fetch the dataset with prefetches for available neurons and classes.
             dataset_obj = (
-                Dataset.objects
-                .filter(dataset_id=dataset_id)
-                .only('dataset_id')
+                Dataset.objects.filter(dataset_id=dataset_id)
+                .only("dataset_id")
                 .prefetch_related(
-                    Prefetch('available_neurons', queryset=neuron_qs),
-                    Prefetch('available_classes', queryset=neuron_class_qs)
+                    Prefetch("available_neurons", queryset=neuron_qs),
+                    Prefetch("available_classes", queryset=neuron_class_qs),
                 )
                 .first()
             )
             if not dataset_obj:
                 continue  # Skip if no such dataset exists.
-            
+
             # Collect available neurons and classes.
             neurons_set = set(dataset_obj.available_neurons.all())
             neuron_classes_set = set(dataset_obj.available_classes.all())
-            
+
             # Serialize neurons keyed by name.
             neurons_data = {
                 neuron.name: {
-                    'neuron_class': neuron.neuron_class.name if neuron.neuron_class else None,
-                    'name': neuron.name,
-                    'cell_type': neuron.cell_type,
-                    'cell_type_desc': neuron.cell_type_desc
+                    "neuron_class": neuron.neuron_class.name
+                    if neuron.neuron_class
+                    else None,
+                    "name": neuron.name,
+                    "cell_type": neuron.cell_type,
+                    "cell_type_desc": neuron.cell_type_desc,
                 }
                 for neuron in neurons_set
             }
@@ -235,29 +248,28 @@ def available_neurons(request):
                 cls.name: [n.name for n in cls.neurons.all()]
                 for cls in neuron_classes_set
             }
-            
+
             dataset_result = {
-                'neurons': neurons_data,
-                'neuron_classes': neuron_classes_data
+                "neurons": neurons_data,
+                "neuron_classes": neuron_classes_data,
             }
             # Cache the serialized result for this dataset.
             cache.set(cache_key, dataset_result, timeout=CONNECTOME_CACHE_TTL)
-        
+
         # Combine the dataset result into the final union.
-        for neuron_name, neuron_info in dataset_result.get('neurons', {}).items():
+        for neuron_name, neuron_info in dataset_result.get("neurons", {}).items():
             final_neurons[neuron_name] = neuron_info
-        
-        for cls_name, neuron_list in dataset_result.get('neuron_classes', {}).items():
+
+        for cls_name, neuron_list in dataset_result.get("neuron_classes", {}).items():
             if cls_name in final_neuron_classes:
                 # Merge lists and remove duplicates.
-                final_neuron_classes[cls_name] = list(set(final_neuron_classes[cls_name]).union(neuron_list))
+                final_neuron_classes[cls_name] = list(
+                    set(final_neuron_classes[cls_name]).union(neuron_list)
+                )
             else:
                 final_neuron_classes[cls_name] = neuron_list
 
-    data = {
-        'neurons': final_neurons,
-        'neuron_classes': final_neuron_classes
-    }
+    data = {"neurons": final_neurons, "neuron_classes": final_neuron_classes}
 
     return JsonResponse(data)
 
@@ -271,7 +283,9 @@ def get_edge_response_data(data):
 
     # neuron_class names for neurons in neurons_input.
     list_class_split = set(
-        Neuron.objects.filter(name__in=neurons_input).values_list("neuron_class__name", flat=True)
+        Neuron.objects.filter(name__in=neurons_input).values_list(
+            "neuron_class__name", flat=True
+        )
     )
 
     # Initialize synapses structure.
@@ -310,24 +324,37 @@ def get_edge_response_data(data):
     # For each group, fetch synapses in one query and then split results.
     for (dataset, typ), values in missing_group.items():
         if typ == "neuron":
-            qs = Synapse.objects.filter(
-                dataset__dataset_id=dataset,
-            ).filter(
-                Q(pre__name__in=values) | Q(post__name__in=values)
-            ).values_list(
-                'pre__name', 'pre__neuron_class__name',
-                'post__name', 'post__neuron_class__name',
-                'synapse_type', 'synapse_count'
+            qs = (
+                Synapse.objects.filter(
+                    dataset__dataset_id=dataset,
+                )
+                .filter(Q(pre__name__in=values) | Q(post__name__in=values))
+                .values_list(
+                    "pre__name",
+                    "pre__neuron_class__name",
+                    "post__name",
+                    "post__neuron_class__name",
+                    "synapse_type",
+                    "synapse_count",
+                )
             )
         else:  # typ == "class"
-            qs = Synapse.objects.filter(
-                dataset__dataset_id=dataset,
-            ).filter(
-                Q(pre__neuron_class__name__in=values) | Q(post__neuron_class__name__in=values)
-            ).values_list(
-                'pre__name', 'pre__neuron_class__name',
-                'post__name', 'post__neuron_class__name',
-                'synapse_type', 'synapse_count'
+            qs = (
+                Synapse.objects.filter(
+                    dataset__dataset_id=dataset,
+                )
+                .filter(
+                    Q(pre__neuron_class__name__in=values)
+                    | Q(post__neuron_class__name__in=values)
+                )
+                .values_list(
+                    "pre__name",
+                    "pre__neuron_class__name",
+                    "post__name",
+                    "post__neuron_class__name",
+                    "synapse_type",
+                    "synapse_count",
+                )
             )
 
         # Prepare a dictionary to collect results per value.
@@ -394,8 +421,11 @@ def get_edge_response_data(data):
 
                 # Decide whether to add the synapse based on filter conditions.
                 if not show_connected_neuron:
-                    if ((pre_name in neurons_input) or (pre_class in classes_input)) and \
-                       ((post_name in neurons_input) or (post_class in classes_input)):
+                    if (
+                        (pre_name in neurons_input) or (pre_class in classes_input)
+                    ) and (
+                        (post_name in neurons_input) or (post_class in classes_input)
+                    ):
                         add_synapse = True
                     else:
                         add_synapse = False
@@ -403,9 +433,11 @@ def get_edge_response_data(data):
                     add_synapse = True
 
                 if add_synapse:
-                    key = get_synapse_key(select_label(pre_name, pre_class),
-                                          select_label(post_name, post_class),
-                                          syn_type)
+                    key = get_synapse_key(
+                        select_label(pre_name, pre_class),
+                        select_label(post_name, post_class),
+                        syn_type,
+                    )
                     if key not in collect_synapses:
                         collect_synapses[key] = [0] * len(datasets)
 
@@ -417,22 +449,20 @@ def get_edge_response_data(data):
                         set_pair_added.add(key_neurons)
 
     # Build the return dictionary.
-    return_dict = {
-        "datasets": datasets,
-        "neurons": [],
-        "synapses": []
-    }
+    return_dict = {"datasets": datasets, "neurons": [], "synapses": []}
 
     for syn_key in sorted(collect_synapses.keys()):
         pre, post, syn_type = syn_key
         list_count = collect_synapses[syn_key]
-        return_dict["synapses"].append({
-            "pre": pre,
-            "post": post,
-            "type": syn_type,
-            "count": sum(list_count),
-            "list_count": list_count,
-        })
+        return_dict["synapses"].append(
+            {
+                "pre": pre,
+                "post": post,
+                "type": syn_type,
+                "count": sum(list_count),
+                "list_count": list_count,
+            }
+        )
         if pre not in return_dict["neurons"]:
             return_dict["neurons"].append(pre)
         if post not in return_dict["neurons"]:
@@ -448,11 +478,13 @@ def get_edges(request):
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
-        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+        return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
 
     normalized_data, validation_error = _validate_get_edges_payload(data)
     if validation_error:
-        return JsonResponse({'status': 'error', 'message': validation_error}, status=400)
+        return JsonResponse(
+            {"status": "error", "message": validation_error}, status=400
+        )
 
     return JsonResponse(get_edge_response_data(normalized_data))
 
@@ -460,22 +492,28 @@ def get_edges(request):
 @require_GET
 def find_paths(request):
     """
-    Find paths between two neurons within a dataset. 
+    Find paths between two neurons within a dataset.
     Higher edge count means shorter path. Option to exclude electrical synapses.
     Return paths with edge details.
     """
     try:
         dataset_graphs = graph_data.get_graph_objects()
     except ImproperlyConfigured:
-        return JsonResponse({'error': 'Graph precompute data is not available'}, status=400)
+        return JsonResponse(
+            {"error": "Graph precompute data is not available"}, status=400
+        )
     except Exception:
-        return JsonResponse({'error': 'Graph precompute data is not available'}, status=400)
+        return JsonResponse(
+            {"error": "Graph precompute data is not available"}, status=400
+        )
 
-    dataset = request.GET.get('dataset')
-    start_neuron = request.GET.get('start')
-    end_neuron = request.GET.get('end')
+    dataset = request.GET.get("dataset")
+    start_neuron = request.GET.get("start")
+    end_neuron = request.GET.get("end")
     if not dataset or not start_neuron or not end_neuron:
-        return JsonResponse({'error': 'dataset, start, and end query params are required'}, status=400)
+        return JsonResponse(
+            {"error": "dataset, start, and end query params are required"}, status=400
+        )
 
     def parse_bool(value, default):
         if value is None:
@@ -488,32 +526,40 @@ def find_paths(request):
         raise ValueError
 
     try:
-        weighted = parse_bool(request.GET.get('weighted'), True)
-        gap_junction = parse_bool(request.GET.get('gap_junction'), True)
-        use_class = parse_bool(request.GET.get('class'), False)
+        weighted = parse_bool(request.GET.get("weighted"), True)
+        gap_junction = parse_bool(request.GET.get("gap_junction"), True)
+        use_class = parse_bool(request.GET.get("class"), False)
     except ValueError:
-        return JsonResponse({'error': 'Boolean query params must be true/false or 1/0'}, status=400)
+        return JsonResponse(
+            {"error": "Boolean query params must be true/false or 1/0"}, status=400
+        )
 
     # validate dataset
     if dataset not in dataset_graphs:
-        return JsonResponse({'error': 'Invalid dataset'}, status=400)
-    
+        return JsonResponse({"error": "Invalid dataset"}, status=400)
+
     # get graph
-    graph = dataset_graphs[dataset]["class" if use_class else "neuron"]["all" if gap_junction else "chemical_only"]
+    graph = dataset_graphs[dataset]["class" if use_class else "neuron"][
+        "all" if gap_junction else "chemical_only"
+    ]
 
     # find all shortest paths
     try:
-        paths = list(nx.all_shortest_paths(
-            graph,
-            source=start_neuron,
-            target=end_neuron,
-            method="dijkstra",
-            weight=(lambda u, v, data: 1 / data['weight']) if weighted else None,
-        ))
+        paths = list(
+            nx.all_shortest_paths(
+                graph,
+                source=start_neuron,
+                target=end_neuron,
+                method="dijkstra",
+                weight=(lambda u, v, data: 1 / data["weight"]) if weighted else None,
+            )
+        )
     except nx.NetworkXNoPath:
-        return JsonResponse({'paths': [], 'message': 'No path found'})
+        return JsonResponse({"paths": [], "message": "No path found"})
     except nx.NodeNotFound:
-        return JsonResponse({'error': 'Start or end neuron not found in the dataset'}, status=400)
+        return JsonResponse(
+            {"error": "Start or end neuron not found in the dataset"}, status=400
+        )
 
     # add edge information for each path
     node_set = set()
@@ -525,27 +571,27 @@ def find_paths(request):
             u, v = path[i], path[i + 1]
             node_set.update([u, v])
             edge_data = graph.get_edge_data(u, v)
-            path_edges.append({
-                'pre': u,
-                'post': v,
-                'count': edge_data.get('weight'),
-                'type': edge_data.get('synapse_type')
-            })
-            total_weight += edge_data.get('weight')
-        paths_with_details.append({
-            'path': path,
-            'edges': path_edges,
-            'total_weight': total_weight
-        })
+            path_edges.append(
+                {
+                    "pre": u,
+                    "post": v,
+                    "count": edge_data.get("weight"),
+                    "type": edge_data.get("synapse_type"),
+                }
+            )
+            total_weight += edge_data.get("weight")
+        paths_with_details.append(
+            {"path": path, "edges": path_edges, "total_weight": total_weight}
+        )
 
     # Format response
     response = {
-        'dataset_id': dataset,
-        'start_neuron': start_neuron,
-        'end_neuron': end_neuron,
-        'use_weights': weighted,
-        'use_gap_junction': gap_junction,
-        'nodes': list(node_set),
-        'paths': paths_with_details
+        "dataset_id": dataset,
+        "start_neuron": start_neuron,
+        "end_neuron": end_neuron,
+        "use_weights": weighted,
+        "use_gap_junction": gap_junction,
+        "nodes": list(node_set),
+        "paths": paths_with_details,
     }
     return JsonResponse(response)

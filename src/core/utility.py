@@ -1,6 +1,7 @@
 import hashlib
 import csv
 
+
 def sha256(file_path, chunk_size=8192):
     sha256 = hashlib.sha256()
     with open(file_path, "rb") as f:
@@ -8,6 +9,7 @@ def sha256(file_path, chunk_size=8192):
             sha256.update(chunk)
 
     return sha256.hexdigest()
+
 
 def load_csv(path):
     list_read = []

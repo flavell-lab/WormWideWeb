@@ -16,8 +16,10 @@ PATH_NEURON_CLASS_SPLIT = ["config", "connectome_neuron_class_split.csv"]
 PATH_CHECKSUM = ["connectome", "connectome_checksum.csv"]
 INITIAL_DATA_DIR = Path(__file__).resolve().parents[4] / "initial_data"
 
+
 def get_dataset_path(list_part):
     return INITIAL_DATA_DIR.joinpath(*list_part)
+
 
 def convert_split_str(str_):
     if str_ == "1":
@@ -28,10 +30,10 @@ def convert_split_str(str_):
         return False
     else:
         raise ValueError
-        
+
 
 class Command(BaseCommand):
-    help = 'Import and initialize connectome data'
+    help = "Import and initialize connectome data"
 
     # dataset
     def import_dataset(self):
@@ -41,7 +43,7 @@ class Command(BaseCommand):
         with transaction.atomic():
             t1 = time.time_ns()
             path_json = get_dataset_path(PATH_DATSETS)
-            with open(path_json, 'r') as file:
+            with open(path_json, "r") as file:
                 json_data = json.load(file)
 
             n_created = 0
@@ -49,7 +51,9 @@ class Command(BaseCommand):
             for dataset in json_data:
                 checksum_key = dataset["id"] + ".json"
                 if checksum_key not in dict_checksum:
-                    raise CommandError(f"Missing checksum for connectome dataset file '{checksum_key}'")
+                    raise CommandError(
+                        f"Missing checksum for connectome dataset file '{checksum_key}'"
+                    )
 
                 _, created = Dataset.objects.update_or_create(
                     dataset_id=dataset["id"],
@@ -67,12 +71,12 @@ class Command(BaseCommand):
                     n_created += 1
                 else:
                     n_updated += 1
-            
+
             t2 = time.time_ns()
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Imported/updated connectome datasets. created={n_created} updated={n_updated}. "
-                    f"Time: {(t2-t1)/1e9} s"
+                    f"Time: {(t2 - t1) / 1e9} s"
                 )
             )
 
@@ -82,7 +86,7 @@ class Command(BaseCommand):
         with transaction.atomic():
             # connectome neuron and neuron class split data
             data_neuron = load_csv(get_dataset_path(PATH_NEURONS))
-            
+
             data_split = {}
             for split_ in load_csv(get_dataset_path(PATH_NEURON_CLASS_SPLIT))[1:]:
                 class_name = split_[0]
@@ -108,20 +112,30 @@ class Command(BaseCommand):
 
                 # load the manual split for d/v and l/r
                 if neuron_class_str in data_split:
-                    split_lr, split_dv, split_d_lr, split_v_lr = data_split[neuron_class_str]
+                    split_lr, split_dv, split_d_lr, split_v_lr = data_split[
+                        neuron_class_str
+                    ]
                 else:
-                    self.stdout.write(self.style.ERROR(f"neuron class {neuron_class_str} not found in neuron_class_split.json"))
-                    raise CommandError(f"Missing neuron class split metadata for '{neuron_class_str}'")
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"neuron class {neuron_class_str} not found in neuron_class_split.json"
+                        )
+                    )
+                    raise CommandError(
+                        f"Missing neuron class split metadata for '{neuron_class_str}'"
+                    )
 
                 # create neuron class
-                neuron_class_obj, neuron_class_created = NeuronClass.objects.update_or_create(
-                    name=neuron_class_str,
-                    defaults={
-                        "split_lr": split_lr,
-                        "split_dv": split_dv,
-                        "split_d_lr": split_d_lr,
-                        "split_v_lr": split_v_lr,
-                    },
+                neuron_class_obj, neuron_class_created = (
+                    NeuronClass.objects.update_or_create(
+                        name=neuron_class_str,
+                        defaults={
+                            "split_lr": split_lr,
+                            "split_dv": split_dv,
+                            "split_d_lr": split_d_lr,
+                            "split_v_lr": split_v_lr,
+                        },
+                    )
                 )
                 if neuron_class_created:
                     n_neuron_class_created += 1
@@ -151,7 +165,7 @@ class Command(BaseCommand):
                 "Imported/updated neurons. "
                 f"neuron_classes(created={n_neuron_class_created}, updated={n_neuron_class_updated}), "
                 f"neurons(created={n_neuron_created}, updated={n_neuron_updated}). "
-                f"Time: {(t2-t1)/1e9} s"
+                f"Time: {(t2 - t1) / 1e9} s"
             )
         )
 
@@ -168,7 +182,7 @@ class Command(BaseCommand):
                 return name
 
         path_json = get_dataset_path(PATH_DATSETS)
-        with open(path_json, 'r') as file:
+        with open(path_json, "r") as file:
             data_datasets = json.load(file)
         skip_gap_junction = {}
         for dataset in data_datasets:
@@ -183,11 +197,15 @@ class Command(BaseCommand):
             neuron_map = {n.name: n for n in Neuron.objects.all()}
             datasets = {d.dataset_id: d for d in Dataset.objects.all()}
             neuron_to_id = {n.name: n.id for n in Neuron.objects.all()}
-            neuron_to_neuron_class_id = {n.name: n.neuron_class.id for n in Neuron.objects.all()}
+            neuron_to_neuron_class_id = {
+                n.name: n.neuron_class.id for n in Neuron.objects.all()
+            }
 
             # Load files
             path_connectome_dir = get_dataset_path(PATH_CONNECTOME_DIR)
-            json_files = sorted([f for f in os.listdir(path_connectome_dir) if f.endswith('.json')])
+            json_files = sorted(
+                [f for f in os.listdir(path_connectome_dir) if f.endswith(".json")]
+            )
             file_dataset_ids = {os.path.splitext(name)[0] for name in json_files}
             dataset_ids = set(datasets.keys())
             missing_files = sorted(dataset_ids - file_dataset_ids)
@@ -211,7 +229,7 @@ class Command(BaseCommand):
             total_synapses = 0
             for json_name in json_files:
                 path_json = os.path.join(path_connectome_dir, json_name)
-                with open(path_json, 'r') as file:
+                with open(path_json, "r") as file:
                     json_data = json.load(file)
 
                 dataset_name = os.path.splitext(json_name)[0]
@@ -223,19 +241,23 @@ class Command(BaseCommand):
                         f"Checksum error for '{dataset_name}'. expected={dict_checksum[json_name]} actual={file_checksum}"
                     )
                 if dataset_name not in datasets:
-                    raise CommandError(f"Dataset '{dataset_name}' is missing from connectome_datasets.json")
+                    raise CommandError(
+                        f"Dataset '{dataset_name}' is missing from connectome_datasets.json"
+                    )
                 dataset_obj = datasets[dataset_name]
 
                 # Get synapse data
                 new_synapse_dict = {}
                 for syn in json_data:
                     syn_type_raw = syn.get("typ")
-                    syn_type = "c" if syn_type_raw == 0 else "e" if syn_type_raw == 2 else None
+                    syn_type = (
+                        "c" if syn_type_raw == 0 else "e" if syn_type_raw == 2 else None
+                    )
                     if syn_type is None:
                         raise CommandError(
                             f"Invalid synapse type in dataset '{dataset_name}': typ={syn_type_raw}"
                         )
-                    
+
                     # skip creation if the config skips gap junction/electrical synapse
                     if syn_type == "e" and skip_gap_junction[dataset_name]:
                         continue
@@ -253,7 +275,7 @@ class Command(BaseCommand):
                             "synapse_type": syn_type,
                             "synapse_count": sum(syn["syn"]),
                         }
-                                    
+
                 # Rebuild dataset synapses idempotently.
                 Synapse.objects.filter(dataset=dataset_obj).delete()
 
@@ -262,23 +284,53 @@ class Command(BaseCommand):
                 available_neuron_ids = set()
                 available_neuron_class_ids = set()
                 for syn_key, syn_data in new_synapse_dict.items():
-                    pre, post, syn_type, syn_count = syn_data["pre"], syn_data["post"], syn_data["synapse_type"], syn_data["synapse_count"]
+                    pre, post, syn_type, syn_count = (
+                        syn_data["pre"],
+                        syn_data["post"],
+                        syn_data["synapse_type"],
+                        syn_data["synapse_count"],
+                    )
 
                     # check if pre and post exists
                     both_neuron_exist = True
                     if pre not in neuron_map:
                         both_neuron_exist = False
-                        self.stdout.write(self.style.WARNING(dataset_name + ": " + pre + " -> " + post + " (pre) does not exist"))
+                        self.stdout.write(
+                            self.style.WARNING(
+                                dataset_name
+                                + ": "
+                                + pre
+                                + " -> "
+                                + post
+                                + " (pre) does not exist"
+                            )
+                        )
                         # raise KeyError
                     if post not in neuron_map:
                         both_neuron_exist = False
-                        self.stdout.write(self.style.WARNING(dataset_name + ": " + pre + " -> " + post + " (post) does not exist"))
+                        self.stdout.write(
+                            self.style.WARNING(
+                                dataset_name
+                                + ": "
+                                + pre
+                                + " -> "
+                                + post
+                                + " (post) does not exist"
+                            )
+                        )
                         # raise KeyError
-                    
+
                     # create Synapse object
                     if both_neuron_exist:
-                        available_neuron_ids.update([neuron_to_id[pre], neuron_to_id[post]])
-                        available_neuron_class_ids.update([neuron_to_neuron_class_id[pre], neuron_to_neuron_class_id[post]])
+                        available_neuron_ids.update(
+                            [neuron_to_id[pre], neuron_to_id[post]]
+                        )
+                        available_neuron_class_ids.update(
+                            [
+                                neuron_to_neuron_class_id[pre],
+                                neuron_to_neuron_class_id[post],
+                            ]
+                        )
 
                         new_synapses.append(
                             Synapse(
@@ -295,12 +347,19 @@ class Command(BaseCommand):
                 dataset_obj.available_neurons.set(sorted(available_neuron_ids))
                 dataset_obj.available_classes.set(sorted(available_neuron_class_ids))
 
-                self.stdout.write(self.style.SUCCESS("Imported " + str(len(new_synapses)) + " synapses from " + dataset_name))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "Imported "
+                        + str(len(new_synapses))
+                        + " synapses from "
+                        + dataset_name
+                    )
+                )
             t2 = time.time_ns()
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Imported {len(json_files)} connectome datasets with {total_synapses} synapses. "
-                    f"Total time: {(t2-t1)/1e9} seconds"
+                    f"Total time: {(t2 - t1) / 1e9} seconds"
                 )
             )
 

@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('connectome', '0003_remove_neuron_in_head_remove_neuron_in_tail_and_more'),
+        ("connectome", "0003_remove_neuron_in_head_remove_neuron_in_tail_and_more"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='neuron',
-            old_name='cell_type_decs',
-            new_name='cell_type_desc',
+            model_name="neuron",
+            old_name="cell_type_decs",
+            new_name="cell_type_desc",
         ),
     ]

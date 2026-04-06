@@ -16,7 +16,10 @@ class CoreViewsTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.decode("utf-8"), "OK")
 
-    @patch("core.views.connection.ensure_connection", side_effect=Exception("db unavailable"))
+    @patch(
+        "core.views.connection.ensure_connection",
+        side_effect=Exception("db unavailable"),
+    )
     def test_is_healthy_returns_error_on_failure(self, mock_ensure_connection):
         request = self.factory.get("/is_healthy/")
         response = is_healthy(request)

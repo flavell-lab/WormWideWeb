@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('connectome', '0004_rename_cell_type_decs_neuron_cell_type_desc'),
+        ("connectome", "0004_rename_cell_type_decs_neuron_cell_type_desc"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='neuron',
-            name='name',
+            model_name="neuron",
+            name="name",
             field=models.CharField(max_length=50, unique=True),
         ),
         migrations.AlterField(
-            model_name='neuronclass',
-            name='name',
+            model_name="neuronclass",
+            name="name",
             field=models.CharField(max_length=50, unique=True),
         ),
     ]

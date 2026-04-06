@@ -294,7 +294,9 @@ class ConnectomeDegreeIndexTests(SimpleTestCase):
         mock_cache_set,
     ):
         mock_cache_get.return_value = None
-        mock_compute_degree_index.return_value = {"conn-a": {"A": {"degree_total_full": 1.0}}}
+        mock_compute_degree_index.return_value = {
+            "conn-a": {"A": {"degree_total_full": 1.0}}
+        }
 
         result = _get_connectome_full_degree_index()
 
@@ -328,7 +330,9 @@ class ConnectomeDegreeIndexTests(SimpleTestCase):
 class BehaviorCorrelationIndexTests(SimpleTestCase):
     @patch("activity.views._aggregate_replay_traces")
     @patch("activity.views._extract_behavior_arrays")
-    def test_compute_activity_behavior_correlation_index(self, mock_extract_behavior, mock_aggregate):
+    def test_compute_activity_behavior_correlation_index(
+        self, mock_extract_behavior, mock_aggregate
+    ):
         mock_aggregate.return_value = {
             "A": {"trace": [0.0, 1.0, 2.0, 3.0]},
             "B": {"trace": [3.0, 2.0, 1.0, 0.0]},

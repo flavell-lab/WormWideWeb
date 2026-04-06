@@ -3,6 +3,7 @@ from connectome.views import get_edge_response_data, connectome_datasets
 from connectome.models import Dataset
 import time
 
+
 def cache_datasets(self):
     t1 = time.time_ns()
     connectome_datasets()
@@ -14,11 +15,15 @@ def cache_datasets(self):
     datasets = Dataset.objects.all()
     for dataset in datasets:
         list_datasets.append(dataset.dataset_id)
-        set_neurons.update(list(dataset.available_neurons.values_list("name", flat=True)))
-        set_classes.update(list(dataset.available_classes.values_list("name", flat=True)))
-    
+        set_neurons.update(
+            list(dataset.available_neurons.values_list("name", flat=True))
+        )
+        set_classes.update(
+            list(dataset.available_classes.values_list("name", flat=True))
+        )
+
     list_datasets.sort()
-    
+
     data = {}
     data["datasets"] = list_datasets
     data["show_individual_neuron"] = True
@@ -33,10 +38,13 @@ def cache_datasets(self):
     get_edge_response_data(data)
 
     t2 = time.time_ns()
-    self.stdout.write(self.style.SUCCESS(f"Cached connectome data. Time: {(t2-t1)/1e9} s"))
+    self.stdout.write(
+        self.style.SUCCESS(f"Cached connectome data. Time: {(t2 - t1) / 1e9} s")
+    )
+
 
 class Command(BaseCommand):
-    help = 'Cache connectome module data'
+    help = "Cache connectome module data"
 
     def handle(self, *args, **options):
         cache_datasets(self)

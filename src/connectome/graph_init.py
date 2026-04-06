@@ -5,6 +5,7 @@ from .models import Dataset, Synapse
 from django.db.models import Prefetch
 import pickle
 
+
 def add_min_edge(g, a, b, syn_weight, syn_type):
     """
     Add or update an edge in the graph with the given attributes.
@@ -16,6 +17,7 @@ def add_min_edge(g, a, b, syn_weight, syn_type):
             g[a][b]["synapse_type"] = syn_type
     else:
         g.add_edge(a, b, weight=syn_weight, synapse_type=syn_type)
+
 
 def add_edge(graphs, pre, post, pre_class, post_class, weight, synapse_type):
     """
@@ -32,6 +34,7 @@ def add_edge(graphs, pre, post, pre_class, post_class, weight, synapse_type):
         add_min_edge(g_no_e, pre, post, weight, synapse_type)
         add_min_edge(g_class_no_e, pre_class, post_class, weight, synapse_type)
 
+
 def initialize_graphs():
     """Initialize graphs for each dataset."""
     print("init graph")
@@ -40,8 +43,12 @@ def initialize_graphs():
     dataset_graphs = {}
 
     # Prefetch related data for optimization
-    synapse_prefetch = Synapse.objects.select_related("pre", "post", "pre__neuron_class", "post__neuron_class")
-    datasets = Dataset.objects.prefetch_related(Prefetch("synapses", queryset=synapse_prefetch))
+    synapse_prefetch = Synapse.objects.select_related(
+        "pre", "post", "pre__neuron_class", "post__neuron_class"
+    )
+    datasets = Dataset.objects.prefetch_related(
+        Prefetch("synapses", queryset=synapse_prefetch)
+    )
 
     for dataset in datasets:
         # Initialize graphs
@@ -59,9 +66,12 @@ def initialize_graphs():
 
             add_edge(
                 (g, g_class, g_no_e, g_class_no_e),
-                pre_name, post_name,
-                pre_class_name, post_class_name,
-                synapse.synapse_count, synapse.synapse_type
+                pre_name,
+                post_name,
+                pre_class_name,
+                post_class_name,
+                synapse.synapse_count,
+                synapse.synapse_type,
             )
 
         # Store graphs for the dataset
@@ -71,9 +81,10 @@ def initialize_graphs():
         }
 
     t2 = time.time_ns()
-    print(f"init graph done. elapsed: {(t2-t1)/1e9} seconds")
+    print(f"init graph done. elapsed: {(t2 - t1) / 1e9} seconds")
 
     return dataset_graphs
+
 
 def load_precomputed_graphs(file_path="connectome_graphs.pkl"):
     graph_path = Path(file_path)
@@ -87,6 +98,6 @@ def load_precomputed_graphs(file_path="connectome_graphs.pkl"):
     with open(graph_path, "rb") as f:
         dataset_graphs = pickle.load(f)
     t2 = time.time_ns()
-    print(f"graph loading done. elapsed: {(t2-t1)/1e9} seconds")
-    
+    print(f"graph loading done. elapsed: {(t2 - t1) / 1e9} seconds")
+
     return dataset_graphs

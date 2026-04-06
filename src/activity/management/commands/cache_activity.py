@@ -3,6 +3,7 @@ from activity.views import get_neural_trace_data, get_behavior_data, get_encodin
 from activity.models import GCaMPDataset
 import time
 
+
 def cache_datasets(self):
     t1 = time.time_ns()
     datasets = GCaMPDataset.objects.all()
@@ -10,7 +11,7 @@ def cache_datasets(self):
     for dataset in datasets:
         dataset_id = dataset.dataset_id
         n_neuron = dataset.n_neuron
-        
+
         # behavior
         get_behavior_data(dataset_id)
 
@@ -19,14 +20,19 @@ def cache_datasets(self):
             get_encoding_data(dataset_id)
 
         # neural traces
-        for idx_neuron in range(1, n_neuron+1):
+        for idx_neuron in range(1, n_neuron + 1):
             get_neural_trace_data(dataset_id, idx_neuron)
-    
+
     t2 = time.time_ns()
-    self.stdout.write(self.style.SUCCESS(f"Neural/behavior datacached for {len(datasets)} datasets. Time: {(t2-t1)/1e9} s"))
+    self.stdout.write(
+        self.style.SUCCESS(
+            f"Neural/behavior datacached for {len(datasets)} datasets. Time: {(t2 - t1) / 1e9} s"
+        )
+    )
+
 
 class Command(BaseCommand):
-    help = 'Cache activity module data'
+    help = "Cache activity module data"
 
     def handle(self, *args, **options):
         cache_datasets(self)

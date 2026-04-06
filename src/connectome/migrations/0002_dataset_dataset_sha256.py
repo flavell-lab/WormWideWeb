@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('connectome', '0001_initial'),
+        ("connectome", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dataset',
-            name='dataset_sha256',
-            field=models.CharField(blank=True, editable=False, max_length=64, unique=True),
+            model_name="dataset",
+            name="dataset_sha256",
+            field=models.CharField(
+                blank=True, editable=False, max_length=64, unique=True
+            ),
         ),
     ]

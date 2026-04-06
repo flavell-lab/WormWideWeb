@@ -12,7 +12,7 @@ from django.core.wsgi import get_wsgi_application
 from django.urls import get_resolver
 from django.conf import settings
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wormwideweb.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wormwideweb.settings")
 
 # Now create the WSGI application.
 application = get_wsgi_application()

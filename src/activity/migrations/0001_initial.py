@@ -6,89 +6,196 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('connectome', '0001_initial'),
+        ("connectome", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='GCaMPDatasetType',
+            name="GCaMPDatasetType",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('type_id', models.CharField(max_length=150, unique=True)),
-                ('name', models.CharField(max_length=20)),
-                ('description', models.CharField(max_length=300)),
-                ('color_background', models.CharField(default='#000000', max_length=25)),
-                ('color_text', models.CharField(default='#000000', max_length=25)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("type_id", models.CharField(max_length=150, unique=True)),
+                ("name", models.CharField(max_length=20)),
+                ("description", models.CharField(max_length=300)),
+                (
+                    "color_background",
+                    models.CharField(default="#000000", max_length=25),
+                ),
+                ("color_text", models.CharField(default="#000000", max_length=25)),
             ],
             options={
-                'verbose_name': 'GCaMP Dataset Type',
-                'verbose_name_plural': 'GCaMP Dataset Types',
+                "verbose_name": "GCaMP Dataset Type",
+                "verbose_name_plural": "GCaMP Dataset Types",
             },
         ),
         migrations.CreateModel(
-            name='GCaMPPaper',
+            name="GCaMPPaper",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('paper_id', models.CharField(max_length=100, unique=True)),
-                ('title_full', models.CharField(max_length=300)),
-                ('title_short', models.CharField(max_length=100)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("paper_id", models.CharField(max_length=100, unique=True)),
+                ("title_full", models.CharField(max_length=300)),
+                ("title_short", models.CharField(max_length=100)),
             ],
             options={
-                'verbose_name': 'GCaMP Paper',
-                'verbose_name_plural': 'GCaMP Papers',
+                "verbose_name": "GCaMP Paper",
+                "verbose_name_plural": "GCaMP Papers",
             },
         ),
         migrations.CreateModel(
-            name='GCaMPDataset',
+            name="GCaMPDataset",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('dataset_id', models.CharField(max_length=200, unique=True)),
-                ('dataset_name', models.CharField(max_length=100)),
-                ('dataset_meta', models.JSONField(default=activity.models.empty_json)),
-                ('avg_timestep', models.FloatField(default=0.0)),
-                ('max_t', models.PositiveSmallIntegerField(default=0)),
-                ('timestamp_confocal', models.JSONField(default=activity.models.empty_json)),
-                ('n_neuron', models.PositiveSmallIntegerField(default=0)),
-                ('n_labeled', models.PositiveSmallIntegerField(default=0)),
-                ('behavior', models.JSONField(default=activity.models.empty_json)),
-                ('truncated_behavior', models.JSONField(default=activity.models.empty_json)),
-                ('encoding', models.JSONField(default=activity.models.empty_json)),
-                ('events', models.JSONField(default=activity.models.empty_json)),
-                ('neuron_cor', models.JSONField(default=activity.models.empty_json)),
-                ('dataset_type', models.ManyToManyField(related_name='datasets', to='activity.gcampdatasettype')),
-                ('paper', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='datasets', to='activity.gcamppaper')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("dataset_id", models.CharField(max_length=200, unique=True)),
+                ("dataset_name", models.CharField(max_length=100)),
+                ("dataset_meta", models.JSONField(default=activity.models.empty_json)),
+                ("avg_timestep", models.FloatField(default=0.0)),
+                ("max_t", models.PositiveSmallIntegerField(default=0)),
+                (
+                    "timestamp_confocal",
+                    models.JSONField(default=activity.models.empty_json),
+                ),
+                ("n_neuron", models.PositiveSmallIntegerField(default=0)),
+                ("n_labeled", models.PositiveSmallIntegerField(default=0)),
+                ("behavior", models.JSONField(default=activity.models.empty_json)),
+                (
+                    "truncated_behavior",
+                    models.JSONField(default=activity.models.empty_json),
+                ),
+                ("encoding", models.JSONField(default=activity.models.empty_json)),
+                ("events", models.JSONField(default=activity.models.empty_json)),
+                ("neuron_cor", models.JSONField(default=activity.models.empty_json)),
+                (
+                    "dataset_type",
+                    models.ManyToManyField(
+                        related_name="datasets", to="activity.gcampdatasettype"
+                    ),
+                ),
+                (
+                    "paper",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="datasets",
+                        to="activity.gcamppaper",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'GCaMP Dataset',
-                'verbose_name_plural': 'GCaMP Datasets',
+                "verbose_name": "GCaMP Dataset",
+                "verbose_name_plural": "GCaMP Datasets",
             },
         ),
         migrations.AddField(
-            model_name='gcampdatasettype',
-            name='paper',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='dataset_types', to='activity.gcamppaper'),
+            model_name="gcampdatasettype",
+            name="paper",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="dataset_types",
+                to="activity.gcamppaper",
+            ),
         ),
         migrations.CreateModel(
-            name='GCaMPNeuron',
+            name="GCaMPNeuron",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('neuron_name', models.CharField(blank=True, max_length=10)),
-                ('idx_neuron', models.PositiveIntegerField(default=0)),
-                ('lr', models.CharField(choices=[('l', 'left'), ('r', 'right'), ('?', 'unknown'), ('x', 'undefined'), ('n', 'not labeled')], max_length=1)),
-                ('dv', models.CharField(choices=[('d', 'dorsal'), ('v', 'ventral'), ('?', 'unknown'), ('x', 'undefined'), ('n', 'not labeled')], max_length=1)),
-                ('trace', models.JSONField(default=activity.models.empty_json)),
-                ('trace_original', models.JSONField(default=activity.models.empty_json)),
-                ('dataset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='neurons', to='activity.gcampdataset')),
-                ('neuron_class', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='gcamp_neurons', to='connectome.neuronclass')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("neuron_name", models.CharField(blank=True, max_length=10)),
+                ("idx_neuron", models.PositiveIntegerField(default=0)),
+                (
+                    "lr",
+                    models.CharField(
+                        choices=[
+                            ("l", "left"),
+                            ("r", "right"),
+                            ("?", "unknown"),
+                            ("x", "undefined"),
+                            ("n", "not labeled"),
+                        ],
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "dv",
+                    models.CharField(
+                        choices=[
+                            ("d", "dorsal"),
+                            ("v", "ventral"),
+                            ("?", "unknown"),
+                            ("x", "undefined"),
+                            ("n", "not labeled"),
+                        ],
+                        max_length=1,
+                    ),
+                ),
+                ("trace", models.JSONField(default=activity.models.empty_json)),
+                (
+                    "trace_original",
+                    models.JSONField(default=activity.models.empty_json),
+                ),
+                (
+                    "dataset",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="neurons",
+                        to="activity.gcampdataset",
+                    ),
+                ),
+                (
+                    "neuron_class",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="gcamp_neurons",
+                        to="connectome.neuronclass",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'GCaMP Neuron',
-                'verbose_name_plural': 'GCaMP Neurons',
-                'constraints': [models.UniqueConstraint(fields=('dataset', 'idx_neuron'), name='unique idx_neuron for each dataset')],
+                "verbose_name": "GCaMP Neuron",
+                "verbose_name_plural": "GCaMP Neurons",
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("dataset", "idx_neuron"),
+                        name="unique idx_neuron for each dataset",
+                    )
+                ],
             },
         ),
     ]
