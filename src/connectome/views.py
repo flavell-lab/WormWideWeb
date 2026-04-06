@@ -16,11 +16,10 @@ from connectome import graph_data
 CONNECTOME_CACHE_TTL = 60 * 60 * 24 * 30
 CONNECTOME_PAGE_CACHE_TTL = 60 * 60 * 6
 CONNECTOME_AVAILABLE_NEURONS_HTTP_CACHE_TTL = 60 * 60 * 24 * 30
-CONNECTOME_CACHE_VERSION = "v1"
 
 
 def _connectome_cache_key(*parts):
-    return "connectome_" + CONNECTOME_CACHE_VERSION + "_" + "_".join(
+    return "connectome_" + "_".join(
         str(part) for part in parts
     )
 

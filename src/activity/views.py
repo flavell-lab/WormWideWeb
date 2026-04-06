@@ -28,11 +28,10 @@ ACTIVITY_ENCODING_TABLE_CACHE_TTL = 60 * 60 * 24
 ACTIVITY_NEURAL_TRACE_HTTP_CACHE_TTL = 60 * 60 * 24 * 3
 ACTIVITY_ENCODING_BEHAVIOR_HTTP_CACHE_TTL = 60 * 60 * 24 * 7
 ACTIVITY_PLOT_MULTIPLE_CACHE_TTL = 60 * 30
-ACTIVITY_CACHE_VERSION = "v1"
 
 
 def _activity_cache_key(*parts):
-    return "activity_" + ACTIVITY_CACHE_VERSION + "_" + "_".join(
+    return "activity_" + "_".join(
         str(part) for part in parts
     )
 
