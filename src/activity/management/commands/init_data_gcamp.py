@@ -8,10 +8,8 @@ from activity.models import (
     GCaMPEventStyle,
 )
 import numpy as np
-from scipy.stats import pearsonr
 import time
 import json
-import math
 import os
 from core.utility import sha256
 
@@ -56,6 +54,11 @@ class NumpyEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+def truncate_numpy_array(array, n=6):
+    factor = 10.0**n
+    return np.trunc(array * factor) / factor
+
+
 def truncate_floats_in_list(numbers, n=6):
     """
     Truncates each float in a list to n decimal places using float operations.
@@ -70,20 +73,27 @@ def truncate_floats_in_list(numbers, n=6):
     if not isinstance(numbers, list):
         raise TypeError("Input data must be a list.")
 
-    truncated_numbers = []
-    factor = 10.0**n  # Factor to shift decimal places
+    try:
+        array = np.asarray(numbers, dtype=np.float64)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("All items in the list must be numbers.") from exc
 
-    for idx, num in enumerate(numbers):
-        if not isinstance(num, (int, float)):
-            raise ValueError(
-                f"All items in the list must be numbers. Invalid item at index {idx}: {num}"
-            )
+    return truncate_numpy_array(array, n).tolist()
 
-        # Truncate the number to n decimal places
-        truncated = math.trunc(num * factor) / factor
-        truncated_numbers.append(truncated)
 
-    return truncated_numbers
+def truncate_floats_in_2d_list(numbers, n=6):
+    if not isinstance(numbers, list):
+        raise TypeError("Input data must be a list.")
+
+    try:
+        array = np.asarray(numbers, dtype=np.float64)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("All items in the 2D list must be numbers.") from exc
+
+    if array.ndim != 2:
+        raise ValueError("Input data must be a 2D list.")
+
+    return truncate_numpy_array(array, n).tolist()
 
 
 def correlation_matrix_to_dict(corr_matrix):
@@ -97,15 +107,38 @@ def correlation_matrix_to_dict(corr_matrix):
     Returns:
     - dict: Dictionary with keys in "i,j" format and correlation coefficients as values.
     """
-    correlation_dict = {}
     num_traces = corr_matrix.shape[0]
+    i_idx, j_idx = np.triu_indices(num_traces, k=1)
 
-    for i in range(num_traces):
-        for j in range(i + 1, num_traces):
-            key = f"{i + 1},{j + 1}"
-            correlation_dict[key] = corr_matrix[i][j]
+    return {
+        f"{i + 1},{j + 1}": float(corr_matrix[i][j]) for i, j in zip(i_idx, j_idx)
+    }
 
-    return correlation_dict
+
+def correlate_traces_with_variable(trace_array, variable_data):
+    min_length = min(trace_array.shape[1], len(variable_data))
+    traces = trace_array[:, :min_length]
+    variable = np.asarray(variable_data[:min_length], dtype=np.float64)
+
+    if np.sum(variable) == 0.0:
+        return np.zeros(traces.shape[0], dtype=np.float64)
+
+    variable_centered = variable - np.mean(variable)
+    traces_centered = traces - np.mean(traces, axis=1, keepdims=True)
+    numerator = np.sum(traces_centered * variable_centered, axis=1)
+    denominator = np.sqrt(
+        np.sum(traces_centered**2, axis=1) * np.sum(variable_centered**2)
+    )
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        correlations = np.divide(
+            numerator,
+            denominator,
+            out=np.full(traces.shape[0], np.nan, dtype=np.float64),
+            where=denominator != 0,
+        )
+
+    return np.around(correlations, 6)
 
 
 def calculate_cor_behavior(list_trace_array, data):
@@ -135,26 +168,20 @@ def calculate_cor_behavior(list_trace_array, data):
     # if invalid_keys:
     #     raise KeyError(f"Keys not found in data: {invalid_keys}")
 
-    result = {}
+    trace_array = np.asarray(list_trace_array, dtype=np.float64)
+    if trace_array.ndim != 2:
+        raise ValueError("list_trace_array must be a 2D array-like structure.")
 
-    # Iterate through each trace array
-    for i, trace in enumerate(list_trace_array, 1):  # Start indexing at 1
-        result[i] = {}
+    result = {i: {} for i in range(1, trace_array.shape[0] + 1)}
 
-        # Calculate correlation with each selected variable in data
-        for variable_name in keys:
-            if variable_name in data:
-                variable_data = data[variable_name]
-                key_save = key_conversion[variable_name]
-                if np.sum(variable_data) == 0.0:
-                    result[i][key_save] = 0.0
-                else:
-                    # Ensure lengths match by taking the minimum length
-                    min_length = min(len(trace), len(variable_data))
-                    correlation, _ = pearsonr(
-                        trace[:min_length], variable_data[:min_length]
-                    )
-                    result[i][key_save] = np.around(correlation, 6)
+    for variable_name in keys:
+        if variable_name not in data:
+            continue
+
+        key_save = key_conversion[variable_name]
+        correlations = correlate_traces_with_variable(trace_array, data[variable_name])
+        for i, correlation in enumerate(correlations, 1):
+            result[i][key_save] = float(correlation)
 
     return result
 
@@ -255,13 +282,6 @@ def check_list_lengths(
                     f"List '{name}' has length {current_length}, expected {expected_length}."
                 )
 
-    # If all checks pass
-    self.stdout.write(
-        self.style.SUCCESS(
-            f"All lists have the consistent length of {expected_length}."
-        )
-    )
-
     return expected_length
 
 
@@ -272,8 +292,19 @@ def import_gcamp_data(
     paper_id,
     neuron_class_name_map=None,
     neuron_name_map=None,
+    neuron_class_cache=None,
+    paper_cache=None,
+    dataset_type_cache=None,
 ):
-    neuron_class_cache = {nc.name: nc for nc in NeuronClass.objects.all()}
+    if neuron_class_cache is None:
+        neuron_class_cache = {nc.name: nc for nc in NeuronClass.objects.all()}
+    if paper_cache is None:
+        paper_cache = {paper.paper_id: paper for paper in GCaMPPaper.objects.all()}
+    if dataset_type_cache is None:
+        dataset_type_cache = {
+            dataset_type.type_id: dataset_type
+            for dataset_type in GCaMPDatasetType.objects.all()
+        }
 
     data = load_json(self, path_json)
     gcamp = data["gcamp"]
@@ -310,20 +341,18 @@ def import_gcamp_data(
         )
         timing["max_t"] = expected_length
 
+    trace_array = np.asarray(list_trace_array, dtype=np.float64)
     cor_trace = {
-        "neuron": correlation_matrix_to_dict(
-            np.around(np.corrcoef(list_trace_array), 3)
-        ),
-        "behavior": calculate_cor_behavior(list_trace_array, behavior),
+        "neuron": correlation_matrix_to_dict(np.around(np.corrcoef(trace_array), 3)),
+        "behavior": calculate_cor_behavior(trace_array, behavior),
     }
 
     # behavior data
     def create_trace_data(data_list, multiplier=1, truncate=False):
-        return (
-            truncate_floats_in_list([multiplier * v for v in data_list], 5)
-            if truncate
-            else [multiplier * v for v in data_list]
-        )
+        trace_data = np.asarray(data_list, dtype=np.float64) * multiplier
+        if truncate:
+            return truncate_numpy_array(trace_data, 5).tolist()
+        return trace_data.tolist()
 
     i_b = 0
     data_behavior = {"traces": {}}
@@ -393,7 +422,11 @@ def import_gcamp_data(
             if key in encoding:
                 data_encoding[key] = encoding[key]
 
-    paper, q_created = GCaMPPaper.objects.get_or_create(paper_id=paper_id)
+    paper = paper_cache.get(paper_id)
+    if paper is None:
+        paper, _ = GCaMPPaper.objects.get_or_create(paper_id=paper_id)
+        paper_cache[paper_id] = paper
+
     dataset = GCaMPDataset.objects.create(
         paper=paper,
         dataset_id=paper.paper_id + "-" + metadata["uid"],
@@ -413,23 +446,33 @@ def import_gcamp_data(
     )
 
     # add dataset type
-    for type in metadata["dataset_type"]:
+    dataset_types = []
+    for type_ in metadata["dataset_type"]:
         # Construct the type_id
-        type_id = f"{paper.paper_id}-{type}"
+        type_id = f"{paper.paper_id}-{type_}"
 
         # Try to get the dataset_type by the constructed type_id
-        dataset_type = GCaMPDatasetType.objects.filter(type_id=type_id).first()
+        dataset_type = dataset_type_cache.get(type_id)
 
         if dataset_type is None:
             # Fallback to retrieve, common type
-            dataset_type = GCaMPDatasetType.objects.get(type_id=f"common-{type}")
+            dataset_type = dataset_type_cache.get(f"common-{type_}")
 
-        # Add the dataset_type to the dataset
-        dataset.dataset_type.add(dataset_type)
+        if dataset_type is None:
+            raise GCaMPDatasetType.DoesNotExist(
+                f"Dataset type for '{type_}' does not exist."
+            )
+
+        dataset_types.append(dataset_type)
+
+    if dataset_types:
+        dataset.dataset_type.add(*dataset_types)
 
     # create neuron objects
+    truncated_trace_array = truncate_floats_in_2d_list(list_trace_array)
+    truncated_trace_original = truncate_floats_in_2d_list(list_trace_original)
     new_neurons = []
-    for i in range(0, len(list_trace_array)):
+    for i in range(len(truncated_trace_array)):
         idx_neuron = i + 1
         idx_neuron_str = str(idx_neuron)
         if labels is not None and idx_neuron_str in labels:
@@ -444,7 +487,6 @@ def import_gcamp_data(
                         f"Neuron class {neuron_class_name} does not exist. dataset: {metadata['uid']} idx_neuron: {idx_neuron}"
                     )
                 )
-
             neuron_class = neuron_class_cache[neuron_class_name]
             lr = process_lr(label_["LR"])
             dv = process_dv(label_["DV"])
@@ -454,8 +496,8 @@ def import_gcamp_data(
             lr = "n"
             dv = "n"
 
-        trace = truncate_floats_in_list(list_trace_array[i])
-        trace_original = truncate_floats_in_list(list_trace_original[i])
+        trace = truncated_trace_array[i]
+        trace_original = truncated_trace_original[i]
 
         new_neurons.append(
             GCaMPNeuron(
@@ -615,7 +657,13 @@ def import_all_event_style(self):
 
 def import_all_gcamp(self):
     t1 = time.time_ns()
-    papers = GCaMPPaper.objects.values_list("paper_id")
+    papers = list(GCaMPPaper.objects.values_list("paper_id", flat=True))
+    paper_cache = {paper.paper_id: paper for paper in GCaMPPaper.objects.all()}
+    neuron_class_cache = {nc.name: nc for nc in NeuronClass.objects.all()}
+    dataset_type_cache = {
+        dataset_type.type_id: dataset_type
+        for dataset_type in GCaMPDatasetType.objects.all()
+    }
 
     path_json = get_dataset_path(PATH_CONFIG_GCAMP_NEURON_MAP)
     neuron_name_map = load_json(self, path_json)
@@ -623,8 +671,7 @@ def import_all_gcamp(self):
     neuron_class_name_map = load_json(self, path_json)
 
     n = 0
-    for paper_ in papers:
-        paper_id = paper_[0]
+    for paper_id in papers:
         dir_datasets = get_dataset_path(["activity", "data", paper_id])
 
         json_files = [f for f in os.listdir(dir_datasets) if f.endswith(".json")]
@@ -641,6 +688,9 @@ def import_all_gcamp(self):
                 paper_id,
                 neuron_class_name_map,
                 neuron_name_map,
+                neuron_class_cache,
+                paper_cache,
+                dataset_type_cache,
             )
             n = n + 1
             # except Exception as e:
