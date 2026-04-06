@@ -94,35 +94,7 @@ python manage.py runserver
 For deployment testing, building a docker image with the supplied `docker-compose.yml` is recommended. Run `docker compose build` and then `docker compose run -d`.  
 
 ## initial_data
-All connectome datasets, GCaMP/behavior datasets, and various configurations are placed in the directory named `initial_data` located in the same directory as `src`.  
-
-Directory structure: 
-```
-initial_data
-- activity
-    - data
-        - atanas_kim_2023
-            - 2021-05-26-07.json
-              ...
-        - dag_nwabudike_kang_2023
-            - 2022-01-16-01.json
-              ...
-    - dataset_types.json
-    - encoding_table.json
-    - papers.json
-- config
-    - gcamp_neuron_class_name_map_manual.json
-    - gcamp_neuron_name_map_manual.json
-    - neuron_class_split_manual.json
-    - neuron_class_split.json
-    - data_checksum.json
-- connectome
-    - connectome
-        - white_1986_whole.json
-          ...
-    - connectome_datasets.json
-    - connectome_neurons.json
-```
+All connectome datasets, GCaMP/behavior datasets, and various configurations are placed in the directory named `initial_data` located in the same directory as `src`. Please refer to https://github.com/flavell-lab/WormWideWeb-data/
 
 ### Adding a new neural/behavioral dataset
 Follow the insructions and your datasets will be populated into the database during the image build time.  
