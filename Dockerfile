@@ -1,11 +1,11 @@
 FROM python:3.13-slim AS builder
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-RUN mkdir /config
-COPY /config/requirements.runtime.pip /config/requirements.runtime.pip
-COPY /config/requirements.build.pip /config/requirements.build.pip
+
+COPY /config/requirements.runtime.pip /tmp/requirements.runtime.pip
+COPY /config/requirements.build.pip /tmp/requirements.build.pip
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r /config/requirements.build.pip
+    pip install --no-cache-dir -r /tmp/requirements.build.pip
 
 RUN mkdir /wormwideweb
 COPY /src/ /wormwideweb/
@@ -22,9 +22,9 @@ FROM python:3.13-slim
 # ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 RUN mkdir /config
-COPY /config/requirements.runtime.pip /config/requirements.runtime.pip
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r /config/requirements.runtime.pip
+COPY /config/requirements.runtime.pip /tmp/requirements.runtime.pip
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r /tmp/requirements.runtime.pip
 
 # copy from the builder stage
 COPY --from=builder /wormwideweb /wormwideweb
