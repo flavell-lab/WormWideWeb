@@ -9,11 +9,11 @@ RUN pip install --no-cache-dir -r /config/requirements.build.pip
 
 RUN mkdir /wormwideweb
 COPY /src/ /wormwideweb/
-COPY /initial_data/ /initial_data/
 
 WORKDIR /wormwideweb
 
-RUN --mount=type=secret,id=env_base,dst=/run/secrets/env_base \
+RUN --mount=type=bind,source=./initial_data,target=/initial_data \
+    --mount=type=secret,id=env_base,dst=/run/secrets/env_base \
     bash -c 'set -a && source /run/secrets/env_base && set +a && \
         sh /wormwideweb/populate_db.sh'
 
