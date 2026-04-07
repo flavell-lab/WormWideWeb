@@ -33,6 +33,9 @@ export class PlotGraph {
 
         // download
         this.jsonData = null;
+        this.lastConnectomeQueryKey = null;
+        this.inFlightConnectomeQueryKey = null;
+        this.connectomeRequestSeq = 0;
 
         // info panel
         this.infoPanel = new InfoPanel();
@@ -647,53 +650,79 @@ export class PlotGraph {
     
     debouncedUpdateGraph = debounce(this.updateGraph, 500); // 500ms delay
     updateGraph() {
+        if (Object.keys(this.manifest).length === 0) {
+            this.graph.elements().remove();
+            this.jsonData = null;
+            this.lastConnectomeQueryKey = null;
+            this.inFlightConnectomeQueryKey = null;
+            return;
+        }
+
+        // construct query payload
+        const nodeDict = {
+            datasets: [...this.listDataset].sort(), classes: [], neurons: [],
+            // show_individual_neuron: this.switchShowIndividual.value,
+            show_individual_neuron: true,
+            show_connected_neuron: this.switchShowConnected.value
+        }
+        for (const [neuron, type] of Object.entries(this.manifest)) {
+            if (type == "class") {
+                nodeDict.classes.push(neuron)
+            } else {
+                nodeDict.neurons.push(neuron)
+            }
+        }
+
+        nodeDict.classes.sort()
+        nodeDict.neurons.sort()
+
+        const queryKey = JSON.stringify(nodeDict);
+        if (
+            queryKey === this.inFlightConnectomeQueryKey ||
+            queryKey === this.lastConnectomeQueryKey
+        ) {
+            return;
+        }
+
         // reset graph
         this.graph.elements().remove();
         this.jsonData = null;
 
-        if (Object.keys(this.manifest).length > 0) {
-            // construct query payload
-            const nodeDict = {
-                datasets: this.listDataset, classes: [], neurons: [],
-                // show_individual_neuron: this.switchShowIndividual.value,
-                show_individual_neuron: true,
-                show_connected_neuron: this.switchShowConnected.value
-            }
-            for (const [neuron, type] of Object.entries(this.manifest)) {
-                if (type == "class") {
-                    nodeDict.classes.push(neuron)
-                } else {
-                    nodeDict.neurons.push(neuron)
+        const requestSeq = ++this.connectomeRequestSeq;
+        this.inFlightConnectomeQueryKey = queryKey;
+
+        // request edges
+        fetch(URL_CONNECTOME_EDGE, {
+            method: 'POST', // HTTP method
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json', // Tell the server it's JSON
+                'X-CSRFToken': getCSRFToken(), // Include CSRF token for security if needed
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(nodeDict) // Convert the JavaScript object to JSON
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            }
-
-            nodeDict.classes.sort()
-            nodeDict.neurons.sort()
-
-            // request edges
-            fetch(URL_CONNECTOME_EDGE, {
-                method: 'POST', // HTTP method
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json', // Tell the server it's JSON
-                    'X-CSRFToken': getCSRFToken(), // Include CSRF token for security if needed
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                body: JSON.stringify(nodeDict) // Convert the JavaScript object to JSON
+                
+                return response.json(); // Parse the JSON response
             })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    return response.json(); // Parse the JSON response
-                })
-                .then(data => {
-                    this.jsonData = data;
-                    this.drawGraph(data, nodeDict);
-                })
-                .catch(error => console.error('Error:', error));
-        }
+            .then(data => {
+                // Ignore stale responses if a newer request was started.
+                if (requestSeq !== this.connectomeRequestSeq) return;
+                this.inFlightConnectomeQueryKey = null;
+                this.lastConnectomeQueryKey = queryKey;
+                this.jsonData = data;
+                this.drawGraph(data, nodeDict);
+            })
+            .catch(error => {
+                if (requestSeq === this.connectomeRequestSeq) {
+                    this.inFlightConnectomeQueryKey = null;
+                }
+                console.error('Error:', error);
+            });
     }
 
     // actual graph drawing
