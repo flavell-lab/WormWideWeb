@@ -4,8 +4,8 @@ ENV PYTHONUNBUFFERED=1
 RUN mkdir /config
 COPY /config/requirements.runtime.pip /config/requirements.runtime.pip
 COPY /config/requirements.build.pip /config/requirements.build.pip
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r /config/requirements.build.pip
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r /config/requirements.build.pip
 
 RUN mkdir /wormwideweb
 COPY /src/ /wormwideweb/
