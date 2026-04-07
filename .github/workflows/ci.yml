@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.13"
           cache: "pip"
-          cache-dependency-path: config/requirement.runtime.pip
+          cache-dependency-path: config/requirements.runtime.pip
 
       - name: Install dependencies
         run: |
