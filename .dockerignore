@@ -3,8 +3,34 @@ config/default.env
 config/*.env
 .env
 .env.*
+.venv
+env/
+venv/
+ENV/
+
 
 # Git and local noise.
 .git
 .gitignore
 .DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache
+.tox
+.coverage
+htmlcov
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
