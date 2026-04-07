@@ -9,6 +9,7 @@ import {
 } from './plot_data.js';
 
 import { removeFromList, minArray, maxArray, initSwitch, getLocalBool } from '/static/core/js/utility.js';
+import { PLOTLY_COLOR_SCALES, getNodeColor, updateColorBar } from '/static/core/js/colorscale.js';
 
 /*
     Neuron and Behavior Plot Manager.
@@ -113,6 +114,10 @@ export class NeuronBehaviorPlot {
         this.isURLSyncPaused = false;
         this.pendingNeuronURLSync = false;
         this.pendingBehaviorURLSync = false;
+
+        this.corNeuronMaxCellSize = 32;
+
+        this.corBehaviorMaxCellSize = 32;
     }
 
     /**
@@ -596,192 +601,605 @@ export class NeuronBehaviorPlot {
     }
 
     renderCor() {
+        this.renderCorColorBars();
         this.renderCorNeuron();
         this.renderCorBehavior();
-        this.renderCorOthers();
+        this.renderCorNeuronTop3();
+        this.renderCorBehaviorTop3();
     }
 
-    renderCorBehavior() {
-        let txtBehaviorSections = "";
-        const corBehaviorElement = document.getElementById("cor_behavior");
-        const behaviors = this.data.behavior.traces
-        const nBehaviors = behaviors.length;
-        Object.keys(behaviors).forEach((behaviorCode, indexBehavior) => {
-            const behaviorName = behaviors[behaviorCode].name;
-            const behaviorPairs = [];
+    getMainPlotLegendFontSize() {
+        const legendTextElement = this.plot?.querySelector(".legend .legendtext");
+        if (legendTextElement) {
+            const legendSize = Number.parseFloat(window.getComputedStyle(legendTextElement).fontSize);
+            if (Number.isFinite(legendSize)) return legendSize;
+        }
+        return 12;
+    }
 
-            // Extract correlation values for each plotted neuron
-            this.listIdxPlot.forEach((idxNeuron, iNeuron) => {
-                if (data.cor.behavior[idxNeuron] && typeof data.cor.behavior[idxNeuron][behaviorCode] === 'number') {
-                    const corValue = data.cor.behavior[idxNeuron][behaviorCode];
-                    const neuronName = data.neuron[idxNeuron] ? data.neuron[idxNeuron].name : `Neuron ${idxNeuron}`;
+    renderCorColorBars() {
+        const colormapName = "PiYG";
+        const colorMin = getNodeColor(-1, -1, 1, colormapName);
+        const colorMid = getNodeColor(0, -1, 1, colormapName);
+        const colorMax = getNodeColor(1, -1, 1, colormapName);
+        updateColorBar(colorMin, colorMid, colorMax, "cor_neuron_colorbar");
+        updateColorBar(colorMin, colorMid, colorMax, "cor_behavior_colorbar");
 
-                    behaviorPairs.push({
-                        name: neuronName,
-                        correlation: corValue,
-                        color: getCycleColor(iNeuron)
-                    });
-                }
-            });
-
-            // Sort by descending absolute correlation values
-            behaviorPairs.sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
-
-            // Split into two columns
-            const totalLength = behaviorPairs.length;
-
-            // Calculate indices for dividing into three parts
-            const firstSplitIndex = Math.ceil(totalLength / 3);
-            const secondSplitIndex = Math.ceil((2 * totalLength) / 3);
-
-            // Divide the array into three distinct columns
-            const behaviorColumn1 = behaviorPairs.slice(0, firstSplitIndex);
-            const behaviorColumn2 = behaviorPairs.slice(firstSplitIndex, secondSplitIndex);
-            const behaviorColumn3 = behaviorPairs.slice(secondSplitIndex);
-
-            // Function to generate HTML for a behavior column
-            const generateBehaviorColumnHTML = (pairs) => {
-                return pairs.map(pair => `
-                    <div class="mb-2">
-                        <span class="badge text-bg-dark" style="background-color: ${pair.color} !important">${pair.name}</span>
-                        <span class="cor-value">${pair.correlation.toFixed(3)}</span>
-                    </div>
-                `).join('');
-            };
-
-            // Generate HTML for behavioral columns
-            const txtBehaviorColumn1 = generateBehaviorColumnHTML(behaviorColumn1);
-            const txtBehaviorColumn2 = generateBehaviorColumnHTML(behaviorColumn2);
-            const txtBehaviorColumn3 = generateBehaviorColumnHTML(behaviorColumn3);
-
-            // Combine behavioral columns into a Bootstrap row with a header
-            txtBehaviorSections += `
-                <div class="behavior-section">
-                    <h6>${behaviorName}</h6>
-                    <div class="row">
-                        <div class="col-md-4">
-                            ${txtBehaviorColumn1}
-                        </div>
-                        <div class="col-md-4">
-                            ${txtBehaviorColumn2}
-                        </div>
-                        <div class="col-md-4">
-                            ${txtBehaviorColumn3}
-                        </div>
-                    </div>
-                </div>
-                ${nBehaviors - 1 === indexBehavior ? "" : "<hr>"}
-            `;
+        const legendFontSize = this.getMainPlotLegendFontSize();
+        document.querySelectorAll(".cor-static-cbar-label, .cor-static-cbar-ticks").forEach((el) => {
+            el.style.fontSize = `${legendFontSize}px`;
         });
-
-        corBehaviorElement.innerHTML = txtBehaviorSections;
-
     }
 
-    renderCorNeuron() {
-        const corNeuronElement = document.getElementById("cor_neuron");
+    getCorNeuronIndexList() {
+        const idxList = [];
+        const seen = new Set();
+        this.listIdxPlot.forEach((idxNeuron) => {
+            const idx = Number.parseInt(idxNeuron, 10);
+            if (!Number.isInteger(idx) || seen.has(idx)) return;
+            seen.add(idx);
+            idxList.push(idx);
+        });
+        return idxList;
+    }
 
-        // Initialize HTML content for both columns
-        let txtNeuralColumn1 = "";
-        let txtNeuralColumn2 = "";
+    getCorNeuronName(idxNeuron) {
+        return this.data.neuron[idxNeuron]?.name || `Neuron ${idxNeuron}`;
+    }
 
-        // Check if there are at least two neurons selected
-        if (this.listIdxPlot.length > 1) {
-            const correlationPairs = [];
+    getNeuronCorrelation(idxNeuron1, idxNeuron2) {
+        if (idxNeuron1 === idxNeuron2) return 1.0;
+        const key = `${idxNeuron1},${idxNeuron2}`;
+        const reverseKey = `${idxNeuron2},${idxNeuron1}`;
+        const direct = this.data.cor.neuron[key];
+        const reverse = this.data.cor.neuron[reverseKey];
+        const value = typeof direct === "number" ? direct : reverse;
+        return typeof value === "number" && !Number.isNaN(value) ? value : null;
+    }
 
-            // Iterate through the list of neuron indices to extract unique pairs
-            for (let i = 0; i < this.listIdxPlot.length; i++) {
-                for (let j = 0; j < i; j++) { // j < i ensures unique pairs and skips self-correlation
-                    const idxNeuron1 = this.listIdxPlot[j];
-                    const idxNeuron2 = this.listIdxPlot[i];
-                    const corNeuralKey = `${idxNeuron1},${idxNeuron2}`;
-                    let cor_;
-
-                    // Attempt to retrieve the correlation using the original key
-                    if (corNeuralKey in this.data.cor.neuron) {
-                        cor_ = this.data.cor.neuron[corNeuralKey];
-                    } else {
-                        // If not found, try the reversed key
-                        const reverseKey = `${idxNeuron2},${idxNeuron1}`;
-                        cor_ = this.data.cor.neuron[reverseKey] !== undefined ? this.data.cor.neuron[reverseKey] : null;
-                    }
-
-                    // Proceed only if a valid correlation coefficient is found
-                    if (cor_ !== null && !isNaN(cor_)) {
-                        const neuron1 = this.data.neuron[idxNeuron1];
-                        const neuron2 = this.data.neuron[idxNeuron2];
-
-                        // Ensure that both neuron objects exist
-                        if (neuron1 && neuron2) {
-                            correlationPairs.push({
-                                name1: neuron1.name,
-                                name2: neuron2.name,
-                                color1: getCycleColor(j),
-                                color2: getCycleColor(i),
-                                correlation: cor_ // Keep the original precision for accurate sorting
-                            });
-                        }
-                    }
-                }
-            }
-
-            // Check if any valid correlation pairs were found
-            if (correlationPairs.length > 0) {
-                // Sort the correlation pairs by descending order of absolute correlation values
-                correlationPairs.sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
-
-                // Split the sorted correlation pairs into two roughly equal halves for two columns
-                const midIndex = Math.ceil(correlationPairs.length / 2);
-                const column1 = correlationPairs.slice(0, midIndex);
-                const column2 = correlationPairs.slice(midIndex);
-
-                // Function to generate HTML for a column
-                const generateColumnHTML = (pairs) => {
-                    return pairs.map(pair => `
-                <div class="mb-2">
-                    <span class="badge text-bg-dark" style="background-color:${pair.color1} !important">${pair.name1}</span>,
-                    <span class="badge text-bg-dark" style="background-color:${pair.color2} !important">${pair.name2}</span>
-                    <span class="cor-value">${pair.correlation.toFixed(3)}</span>
-                </div>
-            `).join('');
-                };
-
-                // Generate HTML for both columns
-                txtNeuralColumn1 = generateColumnHTML(column1);
-                txtNeuralColumn2 = generateColumnHTML(column2);
-            } else {
-                // No valid correlation pairs found
-                txtNeuralColumn1 = `<div class="alert alert-warning" role="alert">
-                                No valid correlation pairs found.
-                             </div>`;
-                txtNeuralColumn2 = "";
-            }
-        } else {
-            // Fewer than two neurons selected
-            corNeuronElement.innerHTML = `<div class="alert alert-warning" role="alert">
-                            2 or more neurons need to be selected.
-                         </div>`;
+    setCorNeuronDetail(detailElement, { pairData = null, locked = false, message = "", warning = false } = {}) {
+        if (!detailElement) return;
+        detailElement.classList.toggle("is-warning", warning);
+        if (message) {
+            detailElement.innerHTML = message;
+            return;
+        }
+        if (!pairData) {
+            detailElement.innerHTML = "<strong>Tip:</strong> Hover over any matrix cell to inspect a pair.";
             return;
         }
 
-        // Combine the two columns within a Bootstrap row
-        const combinedHTML = `
-            <div class="row">
-                <div class="col-lg-6">
-                    ${txtNeuralColumn1}
-                </div>
-                <div class="col-lg-6">
-                    ${txtNeuralColumn2}
-                </div>
-            </div>`;
+        const pairLabel = locked ? "Locked pair" : "Hovered pair";
+        const isMissing = pairData.value === null;
+        const valueText = isMissing ? "Unavailable" : pairData.value.toFixed(3);
+        const extraLine = isMissing
+            ? "<div>Missing correlation value for this neuron pair.</div>"
+            : "";
+        detailElement.innerHTML = `
+            <div><strong>${pairLabel}</strong></div>
+            <div><span>${pairData.nameRow}</span> × <span>${pairData.nameCol}</span></div>
+            <div>Pearson r: <strong>${valueText}</strong></div>
+            ${extraLine}
+        `;
+    }
 
-        // Inject the combined HTML into the target element
-        corNeuronElement.innerHTML = combinedHTML;
+    getCorNeuronPairData(row, col, idxNeurons, labels, zMatrix) {
+        if (
+            !Number.isInteger(row) ||
+            !Number.isInteger(col) ||
+            row < 0 ||
+            col < 0 ||
+            row >= idxNeurons.length ||
+            col >= idxNeurons.length
+        ) {
+            return null;
+        }
+
+        return {
+            idxRow: idxNeurons[row],
+            idxCol: idxNeurons[col],
+            nameRow: labels[row],
+            nameCol: labels[col],
+            value: zMatrix[row][col],
+        };
+    }
+
+    getCorBehaviorCodes() {
+        const behaviorDict = this.data?.behavior?.traces || {};
+        return Object.keys(behaviorDict);
+    }
+
+    getCorBehaviorName(behaviorCode) {
+        return this.data?.behavior?.traces?.[behaviorCode]?.name || behaviorCode;
+    }
+
+    getBehaviorCorrelation(idxNeuron, behaviorCode) {
+        const value = this.data?.cor?.behavior?.[idxNeuron]?.[behaviorCode];
+        return typeof value === "number" && !Number.isNaN(value) ? value : null;
+    }
+
+    setCorBehaviorDetail(detailElement, { cellData = null, locked = false, message = "", warning = false } = {}) {
+        if (!detailElement) return;
+        detailElement.classList.toggle("is-warning", warning);
+        if (message) {
+            detailElement.innerHTML = message;
+            return;
+        }
+        if (!cellData) {
+            detailElement.innerHTML = "<strong>Tip:</strong> Hover over a strip cell to inspect a behavior-neuron pair.";
+            return;
+        }
+
+        const label = locked ? "Locked pair" : "Hovered pair";
+        const isMissing = cellData.value === null;
+        const valueText = isMissing ? "Unavailable" : cellData.value.toFixed(3);
+        const extraLine = isMissing
+            ? "<div>Missing correlation value for this behavior-neuron pair.</div>"
+            : "";
+        detailElement.innerHTML = `
+            <div><strong>${label}</strong></div>
+            <div>Behavior: <span>${cellData.behaviorName}</span></div>
+            <div>Neuron: <span>${cellData.neuronName}</span></div>
+            <div>Pearson r: <strong>${valueText}</strong></div>
+            ${extraLine}
+        `;
+    }
+
+    getCorBehaviorCellData(row, col, idxNeurons, behaviorCodes, neuronLabels, behaviorLabels, zMatrix) {
+        if (
+            !Number.isInteger(row) ||
+            !Number.isInteger(col) ||
+            row < 0 ||
+            col < 0 ||
+            row >= idxNeurons.length ||
+            col >= behaviorCodes.length
+        ) {
+            return null;
+        }
+
+        return {
+            behaviorCode: behaviorCodes[col],
+            idxNeuron: idxNeurons[row],
+            behaviorName: behaviorLabels[col],
+            neuronName: neuronLabels[row],
+            value: zMatrix[row][col],
+        };
+    }
+
+    getTopCorrelatedNeuronsForNeuron(idxNeuron, limit = 3) {
+        const bestByNeuron = new Map();
+        Object.entries(this.data?.cor?.neuron || {}).forEach(([key, value]) => {
+            if (typeof value !== "number" || Number.isNaN(value)) return;
+            const [idxA, idxB] = key.split(",").map((str) => Number.parseInt(str, 10));
+            if (!Number.isInteger(idxA) || !Number.isInteger(idxB)) return;
+            if (idxA === idxNeuron && idxB !== idxNeuron) {
+                const current = bestByNeuron.get(idxB);
+                if (current === undefined || Math.abs(value) > Math.abs(current)) {
+                    bestByNeuron.set(idxB, value);
+                }
+            } else if (idxB === idxNeuron && idxA !== idxNeuron) {
+                const current = bestByNeuron.get(idxA);
+                if (current === undefined || Math.abs(value) > Math.abs(current)) {
+                    bestByNeuron.set(idxA, value);
+                }
+            }
+        });
+
+        const pairs = Array.from(bestByNeuron.entries()).map(([idx, correlation]) => ({ idx, correlation }));
+        pairs.sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
+        return pairs.slice(0, limit);
+    }
+
+    getTopCorrelatedNeuronsForBehavior(behaviorCode, limit = 3) {
+        const pairs = [];
+        Object.entries(this.data?.cor?.behavior || {}).forEach(([idxNeuron, byBehavior]) => {
+            if (!byBehavior || typeof byBehavior !== "object") return;
+            const value = byBehavior[behaviorCode];
+            if (typeof value !== "number" || Number.isNaN(value)) return;
+            const idx = Number.parseInt(idxNeuron, 10);
+            if (!Number.isInteger(idx)) return;
+            pairs.push({ idx, correlation: value });
+        });
+
+        pairs.sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
+        return pairs.slice(0, limit);
+    }
+
+    renderCorNeuronTop3() {
+        const container = document.getElementById("cor_neuron_top3");
+        if (!container) return;
+
+        const idxNeurons = this.getCorNeuronIndexList();
+        if (idxNeurons.length === 0) {
+            container.innerHTML = '<div class="cor-summary-empty">Select neurons to view top correlated partners.</div>';
+            return;
+        }
+
+        let html = '<div class="cor-summary-title">Top 3 Correlated Neurons Per Selected Neuron</div>';
+        idxNeurons.forEach((idxNeuron) => {
+            const sourceName = this.getCorNeuronName(idxNeuron);
+            const topPairs = this.getTopCorrelatedNeuronsForNeuron(idxNeuron, 3);
+            if (topPairs.length === 0) {
+                html += `
+                    <div class="cor-summary-item">
+                        <span class="cor-summary-target">${sourceName}:</span>
+                        <span class="cor-summary-empty">No correlation pairs available.</span>
+                    </div>`;
+                return;
+            }
+            const listText = topPairs
+                .map((pair) => `${this.getCorNeuronName(pair.idx)} (${pair.correlation.toFixed(3)})`)
+                .join(", ");
+            html += `
+                <div class="cor-summary-item">
+                    <span class="cor-summary-target">${sourceName}:</span>
+                    <span>${listText}</span>
+                </div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    renderCorBehaviorTop3() {
+        const container = document.getElementById("cor_behavior_top3");
+        if (!container) return;
+
+        const behaviorCodes = this.getCorBehaviorCodes();
+        if (behaviorCodes.length === 0) {
+            container.innerHTML = '<div class="cor-summary-empty">No behavior traces available.</div>';
+            return;
+        }
+
+        let html = '<div class="cor-summary-title">Top 3 Correlated Neurons Per Behavior</div>';
+        behaviorCodes.forEach((behaviorCode) => {
+            const behaviorName = this.getCorBehaviorName(behaviorCode);
+            const topPairs = this.getTopCorrelatedNeuronsForBehavior(behaviorCode, 3);
+            if (topPairs.length === 0) {
+                html += `
+                    <div class="cor-summary-item">
+                        <span class="cor-summary-target">${behaviorName}:</span>
+                        <span class="cor-summary-empty">No correlation values available.</span>
+                    </div>`;
+                return;
+            }
+            const listText = topPairs
+                .map((pair) => `${this.getCorNeuronName(pair.idx)} (${pair.correlation.toFixed(3)})`)
+                .join(", ");
+            html += `
+                <div class="cor-summary-item">
+                    <span class="cor-summary-target">${behaviorName}:</span>
+                    <span>${listText}</span>
+                </div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    renderCorBehavior() {
+        const matrixWrapElement = document.getElementById("cor_behavior_matrix_wrap");
+        const matrixElement = document.getElementById("cor_behavior_matrix");
+        const detailElement = document.getElementById("cor_behavior_detail");
+
+        if (!matrixElement) return;
+
+        const idxNeurons = this.getCorNeuronIndexList();
+        const behaviorCodes = this.getCorBehaviorCodes();
+        const nNeurons = idxNeurons.length;
+        const nBehaviors = behaviorCodes.length;
+
+        if (nNeurons < 1) {
+            Plotly.react(matrixElement, [], {
+                height: 160,
+                margin: { t: 8, r: 8, b: 8, l: 8 },
+                xaxis: { visible: false, fixedrange: true },
+                yaxis: { visible: false, fixedrange: true },
+                annotations: [{
+                    text: "Select at least 1 neuron to view behavioral strips.",
+                    x: 0.5,
+                    y: 0.5,
+                    xref: "paper",
+                    yref: "paper",
+                    showarrow: false,
+                    font: { size: 13 },
+                }],
+                template: "plotly_white",
+            }, {
+                displayModeBar: false,
+                responsive: true,
+            });
+            this.setCorBehaviorDetail(detailElement, {
+                message: "<strong>Need neurons:</strong> select at least 1 neuron to render behavior strips.",
+                warning: true,
+            });
+            return;
+        }
+
+        if (nBehaviors < 1) {
+            Plotly.react(matrixElement, [], {
+                height: 160,
+                margin: { t: 8, r: 8, b: 8, l: 8 },
+                xaxis: { visible: false, fixedrange: true },
+                yaxis: { visible: false, fixedrange: true },
+                annotations: [{
+                    text: "No behavior traces available.",
+                    x: 0.5,
+                    y: 0.5,
+                    xref: "paper",
+                    yref: "paper",
+                    showarrow: false,
+                    font: { size: 13 },
+                }],
+                template: "plotly_white",
+            }, {
+                displayModeBar: false,
+                responsive: true,
+            });
+            this.setCorBehaviorDetail(detailElement, {
+                message: "<strong>No behaviors:</strong> this dataset has no behavior traces to correlate.",
+                warning: true,
+            });
+            return;
+        }
+
+        const neuronLabels = idxNeurons.map((idx) => this.getCorNeuronName(idx));
+        const behaviorLabels = behaviorCodes.map((code) => this.getCorBehaviorName(code));
+        const xAxis = Array.from({ length: nBehaviors }, (_, idx) => idx);
+        const yAxis = Array.from({ length: nNeurons }, (_, idx) => idx);
+        const zMatrix = Array.from({ length: nNeurons }, () => Array.from({ length: nBehaviors }, () => null));
+        const customData = Array.from({ length: nNeurons }, () => Array.from({ length: nBehaviors }, () => null));
+
+        for (let row = 0; row < nNeurons; row++) {
+            for (let col = 0; col < nBehaviors; col++) {
+                const value = this.getBehaviorCorrelation(idxNeurons[row], behaviorCodes[col]);
+                zMatrix[row][col] = value;
+                customData[row][col] = [
+                    neuronLabels[row],
+                    behaviorLabels[col],
+                    value === null ? "Unavailable" : value.toFixed(3),
+                ];
+            }
+        }
+
+        const wrapWidth = matrixWrapElement?.clientWidth || 480;
+        const usablePixels = Math.max(96, Math.floor(wrapWidth - 24));
+        const cellSize = Math.min(this.corBehaviorMaxCellSize, Math.max(1, Math.floor(usablePixels / nNeurons)));
+        const stripWidth = Math.max(nBehaviors, cellSize * nBehaviors);
+        const stripHeight = Math.max(nNeurons, cellSize * nNeurons);
+
+        const margins = { t: 20, r: 24, b: 120, l: 120 };
+        const plotWidth = stripWidth + margins.l + margins.r;
+        const plotHeight = stripHeight + margins.t + margins.b;
+        const bodyStyles = window.getComputedStyle(document.body);
+        const legendFontSize = this.getMainPlotLegendFontSize();
+        const plotFont = {
+            family: bodyStyles.fontFamily,
+            size: Number.isFinite(legendFontSize) ? legendFontSize : 12,
+            color: "#000000",
+        };
+
+        Plotly.react(
+            matrixElement,
+            [{
+                type: "heatmap",
+                x: xAxis,
+                y: yAxis,
+                z: zMatrix,
+                customdata: customData,
+                xgap: 1,
+                ygap: 1,
+                colorscale: PLOTLY_COLOR_SCALES.PiYG,
+                showscale: false,
+                zmid: 0,
+                zmin: -1,
+                zmax: 1,
+                hoverongaps: false,
+                hovertemplate: "<b>%{customdata[0]}</b><br>%{customdata[1]}<br>Pearson r: %{customdata[2]}<extra></extra>",
+            }],
+            {
+                width: plotWidth,
+                height: plotHeight,
+                margin: margins,
+                font: plotFont,
+                xaxis: {
+                    tickmode: "array",
+                    tickvals: xAxis,
+                    ticktext: behaviorLabels,
+                    tickangle: -90,
+                    range: [-0.5, nBehaviors - 0.5],
+                    fixedrange: true,
+                    scaleanchor: "y",
+                    scaleratio: 1,
+                    constrain: "domain",
+                    tickfont: { size: plotFont.size },
+                },
+                yaxis: {
+                    tickmode: "array",
+                    tickvals: yAxis,
+                    ticktext: neuronLabels,
+                    range: [nNeurons - 0.5, -0.5],
+                    fixedrange: true,
+                    constrain: "domain",
+                    tickfont: { size: plotFont.size },
+                },
+                template: "plotly_white",
+            },
+            {
+                displayModeBar: false,
+                responsive: true,
+            }
+        );
+
+        if (typeof matrixElement.removeAllListeners === "function") {
+            matrixElement.removeAllListeners("plotly_hover");
+            matrixElement.removeAllListeners("plotly_unhover");
+        }
+
+        matrixElement.on("plotly_hover", (eventData) => {
+            const point = eventData?.points?.[0];
+            if (!point) return;
+            const row = Number.parseInt(point.y, 10);
+            const col = Number.parseInt(point.x, 10);
+            const cellData = this.getCorBehaviorCellData(
+                row,
+                col,
+                idxNeurons,
+                behaviorCodes,
+                neuronLabels,
+                behaviorLabels,
+                zMatrix
+            );
+            this.setCorBehaviorDetail(detailElement, { cellData, locked: false, warning: false });
+        });
+
+        matrixElement.on("plotly_unhover", () => {
+            this.setCorBehaviorDetail(detailElement, { warning: false });
+        });
+
+        this.setCorBehaviorDetail(detailElement, { warning: false });
+    }
+
+    renderCorNeuron() {
+        const matrixWrapElement = document.getElementById("cor_neuron_matrix_wrap");
+        const matrixElement = document.getElementById("cor_neuron_matrix");
+        const detailElement = document.getElementById("cor_neuron_detail");
+
+        if (!matrixElement) return;
+
+        const idxNeurons = this.getCorNeuronIndexList();
+        const nNeurons = idxNeurons.length;
+
+        if (nNeurons < 2) {
+            Plotly.react(matrixElement, [], {
+                height: 160,
+                margin: { t: 8, r: 8, b: 8, l: 8 },
+                xaxis: { visible: false, fixedrange: true },
+                yaxis: { visible: false, fixedrange: true },
+                annotations: [{
+                    text: "2 or more neurons need to be selected.",
+                    x: 0.5,
+                    y: 0.5,
+                    xref: "paper",
+                    yref: "paper",
+                    showarrow: false,
+                    font: { size: 13 },
+                }],
+                template: "plotly_white",
+            }, {
+                displayModeBar: false,
+                responsive: true,
+            });
+            this.setCorNeuronDetail(detailElement, {
+                message: "<strong>Need more neurons:</strong> select at least 2 neurons to render the matrix.",
+                warning: true,
+            });
+            return;
+        }
+
+        const labels = idxNeurons.map((idx) => this.getCorNeuronName(idx));
+        const axis = Array.from({ length: nNeurons }, (_, idx) => idx);
+        const zMatrix = Array.from({ length: nNeurons }, () => Array.from({ length: nNeurons }, () => null));
+        const customData = Array.from({ length: nNeurons }, () => Array.from({ length: nNeurons }, () => null));
+
+        for (let row = 0; row < nNeurons; row++) {
+            for (let col = 0; col < nNeurons; col++) {
+                zMatrix[row][col] = this.getNeuronCorrelation(idxNeurons[row], idxNeurons[col]);
+                customData[row][col] = [labels[row], labels[col]];
+            }
+        }
+
+        const wrapWidth = matrixWrapElement?.clientWidth || 480;
+        const usableMatrixPixels = Math.max(96, Math.floor(wrapWidth - 24));
+        const cellSize = Math.min(this.corNeuronMaxCellSize, Math.max(1, Math.floor(usableMatrixPixels / nNeurons)));
+        const matrixSide = Math.max(nNeurons, cellSize * nNeurons);
+
+        const margins = { t: 24, r: 24, b: 120, l: 120 };
+        const plotWidth = matrixSide + margins.l + margins.r;
+        const plotHeight = matrixSide + margins.t + margins.b;
+        const bodyStyles = window.getComputedStyle(document.body);
+        const legendFontSize = this.getMainPlotLegendFontSize();
+        const plotFont = {
+            family: bodyStyles.fontFamily,
+            size: Number.isFinite(legendFontSize) ? legendFontSize : 12,
+            color: "#000000",
+        };
+
+        Plotly.react(
+            matrixElement,
+            [{
+                type: "heatmap",
+                x: axis,
+                y: axis,
+                z: zMatrix,
+                customdata: customData,
+                xgap: 1,
+                ygap: 1,
+                colorscale: PLOTLY_COLOR_SCALES.PiYG,
+                showscale: false,
+                zmid: 0,
+                zmin: -1,
+                zmax: 1,
+                hoverongaps: false,
+                hovertemplate: "<b>%{customdata[0]}</b> vs <b>%{customdata[1]}</b><br>Pearson r: %{z:.3f}<extra></extra>",
+            }],
+            {
+                width: plotWidth,
+                height: plotHeight,
+                margin: margins,
+                font: plotFont,
+                xaxis: {
+                    tickmode: "array",
+                    tickvals: axis,
+                    ticktext: labels,
+                    tickangle: -90,
+                    range: [-0.5, nNeurons - 0.5],
+                    fixedrange: true,
+                    scaleanchor: "y",
+                    scaleratio: 1,
+                    constrain: "domain",
+                    tickfont: { size: plotFont.size },
+                },
+                yaxis: {
+                    tickmode: "array",
+                    tickvals: axis,
+                    ticktext: labels,
+                    range: [nNeurons - 0.5, -0.5],
+                    fixedrange: true,
+                    constrain: "domain",
+                    tickfont: { size: plotFont.size },
+                },
+                template: "plotly_white",
+            },
+            {
+                displayModeBar: false,
+                responsive: true,
+            }
+        );
+
+        if (typeof matrixElement.removeAllListeners === "function") {
+            matrixElement.removeAllListeners("plotly_hover");
+            matrixElement.removeAllListeners("plotly_unhover");
+        }
+
+        matrixElement.on("plotly_hover", (eventData) => {
+            const point = eventData?.points?.[0];
+            if (!point) return;
+            const row = Number.parseInt(point.y, 10);
+            const col = Number.parseInt(point.x, 10);
+            const pairData = this.getCorNeuronPairData(row, col, idxNeurons, labels, zMatrix);
+            this.setCorNeuronDetail(detailElement, { pairData, locked: false, warning: false });
+        });
+
+        matrixElement.on("plotly_unhover", () => {
+            this.setCorNeuronDetail(detailElement, { warning: false });
+        });
+
+        this.setCorNeuronDetail(detailElement, { warning: false });
     }
 
     renderCorOthers() {
         // get top 5 absolute correlated neurons for each plotted neurons
         const corOthersElement = document.getElementById("cor_others");
+        if (!corOthersElement) return;
         let txtCorOthers = "";
         this.listIdxPlot.forEach((idxNeuron, iNeuron) => {
             const neuronName = this.data.neuron[idxNeuron].name
@@ -808,8 +1226,12 @@ export class NeuronBehaviorPlot {
             // Generate HTML for top 5 correlated neurons
             let txtTop5 = ""
             top5Pairs.forEach((pair) => {
-                const idxOtherStr = `${pair.idx_neuron_other}`;
-                const colorOtherNeuron = getCycleColor(this.listIdxPlot.indexOf(idxOtherStr))
+                const idxOtherInSelection = this.listIdxPlot.findIndex(
+                    (idxSelected) => Number.parseInt(idxSelected, 10) === pair.idx_neuron_other
+                );
+                const colorOtherNeuron = idxOtherInSelection >= 0
+                    ? getCycleColor(idxOtherInSelection)
+                    : null;
                 const styleColor = colorOtherNeuron ? `background-color:${colorOtherNeuron} !important` : '';
                 txtTop5 += `<span class="badge me-1 ${colorOtherNeuron ? "text-bg-dark" : "text-bg-light"}" style="${styleColor}">${this.data.neuron[pair.idx_neuron_other].name}</span><span class="cor-value me-3">${pair.correlation.toFixed(3)}</span>`
             })

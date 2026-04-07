@@ -449,19 +449,46 @@
       <div class="card card-body">
         <h5>Neural Correlation</h5>
         <p>Correlation (Pearson correlation coefficeint) among the selected neurons</p>
-        <div id="cor_neuron"></div>
+        <div id="cor_neuron" class="cor-neuron-section">
+          <div class="cor-neuron-content">
+            <div id="cor_neuron_matrix_wrap" class="cor-neuron-matrix-wrap">
+              <div id="cor_neuron_matrix" class="cor-neuron-matrix-plot"></div>
+            </div>
+            <div class="cor-static-cbar" aria-hidden="true">
+              <div class="cor-static-cbar-label">r</div>
+              <div id="cor_neuron_colorbar" class="cor-static-cbar-bar"></div>
+              <div class="cor-static-cbar-ticks">
+                <span>1</span>
+                <span>0</span>
+                <span>-1</span>
+              </div>
+            </div>
+          </div>
+          <div id="cor_neuron_top3" class="cor-summary-list"></div>
+        </div>
       </div>
     </div>
     <div class="col-md-6">
-      <div class="card card-body mb-3">
-        <h5>Top 3 Correlated Neurons</h5>
-        <p>Top 3 correlated (Pearson correlation coefficeint) neurons for each selected neuron</p>
-        <div id="cor_others"></div>
-      </div>
       <div class="card card-body">
         <h5>Behavioral Correlation</h5>
-        <p>Correlation (Pearson correlation coefficeint) to behaviors for each selected neuron</p>
-        <div id="cor_behavior"></div>
+        <p>Correlation (Pearson correlation coefficeint) as interactive strips (rows: neurons, columns: behaviors)</p>
+        <div id="cor_behavior" class="cor-behavior-section">
+          <div class="cor-behavior-content">
+            <div id="cor_behavior_matrix_wrap" class="cor-behavior-matrix-wrap">
+              <div id="cor_behavior_matrix" class="cor-behavior-matrix-plot"></div>
+            </div>
+            <div class="cor-static-cbar" aria-hidden="true">
+              <div class="cor-static-cbar-label">r</div>
+              <div id="cor_behavior_colorbar" class="cor-static-cbar-bar"></div>
+              <div class="cor-static-cbar-ticks">
+                <span>1</span>
+                <span>0</span>
+                <span>-1</span>
+              </div>
+            </div>
+          </div>
+          <div id="cor_behavior_top3" class="cor-summary-list"></div>
+        </div>
       </div>
     </div>
   </div>

@@ -46,3 +46,136 @@
     opacity: 0.5;
     margin: 0 0 0 2px;
 }
+
+.cor-neuron-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cor-neuron-content,
+.cor-behavior-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cor-neuron-matrix-wrap {
+    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+}
+
+.cor-neuron-matrix-plot {
+    min-width: 280px;
+}
+
+.cor-neuron-detail {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    background: #f8fafc;
+    padding: 0.5rem 0.625rem;
+    line-height: 1.45;
+}
+
+.cor-neuron-detail.is-warning {
+    border-color: #f1c40f;
+    background: #fff8db;
+}
+
+.cor-neuron-detail strong {
+    font-weight: 600;
+}
+
+.cor-behavior-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cor-behavior-matrix-wrap {
+    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+}
+
+.cor-behavior-matrix-plot {
+    min-width: 280px;
+}
+
+.cor-behavior-detail {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    background: #f8fafc;
+    padding: 0.5rem 0.625rem;
+    line-height: 1.45;
+}
+
+.cor-behavior-detail.is-warning {
+    border-color: #f1c40f;
+    background: #fff8db;
+}
+
+.cor-behavior-detail strong {
+    font-weight: 600;
+}
+
+.cor-static-cbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.cor-static-cbar-label {
+    font-size: 0.8rem;
+    color: #334155;
+}
+
+.cor-static-cbar-bar {
+    width: 10px;
+    height: 143px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+}
+
+.cor-static-cbar-ticks {
+    height: 143px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+.cor-summary-list {
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cor-summary-title {
+    font-weight: 600;
+}
+
+.cor-summary-item {
+    line-height: 1.35;
+}
+
+.cor-summary-target {
+    font-weight: 600;
+    margin-right: 0.35rem;
+}
+
+.cor-summary-empty {
+    color: #6b7280;
+}
