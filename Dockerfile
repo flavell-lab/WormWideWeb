@@ -19,7 +19,7 @@ RUN --mount=type=bind,source=./initial_data,target=/initial_data \
 
 # for deployment
 FROM python:3.13-slim
-# ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 RUN mkdir /config
 COPY /config/requirements.runtime.pip /tmp/requirements.runtime.pip
