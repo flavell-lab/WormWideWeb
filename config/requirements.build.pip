@@ -1,2 +1,2 @@
--r /config/requirements.runtime.pip
+-r requirements.runtime.pip
 scipy==1.16.3
