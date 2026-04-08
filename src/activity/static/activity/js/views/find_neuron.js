@@ -73,8 +73,8 @@ document.addEventListener('DOMContentLoaded', async() => {
     });
 
     const buttonDownloadSelected = document.getElementById("downloadSelected")
-    buttonDownloadSelected.addEventListener('click', () => {
-        neuronTable.downloadSelected();
+    buttonDownloadSelected.addEventListener('click', async () => {
+        await neuronTable.downloadSelected(buttonDownloadSelected);
     });
 
     /*

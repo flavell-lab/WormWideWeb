@@ -1,4 +1,5 @@
 import { getDatasetTypePill, getCSRFToken } from '/static/core/js/utility.js';
+import { downloadSelectedDatasetsAsZip } from './dataset_download.js';
 
 const plotMultipleURL = "/activity/plot-multiple-data/"
 
@@ -168,27 +169,11 @@ export class DatasetTable {
             .catch(error => console.error('Error:', error));
     }
 
-    downloadFile(url, fileName) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    downloadSelected() {
+    async downloadSelected(buttonElement = null) {
         const selected = this.getSelected()
-
-        if (selected.length == 0) {
-            alert("Please select at least one dataset to download.")
-            return
-        }
-
-        selected.forEach((option) => {
-            const urlData = getDatasetDownloadURL(option.id);
-            this.downloadFile(urlData, `${option.paper_id}-${option.label}.json`)
+        await downloadSelectedDatasetsAsZip(selected, {
+            buttonElement: buttonElement,
+            zipPrefix: "wormwideweb-activity-find-neuron",
         })
     }
 }

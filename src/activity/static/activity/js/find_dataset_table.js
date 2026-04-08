@@ -1,4 +1,5 @@
 import { getDatasetTypePill } from '/static/core/js/utility.js';
+import { downloadSelectedDatasetsAsZip } from './dataset_download.js';
 
 function getDatasetDownloadURL(datasetId) {
     return `/activity/api/data/download/${encodeURIComponent(datasetId)}/`;
@@ -95,21 +96,11 @@ export class DatasetTable {
         return $(this.tableElementSelector).bootstrapTable("getSelections")
     }
     
-    downloadFile(url, fileName) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-      
-    downloadSelected() {
+    async downloadSelected(buttonElement = null) {
         const selected = this.getSelected()
-        selected.forEach((option) => {
-            const urlData = getDatasetDownloadURL(option.id);
-            this.downloadFile(urlData, `${option.paper_id}-${option.label}.json`)
+        await downloadSelectedDatasetsAsZip(selected, {
+            buttonElement: buttonElement,
+            zipPrefix: "wormwideweb-activity-datasets",
         })
     }   
 }

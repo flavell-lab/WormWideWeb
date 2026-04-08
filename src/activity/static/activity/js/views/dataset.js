@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selectors.selectorDataset.clear();
     });
     const buttonDownloadSelected = document.getElementById("downloadSelected")
-    buttonDownloadSelected.addEventListener('click', () => {
-        datasetTable.downloadSelected();
+    buttonDownloadSelected.addEventListener('click', async () => {
+        await datasetTable.downloadSelected(buttonDownloadSelected);
     });
 
     /*
