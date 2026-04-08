@@ -288,7 +288,7 @@ ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_JSON = os.environ.get(
 ).strip()
 ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS = _optional_int_env(
     "ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS",
-    default=900,
+    default=600,
     min_value=1,
     max_value=604800,
 )
