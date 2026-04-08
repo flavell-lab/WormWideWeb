@@ -13,6 +13,29 @@ function copyURL() {
     alert("URL copied to clipboard");
 }
 
+function getDatasetDownloadURL(datasetId) {
+    return `/activity/api/data/download/${encodeURIComponent(datasetId)}/`;
+}
+
+function downloadFile(url, fileName = "") {
+    const link = document.createElement("a");
+    link.href = url;
+    if (fileName) {
+        link.download = fileName;
+    }
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function sanitizeFileNamePart(value) {
+    return String(value ?? "")
+        .trim()
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_")
+        .replace(/\s+/g, "_");
+}
+
 function initPlotManager(data) {
     return new Promise((resolve, reject) => {
         // 1. Create the PlotManager
@@ -101,7 +124,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const buttonCSVExport = document.getElementById("button_csv_export")
     buttonCSVExport.addEventListener('click', () => {
-        plotManager.exportCSV()
+        const datasetId = sanitizeFileNamePart(data?.dataset_id) || "dataset";
+        const paperId = sanitizeFileNamePart(buttonCSVExport?.dataset?.paperId) || "paper";
+        plotManager.exportCSV(`${datasetId}.csv`)
+    });
+
+    const buttonJSONExportFull = document.getElementById("button_json_export_full")
+    buttonJSONExportFull.addEventListener("click", () => {
+        const datasetId = data?.dataset_id;
+        if (!datasetId) {
+            alert("Cannot download dataset.");
+            return;
+        }
+        const fileName = `wormwideweb-${datasetId}.json`;
+        downloadFile(getDatasetDownloadURL(datasetId), fileName);
     });
 
     const buttonToggleConnectome = document.getElementById("buttonToggleConnectome")

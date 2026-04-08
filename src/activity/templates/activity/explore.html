@@ -127,10 +127,25 @@
                 <i class="bi bi-gear-wide-connected" data-bs-toggle="tooltip" data-bs-placement="top"
                   data-bs-title="Plot configurations"></i>
               </button>
-              <button id="button_csv_export" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Download currently plotted neurons(s)/behavior(s) as a CSV file">
-                <i class="bi bi-download"></i>
-              </button>
+              <div class="dropdown btn-group btn-group-sm">
+                <button id="buttonActivityDownloadMenu" class="btn btn-light dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download options">
+                  <i class="bi bi-download" aria-hidden="true"></i>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="buttonActivityDownloadMenu">
+                  <li>
+                    <button id="button_csv_export" class="dropdown-item" type="button"
+                      data-paper-id="{{ paper.paper_id }}">
+                      Selected traces (CSV)
+                    </button>
+                  </li>
+                  <li>
+                    <button id="button_json_export_full" class="dropdown-item" type="button">
+                      Full dataset (JSON)
+                    </button>
+                  </li>
+                </ul>
+              </div>
               <button id="button_copy_url" class="btn btn-light" data-bs-toggle="tooltip" data-bs-placement="top"
                 data-bs-title="Copy a link to this plot to the clipboard">
                 <i class="bi bi-link-45deg"></i>

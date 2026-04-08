@@ -545,7 +545,7 @@ export class NeuronBehaviorPlot {
         }
     }
 
-    exportCSV() {
+    exportCSV(fileName = "wormwideweb-data.csv") {
         const traceManifest = this.listIdxPlot
         const traceManifestLabel = traceManifest.map(idx => this.data.neuron[idx] ? this.data.neuron[idx].name : `Neuron ${idx}`)
         const behaviorManifest = this.listBehaviorShort
@@ -585,7 +585,7 @@ export class NeuronBehaviorPlot {
             link.href = "data:text/csv;charset=utf-8," + encodeURI(csvStr);
 
             // Set the link's download attribute to the desired file name
-            link.download = "wormwideweb-data.csv";
+            link.download = fileName;
 
             // Append the link to the DOM
             document.body.appendChild(link);
