@@ -1,101 +1,147 @@
 # WormWideWeb
 [![CI](https://github.com/flavell-lab/WormWideWeb/actions/workflows/ci.yml/badge.svg)](https://github.com/flavell-lab/WormWideWeb/actions/workflows/ci.yml)
 
-Currently deployed on [wormwideweb.org](https://wormwideweb.org)
-## General notes on the architecture
-### Database: sqlite3
-- the data rarely changes (i.e. there's no need to dynamically update both the activity and the connectonme data).  
-- the app is also entirely read-only.  
-- the app is containerized and can scale up over multiple instances.  
+WormWideWeb is a Django web application for exploring C. elegans connectome and activity datasets.
 
-These factors in combination led to selecting `sqlite3` for the database, which minimizes the deployment cost. During the build process, the database is populated and then copied to the final image. Since each container instance would have a copy and since there's no write operations, there's no need to run a database service. Since each instance has its own read-only copy, there's no issue with DB concurrency. However, this implies that building a new container image is necessary if we want to add or modify the data.
+Production deployment: [wormwideweb.org](https://wormwideweb.org)
 
-Note that this approach won't work if the number of datasets significantly increases since that'd make the container image too large. If so, setting up an instance of Cloud SQL PotgreSQL might be necessary.
+## Architecture
 
-### Cache: Redis
-Since the containers are ephemeral (i.e. they spin down if there's no traffic) and automatically scaled (i.e. automatically launch more instances if there's any traffic overflow), Redis is used as the singular place for caching (key value pairs).
+### Database: SQLite
+- Data is imported at build/init time and served read-only at runtime.
+- Each container instance has its own local SQLite file.
+- This avoids operating a separate DB service and keeps cost/ops overhead low.
 
-### Backend: Django
-Django in python runs the backend, handling various operations such as serving user requests, caching, DB interface, and computing.
+Runtime note: when `DJ_DB_BUILD=0` (default), SQLite is opened in read-only mode. Set `DJ_DB_BUILD=1` only when running migrations/import workflows (for example local bootstrapping or image build).
 
-### Frontend: Django and JavaScript
-JavaScript implements the front end, while some components are rendered with Django HTML templating.
+### Cache: Redis (optional in local dev)
+- For production-scale, ephemeral containers, Redis is the shared cache backend.
+- For local development, you can set `DJ_USE_REDIS=0` and use in-memory cache.
 
-## Django notes
-### Django apps
-- `activity`: models and views for the GCaMP (neural) and behavioral datasets.  
-- `connectome`: contains the models and views for the connectome features.  
-- `core`: handles core operations, contains core/shared utility functions, and serves certain pages such as the index.  
+### Backend / Frontend
+- Backend: Django (routing, templates, APIs, caching, data access).
+- Frontend: Django templates + JavaScript.
 
-### Django management commands
-Note: if the database doesn't contain the connectome-related models/data, it is necessary to run `init_data_connectome` before running any other commands.  
-- `init_data_connectome`: import and initlaize the connectome data.  
-- `init_data_graph_precompute`: precompute the networkx graph objects necessary for the find route feature.  
-- `init_data_gcamp`: initialize and import all GCaMPPaper, GCaMPDatasetType, and GCaMPNeuron.  
-- `update_encoding_dict_neuron_match`: import the encoding table (from the Atanas & Kim et al., 2023 paper) and match those neurons.  
-- `update_encoding_dict`: update the encoding dictionary (aggregate of neurons across datasets) JSON data.  
-- `update_neuron_match_dict`: create and store the precomputed match dictionary (which dataset has which labeled neuron).  
+## Django Apps
+- `activity`: GCaMP neural/behavior datasets and related APIs/views.
+- `connectome`: connectome models, graph APIs, and connectome pages.
+- `core`: homepage/about/health and shared utilities.
 
-## APIs
-### connectome
-- `api/available-neurons/`: all available neurons across the selected connectome datasets.  
-- `api/get-edges/`: get the connectivity data.  
-- `api/find-paths/`: find all paths from the start neuron to the end neuron.  
+## Data Dependency (`initial_data`)
+This repo expects dataset/config files under `initial_data/` (next to `src/`).
 
-### activity
-- `api/data/<str:dataset_id>/<int:idx_neuron>/`: neural trace of neuron number `idx_neuron` from `dataset_id`.  
-- `api/data/<str:dataset_id>/behavior/`: behavioral data for `dataset_id`.  
-- `api/data/<str:dataset_id>/encoding/`: encoding table for `dataset_id`.  
-- `api/data/atanas_kim_2023_encoding/`: encoding table from the Atanas & Kim et al. 2023 paper.  
-- `api/data/datasets/`: for the dataset table. contains metadata (paper, name, length, number of neurons, etc.) for all neural datasets.  
-- `api/data/find_neuron/`: neuron-dataset match info for the find neuron feature.  
-- `api/data/download/<str:dataset_id>/`: short-lived signed download URL redirect for dataset JSON.
+Reference dataset repo: [WormWideWeb-data](https://github.com/flavell-lab/WormWideWeb-data/)
 
-## Environmental variables and secret keys
-Env variables: 
-- `DJ_DEBUG`: `0` or `1`. Must be set to `0` for deployment.  
-- `DJ_ALLOWED_HOSTS`: `localhost` should be included for local development. space separated. e.g. `127.0.0.1 .run.app wormwideweb.org`
-- `DJ_CSRF_TRUSTED_ORIGINS` (optional): space separated full origins (with scheme), e.g. `https://wormwideweb.org https://*.run.app`. If unset, it is derived from `DJ_ALLOWED_HOSTS`.
-- `DJ_USE_REDIS`: `0` or `1`. Set it to `0` for local development (fallback to local memory caching).  
-- `DJ_REDIS_URI`: Redis instance URI e.g. `redis://x.x.x.x:6379`
-- `DJ_CACHE_VERSION` (optional): cache key version suffix. Bump this to invalidate all cached entries safely.
-- `ACTIVITY_DATA_GCS_BUCKET` (optional): bucket that stores dataset JSON files.  
-- `ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_PATH` or `ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_JSON` (optional): service account credentials used for signed download URLs.  
-- `ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS` (optional): signed URL TTL in seconds (`1-604800`, default `900`).
+## Environment Variables
 
-Secret keys (KEEP THESE SECRET):  
-Be careful not to print these or write into a file in the deployment image. On GCP, the secrets are managed by GCP Secret Manager, so there's no need to bake them into the image.  
-- `DJ_SECRET_KEY`:  your secret key.  
-- `DJ_SECRET_KEY_BACKUP`: secret key backup for rotating (no need to set for development).   
+### Required
+- `DJ_SECRET_KEY`: Django secret key.
+- `DJ_ALLOWED_HOSTS`: space-separated hosts, for example `localhost 127.0.0.1`.
 
-## Local development
-For local testing and development, first set the following environmental variables:  
-- `DJ_DEBUG`: `1`  
-- `DJ_ALLOWED_HOSTS`: `localhost`  
-- `DJ_USE_REDIS`: `0`.  
-- `DJ_SECRET_KEY`: use a random secret key that's not your deployment key.
+### Common Django Settings
+- `DJ_DEBUG`: `0` or `1` (default `0`).
+- `DJ_DB_BUILD`: `0` or `1` (default `0`).
+- `DJ_ADMIN`: `0` or `1` (default `0`).
+- `DJ_SECRET_KEY_BACKUP`: optional fallback key for key rotation.
+- `DJ_CSRF_TRUSTED_ORIGINS`: optional, space-separated full origins with scheme.
+  If unset, it is derived from `DJ_ALLOWED_HOSTS`.
 
-Then run `src/populate_db.sh`. You only need to run this once for your local copy as long as you have the database file. On Apple M2, this takes about a minute.  
-If the scripts finishes without any error, you can run `python manage.py runserver`. This is recommened for development as you can immediately preview the code you write.
+### Cache Settings
+- `DJ_USE_REDIS`: `0` or `1` (default `0`).
+- `DJ_REDIS_URI`: required when `DJ_USE_REDIS=1`.
+- `DJ_CACHE_VERSION`: optional cache key version suffix (default `v1`).
 
-Example:  
+### Activity Dataset Signed Download Settings
+- `ACTIVITY_DATA_GCS_BUCKET`: GCS bucket name (default `www-deploy-bucket`).
+- `ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_PATH`: path to service account JSON (optional).
+- `ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_JSON`: raw service account JSON (optional).
+- `ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS`: `1-604800` (default `600`).
+
+## Local Development
+
+From the repository root:
+
 ```bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r config/requirements.runtime.pip
+
+cd src
 export DJ_DEBUG=1
 export DJ_DB_BUILD=1
-export DJ_ALLOWED_HOSTS="localhost"
+export DJ_ALLOWED_HOSTS="localhost 127.0.0.1"
 export DJ_USE_REDIS=0
-export DJ_SECRET_KEY="random secret key string"
+export DJ_SECRET_KEY="replace-with-local-dev-secret"
 export DJ_ADMIN=1
 
-rm db.sqlite3
+rm -f db.sqlite3 connectome_graphs.pkl
 sh populate_db.sh
 
-python manage.py collectstatic --noinput
 python manage.py runserver
 ```
 
+Notes:
+- `populate_db.sh` runs migrations, collects static files, imports connectome/activity data, and precomputes graph data.
+- Re-run `populate_db.sh` whenever `initial_data` changes.
 
-For deployment testing, building a docker image with the supplied `docker-compose.yml` is recommended. Run `docker compose build` and then `docker compose run -d`.  
+Run tests:
 
-## initial_data
-All connectome datasets, GCaMP/behavior datasets, and various configurations are placed in the directory named `initial_data` located in the same directory as `src`. Please refer to https://github.com/flavell-lab/WormWideWeb-data/
+```bash
+cd src
+python manage.py test
+```
+
+## Docker / Deployment-style Local Run
+
+1. Generate build-time env file:
+
+```bash
+./create_build_config.sh
+```
+
+2. Build and start:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+3. Open: `http://localhost:8000`
+
+Notes:
+- The Docker build uses BuildKit mounts (`--mount=type=bind` and `--mount=type=secret`), so BuildKit must be enabled.
+- `config/default.env` is for local build/runtime convenience. Do not store production secrets in the image.
+
+## Management Commands
+If connectome tables/data are missing, run `init_data_connectome` first.
+
+- `init_data_connectome`: import and initialize connectome datasets, neurons, and synapses.
+- `init_data_graph_precompute`: precompute graph data used by path finding.
+- `init_data_gcamp`: import paper/type/event style/dataset/neuron activity data.
+- `update_encoding_dict_neuron_match`: build encoding neuron-class match cache.
+- `update_encoding_dict`: build aggregate encoding cache.
+- `update_neuron_match_dict`: build dataset-to-neuron match cache.
+- `cache_connectome`: warm connectome caches.
+- `cache_activity`: warm activity caches.
+
+## API Summary
+
+### Core
+- `GET /is_healthy/`: health check endpoint (`OK` or `ERROR`).
+
+### Connectome (`/connectome/`)
+- `GET /connectome/api/available-neurons/?datasets=<id1,id2,...>`
+- `POST /connectome/api/get-edges/`
+- `GET /connectome/api/find-paths/?dataset=<id>&start=<neuron>&end=<neuron>`
+
+### Activity (`/activity/`)
+- `GET /activity/api/data/<str:dataset_id>/<int:idx_neuron>/`
+- `GET /activity/api/data/<str:dataset_id>/behavior/`
+- `GET /activity/api/data/<str:dataset_id>/encoding/`
+- `GET /activity/api/data/atanas_kim_2023_encoding/`
+- `GET /activity/api/data/datasets/`
+- `GET /activity/api/data/find_neuron/`
+- `GET /activity/api/data/replay/?activity_dataset=<id>&connectome_dataset=<id>`
+- `GET /activity/api/data/download/<str:dataset_id>/`
+- `POST /activity/plot-multiple-data/`
