@@ -40,6 +40,29 @@ def _split_env_list(value):
     return [item.strip() for item in value.split() if item.strip()]
 
 
+def _optional_int_env(name, default, min_value=None, max_value=None):
+    raw_value = os.environ.get(name)
+    if raw_value in {None, ""}:
+        parsed = default
+    else:
+        try:
+            parsed = int(raw_value)
+        except ValueError as error:
+            raise ImproperlyConfigured(
+                f"Environment variable {name} must be an integer."
+            ) from error
+
+    if min_value is not None and parsed < min_value:
+        raise ImproperlyConfigured(
+            f"Environment variable {name} must be >= {min_value}."
+        )
+    if max_value is not None and parsed > max_value:
+        raise ImproperlyConfigured(
+            f"Environment variable {name} must be <= {max_value}."
+        )
+    return parsed
+
+
 def _dedupe_preserve_order(values):
     seen = set()
     output = []
@@ -252,3 +275,20 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Activity dataset download settings (GCS signed URLs)
+ACTIVITY_DATA_GCS_BUCKET = os.environ.get(
+    "ACTIVITY_DATA_GCS_BUCKET", "www-deploy-bucket"
+).strip()
+ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_PATH = os.environ.get(
+    "ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_PATH", ""
+).strip()
+ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_JSON = os.environ.get(
+    "ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_JSON", ""
+).strip()
+ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS = _optional_int_env(
+    "ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS",
+    default=900,
+    min_value=1,
+    max_value=604800,
+)

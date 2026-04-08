@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 from django.core.cache import cache
 from django.http import Http404
-from django.test import RequestFactory, SimpleTestCase, TestCase
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 
 from activity.models import GCaMPDataset, GCaMPEventStyle, GCaMPPaper
 from activity.views import (
@@ -210,6 +210,71 @@ class SignalReplayViewTests(SimpleTestCase):
             min_synapse_chemical=1,
             min_synapse_electrical=1,
         )
+
+
+@override_settings(
+    ACTIVITY_DATA_GCS_BUCKET="test-bucket",
+    ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS=300,
+)
+class DatasetDownloadSignedURLTests(TestCase):
+    def setUp(self):
+        self.paper = GCaMPPaper.objects.create(
+            paper_id="atanas_kim_2023",
+            title_full="Atanas full",
+            title_short="Atanas short",
+        )
+        self.dataset = GCaMPDataset.objects.create(
+            paper=self.paper,
+            dataset_id="demo_dataset",
+            dataset_name="demo_dataset",
+            dataset_meta={},
+            dataset_sha256="b" * 64,
+            avg_timestep=0.1,
+            max_t=10,
+            n_neuron=1,
+            n_labeled=0,
+            behavior={},
+            truncated_behavior={},
+            encoding={},
+            events={},
+            neuron_cor={},
+        )
+
+    @patch("activity.views._get_activity_data_signing_credentials")
+    @patch("activity.views.generate_v4_signed_get_url")
+    def test_download_endpoint_redirects_to_signed_url(
+        self, mock_generate_signed_url, mock_get_credentials
+    ):
+        mock_get_credentials.return_value = ("service@demo.iam.gserviceaccount.com", b"key")
+        mock_generate_signed_url.return_value = "https://storage.googleapis.com/signed-url"
+
+        response = self.client.get(f"/activity/api/data/download/{self.dataset.dataset_id}/")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "https://storage.googleapis.com/signed-url")
+
+        mock_generate_signed_url.assert_called_once()
+        call_kwargs = mock_generate_signed_url.call_args.kwargs
+        self.assertEqual(call_kwargs["bucket"], "test-bucket")
+        self.assertEqual(
+            call_kwargs["object_name"],
+            "activity/atanas_kim_2023/demo_dataset.json",
+        )
+        self.assertEqual(call_kwargs["expires_seconds"], 300)
+        self.assertIn("response-content-disposition", call_kwargs["query_params"])
+
+    def test_download_endpoint_returns_404_for_missing_dataset(self):
+        response = self.client.get("/activity/api/data/download/missing-dataset/")
+        self.assertEqual(response.status_code, 404)
+
+    @patch(
+        "activity.views._get_activity_data_signing_credentials",
+        side_effect=ValueError("missing signing credentials"),
+    )
+    def test_download_endpoint_returns_503_if_signing_not_configured(self, _mock_creds):
+        response = self.client.get(f"/activity/api/data/download/{self.dataset.dataset_id}/")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error"], "Dataset download is unavailable.")
 
 
 class ConnectomeDegreeIndexTests(SimpleTestCase):

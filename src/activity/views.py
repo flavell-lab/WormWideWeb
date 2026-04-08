@@ -1,13 +1,15 @@
 import json
 import uuid
 from collections import defaultdict
+from functools import lru_cache
 
 import networkx as nx
 import numpy as np
+from django.conf import settings
 from django.core.cache import cache
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Prefetch
-from django.http import JsonResponse, HttpResponseBadRequest, Http404
+from django.http import JsonResponse, HttpResponseBadRequest, Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.cache import cache_page, cache_control
@@ -15,6 +17,11 @@ from django.views.decorators.http import require_GET, require_POST
 
 from connectome.views import connectome_datasets, get_edge_response_data
 from connectome.models import Dataset as ConnectomeDataset
+from .gcs_signed_url import (
+    generate_v4_signed_get_url,
+    load_service_account_key_from_json,
+    load_service_account_key_from_path,
+)
 from .models import (
     GCaMPDataset,
     GCaMPNeuron,
@@ -79,6 +86,46 @@ def _validate_plot_multiple_payload(data):
         normalized[dataset_id] = _dedupe_int_list(neuron_ids)
 
     return normalized, None
+
+
+def _sanitize_download_filename(file_name):
+    safe_chars = {"-", "_", "."}
+    cleaned = "".join(
+        c if c.isascii() and (c.isalnum() or c in safe_chars) else "_"
+        for c in str(file_name)
+    )
+    cleaned = cleaned.strip("._")
+    if not cleaned:
+        return "dataset.json"
+    if not cleaned.endswith(".json"):
+        return f"{cleaned}.json"
+    return cleaned
+
+
+@lru_cache(maxsize=1)
+def _get_activity_data_signing_credentials():
+    raw_json = settings.ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_JSON
+    if raw_json:
+        return load_service_account_key_from_json(raw_json)
+
+    key_path = settings.ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_PATH
+    if key_path:
+        return load_service_account_key_from_path(key_path)
+
+    raise ValueError(
+        "Activity data signing is not configured. "
+        "Set ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_PATH or "
+        "ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_JSON."
+    )
+
+
+def _build_activity_data_object_name(dataset):
+    if dataset.paper is None or not dataset.paper.paper_id:
+        raise ValueError(f"Dataset '{dataset.dataset_id}' is missing paper metadata.")
+    if not dataset.dataset_name:
+        raise ValueError(f"Dataset '{dataset.dataset_id}' is missing dataset_name.")
+
+    return f"activity/{dataset.paper.paper_id}/{dataset.dataset_name}.json"
 
 
 @cache_page(ACTIVITY_PAGE_CACHE_TTL)
@@ -205,6 +252,49 @@ def get_find_neuron_data(request):
     data = get_object_or_404(JSONCache, name="neuropal_match").json
 
     return JsonResponse(json.loads(data))
+
+
+@require_GET
+def download_activity_dataset_json(request, dataset_id):
+    dataset = get_object_or_404(
+        GCaMPDataset.objects.select_related("paper").only(
+            "dataset_id",
+            "dataset_name",
+            "paper__paper_id",
+        ),
+        dataset_id=dataset_id,
+    )
+
+    try:
+        if not settings.ACTIVITY_DATA_GCS_BUCKET:
+            raise ValueError(
+                "ACTIVITY_DATA_GCS_BUCKET is required for signed downloads."
+            )
+
+        object_name = _build_activity_data_object_name(dataset)
+        service_account_email, private_key_pem = _get_activity_data_signing_credentials()
+        output_file_name = _sanitize_download_filename(
+            f"{dataset.paper.paper_id}-{dataset.dataset_name}.json"
+        )
+        signed_url = generate_v4_signed_get_url(
+            bucket=settings.ACTIVITY_DATA_GCS_BUCKET,
+            object_name=object_name,
+            service_account_email=service_account_email,
+            private_key_pem=private_key_pem,
+            expires_seconds=settings.ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS,
+            query_params={
+                "response-content-disposition": (
+                    f'attachment; filename="{output_file_name}"'
+                ),
+                "response-content-type": "application/json",
+            },
+        )
+    except Exception as error:
+        if settings.DEBUG:
+            return JsonResponse({"error": str(error)}, status=503)
+        return JsonResponse({"error": "Dataset download is unavailable."}, status=503)
+
+    return HttpResponseRedirect(signed_url)
 
 
 @cache_page(ACTIVITY_PAGE_CACHE_TTL)

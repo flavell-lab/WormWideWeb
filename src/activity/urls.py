@@ -44,6 +44,11 @@ urlpatterns = [
         name="activity-get_find_neuron_data",
     ),
     path(
+        "api/data/download/<str:dataset_id>/",
+        views.download_activity_dataset_json,
+        name="activity-download_dataset_json",
+    ),
+    path(
         "api/data/replay/",
         views.get_signal_replay_data,
         name="activity-get_signal_replay_data",

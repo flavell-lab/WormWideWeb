@@ -44,11 +44,12 @@ Note: if the database doesn't contain the connectome-related models/data, it is 
 
 ### activity
 - `api/data/<str:dataset_id>/<int:idx_neuron>/`: neural trace of neuron number `idx_neuron` from `dataset_id`.  
-- `path('api/data/<str:dataset_id>/behavior/`: behavioral data for `dataset_id`.  
+- `api/data/<str:dataset_id>/behavior/`: behavioral data for `dataset_id`.  
 - `api/data/<str:dataset_id>/encoding/`: encoding table for `dataset_id`.  
 - `api/data/atanas_kim_2023_encoding/`: encoding table from the Atanas & Kim et al. 2023 paper.  
 - `api/data/datasets/`: for the dataset table. contains metadata (paper, name, length, number of neurons, etc.) for all neural datasets.  
 - `api/data/find_neuron/`: neuron-dataset match info for the find neuron feature.  
+- `api/data/download/<str:dataset_id>/`: short-lived signed download URL redirect for dataset JSON.
 
 ## Environmental variables and secret keys
 Env variables: 
@@ -58,6 +59,9 @@ Env variables:
 - `DJ_USE_REDIS`: `0` or `1`. Set it to `0` for local development (fallback to local memory caching).  
 - `DJ_REDIS_URI`: Redis instance URI e.g. `redis://x.x.x.x:6379`
 - `DJ_CACHE_VERSION` (optional): cache key version suffix. Bump this to invalidate all cached entries safely.
+- `ACTIVITY_DATA_GCS_BUCKET` (optional): bucket that stores dataset JSON files.  
+- `ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_PATH` or `ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_JSON` (optional): service account credentials used for signed download URLs.  
+- `ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS` (optional): signed URL TTL in seconds (`1-604800`, default `900`).
 
 Secret keys (KEEP THESE SECRET):  
 Be careful not to print these or write into a file in the deployment image. On GCP, the secrets are managed by GCP Secret Manager, so there's no need to bake them into the image.  
