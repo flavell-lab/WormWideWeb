@@ -267,7 +267,7 @@ class DatasetDownloadSignedURLTests(TestCase):
         self.assertEqual(call_kwargs["bucket"], "test-bucket")
         self.assertEqual(
             call_kwargs["object_name"],
-            "activity/atanas_kim_2023/demo_dataset.json",
+            "atanas_kim_2023/atanas_kim_2023_demo_dataset.json",
         )
         self.assertEqual(call_kwargs["expires_seconds"], 300)
         self.assertIn("response-content-disposition", call_kwargs["query_params"])
