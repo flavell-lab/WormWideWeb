@@ -4,7 +4,6 @@ from django.db.models import Q
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("activity", "0002_gcampdataset_dataset_sha256"),
     ]

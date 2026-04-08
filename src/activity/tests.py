@@ -245,13 +245,22 @@ class DatasetDownloadSignedURLTests(TestCase):
     def test_download_endpoint_redirects_to_signed_url(
         self, mock_generate_signed_url, mock_get_credentials
     ):
-        mock_get_credentials.return_value = ("service@demo.iam.gserviceaccount.com", b"key")
-        mock_generate_signed_url.return_value = "https://storage.googleapis.com/signed-url"
+        mock_get_credentials.return_value = (
+            "service@demo.iam.gserviceaccount.com",
+            b"key",
+        )
+        mock_generate_signed_url.return_value = (
+            "https://storage.googleapis.com/signed-url"
+        )
 
-        response = self.client.get(f"/activity/api/data/download/{self.dataset.dataset_id}/")
+        response = self.client.get(
+            f"/activity/api/data/download/{self.dataset.dataset_id}/"
+        )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response["Location"], "https://storage.googleapis.com/signed-url")
+        self.assertEqual(
+            response["Location"], "https://storage.googleapis.com/signed-url"
+        )
 
         mock_generate_signed_url.assert_called_once()
         call_kwargs = mock_generate_signed_url.call_args.kwargs
@@ -272,7 +281,9 @@ class DatasetDownloadSignedURLTests(TestCase):
         side_effect=ValueError("missing signing credentials"),
     )
     def test_download_endpoint_returns_503_if_signing_not_configured(self, _mock_creds):
-        response = self.client.get(f"/activity/api/data/download/{self.dataset.dataset_id}/")
+        response = self.client.get(
+            f"/activity/api/data/download/{self.dataset.dataset_id}/"
+        )
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json()["error"], "Dataset download is unavailable.")
 
@@ -545,8 +556,7 @@ class FrontendEventStyleRegressionTests(SimpleTestCase):
     def test_plot_manager_reads_event_style_from_behavior_api(self):
         repo_root = Path(__file__).resolve().parents[2]
         content = (
-            repo_root
-            / "src/activity/static/activity/js/plot_manager.js"
+            repo_root / "src/activity/static/activity/js/plot_manager.js"
         ).read_text(encoding="utf-8")
 
         self.assertIn("remoteBehavior?.data?.event_style", content)
@@ -555,8 +565,7 @@ class FrontendEventStyleRegressionTests(SimpleTestCase):
     def test_plot_multiple_reads_event_style_from_behavior_api(self):
         repo_root = Path(__file__).resolve().parents[2]
         content = (
-            repo_root
-            / "src/activity/static/activity/js/views/plot_multiple.js"
+            repo_root / "src/activity/static/activity/js/views/plot_multiple.js"
         ).read_text(encoding="utf-8")
 
         self.assertIn("fetchedData.data.event_style", content)

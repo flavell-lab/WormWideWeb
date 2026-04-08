@@ -110,9 +110,7 @@ def correlation_matrix_to_dict(corr_matrix):
     num_traces = corr_matrix.shape[0]
     i_idx, j_idx = np.triu_indices(num_traces, k=1)
 
-    return {
-        f"{i + 1},{j + 1}": float(corr_matrix[i][j]) for i, j in zip(i_idx, j_idx)
-    }
+    return {f"{i + 1},{j + 1}": float(corr_matrix[i][j]) for i, j in zip(i_idx, j_idx)}
 
 
 def correlate_traces_with_variable(trace_array, variable_data):

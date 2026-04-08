@@ -9,7 +9,12 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Prefetch
-from django.http import JsonResponse, HttpResponseBadRequest, Http404, HttpResponseRedirect
+from django.http import (
+    JsonResponse,
+    HttpResponseBadRequest,
+    Http404,
+    HttpResponseRedirect,
+)
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.cache import cache_page, cache_control
@@ -125,7 +130,9 @@ def _build_activity_data_object_name(dataset):
     if not dataset.dataset_name:
         raise ValueError(f"Dataset '{dataset.dataset_id}' is missing dataset_name.")
 
-    return f"{dataset.paper.paper_id}/{dataset.paper.paper_id}_{dataset.dataset_name}.json"
+    return (
+        f"{dataset.paper.paper_id}/{dataset.paper.paper_id}_{dataset.dataset_name}.json"
+    )
 
 
 @cache_page(ACTIVITY_PAGE_CACHE_TTL)
@@ -272,7 +279,9 @@ def download_activity_dataset_json(request, dataset_id):
             )
 
         object_name = _build_activity_data_object_name(dataset)
-        service_account_email, private_key_pem = _get_activity_data_signing_credentials()
+        service_account_email, private_key_pem = (
+            _get_activity_data_signing_credentials()
+        )
         output_file_name = _sanitize_download_filename(
             f"{dataset.paper.paper_id}-{dataset.dataset_name}.json"
         )
