@@ -1,5 +1,3 @@
-export const URL_ROOT_ACTIVITY_DATA = "https://storage.googleapis.com/www-deploy-bucket/activity/"
-
 export const CONNECTOME_DATASET_ID_TO_DATASET_NAME = {
     "cook_jarrell_2019_m": "Cook Jarrell 2019 male",
     "cook_jarrell_2019_h": "Cook Jarrell 2019 hermaphrodite",

@@ -1,5 +1,8 @@
 import { getDatasetTypePill } from '/static/core/js/utility.js';
-import { URL_ROOT_ACTIVITY_DATA } from '/static/core/js/constants.js';
+
+function getDatasetDownloadURL(datasetId) {
+    return `/activity/api/data/download/${encodeURIComponent(datasetId)}/`;
+}
 
 function isNeuroPALDatasetType(datasetTypeList) {
     if (!Array.isArray(datasetTypeList)) return false;
@@ -48,7 +51,7 @@ export class DatasetTable {
             // update buttons urls
             const urlPlot = `/activity/explore/${dataset.id}/?n=1-2-3&b=v-hc`
             const urlReplay = `/activity/replay/?activity_dataset=${encodeURIComponent(dataset.id)}`;
-            const urlData = `${URL_ROOT_ACTIVITY_DATA}${dataset.paper_id}/${dataset.label}.json`
+            const urlData = getDatasetDownloadURL(dataset.id);
             const replayButton = dataset.is_neuropal ? `<a href="${urlReplay}" class="action-btn" title="Circuit Replay">
                         <i class="bi bi-diagram-3"></i>
                     </a>` : "";
@@ -105,7 +108,7 @@ export class DatasetTable {
     downloadSelected() {
         const selected = this.getSelected()
         selected.forEach((option) => {
-            const urlData = `${URL_ROOT_ACTIVITY_DATA}${option.paper_id}/${option.label}.json`
+            const urlData = getDatasetDownloadURL(option.id);
             this.downloadFile(urlData, `${option.paper_id}-${option.label}.json`)
         })
     }   
