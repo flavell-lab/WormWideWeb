@@ -125,7 +125,7 @@ def _build_activity_data_object_name(dataset):
     if not dataset.dataset_name:
         raise ValueError(f"Dataset '{dataset.dataset_id}' is missing dataset_name.")
 
-    return f"activity/{dataset.paper.paper_id}/{dataset.dataset_name}.json"
+    return f"{dataset.paper.paper_id}/{dataset.paper.paper_id}_{dataset.dataset_name}.json"
 
 
 @cache_page(ACTIVITY_PAGE_CACHE_TTL)
