@@ -2,7 +2,7 @@ import { DatasetNeuronSelector } from '../find_neuron_selector.js';
 import { DatasetTable } from '../find_neuron_table.js';
 import { setLocalBool, getLocalBool, getDatasetTypePill } from "/static/core/js/utility.js"
 
-async function initData(data) {
+async function initData() {
     const url = "/activity/api/data/find_neuron/";
     try {
         const response = await fetch(url);
@@ -13,11 +13,41 @@ async function initData(data) {
         return await response.json();
     } catch (error) {
         console.error(error.message);
+        return null;
     }
+}
+
+function showLoadError() {
+    const container = document.querySelector(".container-lg");
+    if (container) {
+        const alertElement = document.createElement("div");
+        alertElement.className = "alert alert-warning";
+        alertElement.setAttribute("role", "alert");
+        alertElement.textContent = "Could not load neuron match data. Please refresh and try again.";
+        container.prepend(alertElement);
+    }
+
+    [
+        "select-paper",
+        "select-neuron",
+        "customSearch",
+        "clearSelector",
+        "plotSelected",
+        "downloadSelected",
+    ].forEach((elementId) => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.disabled = true;
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', async() => {
     const data = await initData();
+    if (!data) {
+        showLoadError();
+        return;
+    }
 
     /*
         Selectors
