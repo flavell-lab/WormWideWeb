@@ -64,3 +64,93 @@ body {
     margin-right: auto;
     margin-left: auto;
 }
+
+/*
+    Download HUD
+*/
+.dataset-download-hud {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 1080;
+    width: min(340px, calc(100vw - 32px));
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
+    transition: opacity 160ms ease, transform 160ms ease;
+    color: #0f172a;
+}
+
+.dataset-download-hud--hidden {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+}
+
+.dataset-download-hud__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.dataset-download-hud__message {
+    margin-top: 2px;
+    font-size: 0.78rem;
+    color: #334155;
+    line-height: 1.25;
+}
+
+.dataset-download-hud__progress {
+    margin-top: 8px;
+    width: 100%;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.3);
+    overflow: hidden;
+}
+
+.dataset-download-hud__progress-fill {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #2563eb;
+    transition: width 220ms ease;
+}
+
+.dataset-download-hud--success .dataset-download-hud__progress-fill {
+    background: #16a34a;
+}
+
+.dataset-download-hud--warning .dataset-download-hud__progress-fill {
+    background: #d97706;
+}
+
+.dataset-download-hud--error .dataset-download-hud__progress-fill {
+    background: #dc2626;
+}
+
+.dataset-download-hud__progress-fill--indeterminate {
+    animation: dataset-download-hud-indeterminate 1s ease-in-out infinite;
+}
+
+@keyframes dataset-download-hud-indeterminate {
+    0% {
+        margin-left: -35%;
+    }
+    50% {
+        margin-left: 25%;
+    }
+    100% {
+        margin-left: 110%;
+    }
+}
+
+@media (max-width: 576px) {
+    .dataset-download-hud {
+        right: 12px;
+        bottom: 12px;
+    }
+}
