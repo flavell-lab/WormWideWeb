@@ -39,7 +39,7 @@ function getUniqueFileName(baseName, usedNames) {
 function buildDatasetFileName(option, datasetId) {
     const paperId = sanitizeFileNamePart(option?.paper_id) || "paper";
     const datasetIdPart = sanitizeFileNamePart(datasetId) || "dataset";
-    return `${paperId}_${datasetIdPart}.json`;
+    return `${paperId}_${datasetIdPart}.json.bz2`;
 }
 
 function buildZipFileName(zipPrefix) {

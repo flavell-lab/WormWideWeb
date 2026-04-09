@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert("Cannot download dataset.");
             return;
         }
-        const fileName = `wormwideweb-${datasetId}.json`;
+        const fileName = `wormwideweb-${datasetId}.json.bz2`;
         downloadFile(getDatasetDownloadURL(datasetId), fileName);
     });
 

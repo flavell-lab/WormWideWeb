@@ -101,9 +101,11 @@ def _sanitize_download_filename(file_name):
     )
     cleaned = cleaned.strip("._")
     if not cleaned:
-        return "dataset.json"
-    if not cleaned.endswith(".json"):
-        return f"{cleaned}.json"
+        return "dataset.json.bz2"
+    if cleaned.endswith(".json"):
+        cleaned = cleaned[: -len(".json")]
+    if not cleaned.endswith(".json.bz2"):
+        return f"{cleaned}.json.bz2"
     return cleaned
 
 
@@ -131,7 +133,7 @@ def _build_activity_data_object_name(dataset):
         raise ValueError(f"Dataset '{dataset.dataset_id}' is missing dataset_name.")
 
     return (
-        f"{dataset.paper.paper_id}/{dataset.paper.paper_id}_{dataset.dataset_name}.json"
+        f"{dataset.paper.paper_id}/{dataset.paper.paper_id}_{dataset.dataset_name}.json.bz2"
     )
 
 
@@ -294,7 +296,7 @@ def download_activity_dataset_json(request, dataset_id):
             _get_activity_data_signing_credentials()
         )
         output_file_name = _sanitize_download_filename(
-            f"{dataset.paper.paper_id}-{dataset.dataset_name}.json"
+            f"{dataset.paper.paper_id}-{dataset.dataset_name}.json.bz2"
         )
         signed_url = generate_v4_signed_get_url(
             bucket=settings.ACTIVITY_DATA_GCS_BUCKET,
@@ -306,7 +308,7 @@ def download_activity_dataset_json(request, dataset_id):
                 "response-content-disposition": (
                     f'attachment; filename="{output_file_name}"'
                 ),
-                "response-content-type": "application/json",
+                "response-content-type": "application/x-bzip2",
             },
         )
     except Exception as error:
