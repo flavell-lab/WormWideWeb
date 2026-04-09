@@ -49,6 +49,11 @@ urlpatterns = [
         name="activity-download_dataset_json",
     ),
     path(
+        "api/data/download/paper/<str:paper_id>/",
+        views.download_activity_paper_archive,
+        name="activity-download_paper_archive",
+    ),
+    path(
         "api/data/replay/",
         views.get_signal_replay_data,
         name="activity-get_signal_replay_data",

@@ -109,6 +109,26 @@ def _sanitize_download_filename(file_name):
     return cleaned
 
 
+def _sanitize_paper_archive_filename(file_name):
+    safe_chars = {"-", "_", "."}
+    cleaned = "".join(
+        c if c.isascii() and (c.isalnum() or c in safe_chars) else "_"
+        for c in str(file_name)
+    )
+    cleaned = cleaned.strip("._")
+    if not cleaned:
+        return "dataset.tar.bz2"
+    if cleaned.endswith(".tar.bz2"):
+        return cleaned
+    if cleaned.endswith(".tar"):
+        cleaned = cleaned[: -len(".tar")]
+    elif cleaned.endswith(".bz2"):
+        cleaned = cleaned[: -len(".bz2")]
+    if not cleaned:
+        return "dataset.tar.bz2"
+    return f"{cleaned}.tar.bz2"
+
+
 @lru_cache(maxsize=1)
 def _get_activity_data_signing_credentials():
     raw_json = settings.ACTIVITY_DATA_SIGNING_SERVICE_ACCOUNT_JSON
@@ -135,6 +155,12 @@ def _build_activity_data_object_name(dataset):
     return (
         f"{dataset.paper.paper_id}/{dataset.paper.paper_id}_{dataset.dataset_name}.json.bz2"
     )
+
+
+def _build_activity_paper_archive_object_name(paper):
+    if not paper.paper_id:
+        raise ValueError("Paper is missing paper_id.")
+    return f"{paper.paper_id}.tar.bz2"
 
 
 @cache_page(ACTIVITY_PAGE_CACHE_TTL)
@@ -298,6 +324,45 @@ def download_activity_dataset_json(request, dataset_id):
         output_file_name = _sanitize_download_filename(
             f"{dataset.paper.paper_id}-{dataset.dataset_name}.json.bz2"
         )
+        signed_url = generate_v4_signed_get_url(
+            bucket=settings.ACTIVITY_DATA_GCS_BUCKET,
+            object_name=object_name,
+            service_account_email=service_account_email,
+            private_key_pem=private_key_pem,
+            expires_seconds=settings.ACTIVITY_DATA_SIGNED_URL_EXPIRATION_SECONDS,
+            query_params={
+                "response-content-disposition": (
+                    f'attachment; filename="{output_file_name}"'
+                ),
+                "response-content-type": "application/x-bzip2",
+            },
+        )
+    except Exception as error:
+        if settings.DEBUG:
+            return JsonResponse({"error": str(error)}, status=503)
+        return JsonResponse({"error": "Dataset download is unavailable."}, status=503)
+
+    return HttpResponseRedirect(signed_url)
+
+
+@require_GET
+def download_activity_paper_archive(request, paper_id):
+    paper = get_object_or_404(
+        GCaMPPaper.objects.only("paper_id"),
+        paper_id=paper_id,
+    )
+
+    try:
+        if not settings.ACTIVITY_DATA_GCS_BUCKET:
+            raise ValueError(
+                "ACTIVITY_DATA_GCS_BUCKET is required for signed downloads."
+            )
+
+        object_name = _build_activity_paper_archive_object_name(paper)
+        service_account_email, private_key_pem = (
+            _get_activity_data_signing_credentials()
+        )
+        output_file_name = _sanitize_paper_archive_filename(object_name)
         signed_url = generate_v4_signed_get_url(
             bucket=settings.ACTIVITY_DATA_GCS_BUCKET,
             object_name=object_name,

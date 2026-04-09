@@ -276,6 +276,43 @@ class DatasetDownloadSignedURLTests(TestCase):
         response = self.client.get("/activity/api/data/download/missing-dataset/")
         self.assertEqual(response.status_code, 404)
 
+    @patch("activity.views._get_activity_data_signing_credentials")
+    @patch("activity.views.generate_v4_signed_get_url")
+    def test_download_paper_archive_redirects_to_signed_url(
+        self, mock_generate_signed_url, mock_get_credentials
+    ):
+        mock_get_credentials.return_value = (
+            "service@demo.iam.gserviceaccount.com",
+            b"key",
+        )
+        mock_generate_signed_url.return_value = (
+            "https://storage.googleapis.com/paper-signed-url"
+        )
+
+        response = self.client.get(
+            f"/activity/api/data/download/paper/{self.paper.paper_id}/"
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response["Location"], "https://storage.googleapis.com/paper-signed-url"
+        )
+
+        mock_generate_signed_url.assert_called_once()
+        call_kwargs = mock_generate_signed_url.call_args.kwargs
+        self.assertEqual(call_kwargs["bucket"], "test-bucket")
+        self.assertEqual(call_kwargs["object_name"], "atanas_kim_2023.tar.bz2")
+        self.assertEqual(call_kwargs["expires_seconds"], 300)
+        self.assertEqual(
+            call_kwargs["query_params"]["response-content-type"],
+            "application/x-bzip2",
+        )
+        self.assertIn("response-content-disposition", call_kwargs["query_params"])
+
+    def test_download_paper_archive_returns_404_for_missing_paper(self):
+        response = self.client.get("/activity/api/data/download/paper/missing-paper/")
+        self.assertEqual(response.status_code, 404)
+
     @patch(
         "activity.views._get_activity_data_signing_credentials",
         side_effect=ValueError("missing signing credentials"),
@@ -283,6 +320,19 @@ class DatasetDownloadSignedURLTests(TestCase):
     def test_download_endpoint_returns_503_if_signing_not_configured(self, _mock_creds):
         response = self.client.get(
             f"/activity/api/data/download/{self.dataset.dataset_id}/"
+        )
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error"], "Dataset download is unavailable.")
+
+    @patch(
+        "activity.views._get_activity_data_signing_credentials",
+        side_effect=ValueError("missing signing credentials"),
+    )
+    def test_download_paper_archive_returns_503_if_signing_not_configured(
+        self, _mock_creds
+    ):
+        response = self.client.get(
+            f"/activity/api/data/download/paper/{self.paper.paper_id}/"
         )
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json()["error"], "Dataset download is unavailable.")
