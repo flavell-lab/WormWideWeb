@@ -425,6 +425,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (hasInitialSelections) {
         try {
+            neuronSelector.flushSelectionSync();
             await plotManager.lastPlotPromise;
         } finally {
             plotManager.setURLSyncPaused(false);
@@ -438,7 +439,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         Encoding table
     */
     if (data.encoding_data_exists) {
-        const encodingTable = new EncodingTable("dataset", data, "individual")
+        const isNeuronSelected = (idxNeuron) => neuronSelector.selector.items.includes(String(idxNeuron));
+        const toggleNeuronSelected = (idxNeuron) => {
+            const neuronKey = String(idxNeuron);
+            if (!(neuronKey in neuronSelector.selector.options)) return;
+
+            if (isNeuronSelected(idxNeuron)) {
+                neuronSelector.selector.removeItem(neuronKey);
+            } else {
+                neuronSelector.selector.addItem(neuronKey);
+            }
+        };
+
+        const encodingTable = new EncodingTable("dataset", data, "individual", {
+            isRowSelected: (idxNeuron) => isNeuronSelected(idxNeuron),
+            onRowToggle: (idxNeuron) => toggleNeuronSelected(idxNeuron),
+        });
+
+        encodingTable.tableDataPromise.then(() => {
+            neuronSelector.selector.on("change", () => {
+                encodingTable.refreshSelectedRowHighlight();
+            });
+            encodingTable.refreshSelectedRowHighlight();
+        });
     }
 
     /*

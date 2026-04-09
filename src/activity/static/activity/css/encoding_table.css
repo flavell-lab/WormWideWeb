@@ -39,6 +39,18 @@
     background-color: #fafafa;
 }
 
+.table-material.encoding-row-toggle-enabled tbody tr {
+    cursor: pointer;
+}
+
+.table-material.encoding-row-toggle-enabled tbody tr.encoding-row-selected td {
+    background-color: #f1f3f5;
+}
+
+.table-material.encoding-row-toggle-enabled tbody tr.encoding-row-selected:hover td {
+    background-color: #e9ecef;
+}
+
 /* 5) Clean up pagination/search toolbar if desired (bootstrap-table) */
 .fixed-table-toolbar .btn,
 .fixed-table-toolbar .form-control {

@@ -2,13 +2,20 @@ import { getEncodingTable } from "./encoding_utility.js"
 import { roundNull } from '/static/core/js/utility.js'
 
 export class EncodingTable {
-    constructor(prefix, data, tableType="individual") {
+    constructor(prefix, data, tableType="individual", options = {}) {
         this.prefix = prefix
         this.tableElementId = `${this.prefix}_encodingTable`
         this.tableElement = document.getElementById(this.tableElementId)
         this.configureElementId = `${this.prefix}_collapseConfigure`
         this.configureElement = document.getElementById(this.configureElementId)
         this.encodingData = []
+        this.isRowSelected = typeof options.isRowSelected === "function"
+            ? options.isRowSelected
+            : () => false;
+        this.toggleRowSelection = typeof options.onRowToggle === "function"
+            ? options.onRowToggle
+            : null;
+        this.enableInteractiveRowSelection = Boolean(this.toggleRowSelection);
 
         if (tableType == "individual") {
             this.datasetId = data.dataset_id
@@ -221,7 +228,55 @@ export class EncodingTable {
             rowStyle: this.rowStyle,
             headerStyle: this.headerStyle,
             // checkboxHeader: false,
-        });        
+        });
+
+        if (this.enableInteractiveRowSelection) {
+            this.tableElement.classList.add("encoding-row-toggle-enabled");
+            this.bindInteractiveRowSelection();
+            this.refreshSelectedRowHighlight();
+        }
+    }
+
+    bindInteractiveRowSelection() {
+        if (!this.enableInteractiveRowSelection) return;
+        const $table = $(this.tableElement);
+
+        $table.off(".encodingTableSelection");
+        $table.on("click-row.bs.table.encodingTableSelection", (event, row) => {
+            if (!row || this.isRowToggleExcludedTarget(event)) return;
+
+            const idxNeuron = Number.parseInt(row.idx_neuron, 10);
+            if (!Number.isInteger(idxNeuron)) return;
+
+            this.toggleRowSelection(idxNeuron, row);
+            window.requestAnimationFrame(() => this.refreshSelectedRowHighlight());
+        });
+
+        $table.on("post-body.bs.table.encodingTableSelection", () => {
+            this.refreshSelectedRowHighlight();
+        });
+    }
+
+    isRowToggleExcludedTarget(event) {
+        const target = event?.target;
+        if (!(target instanceof Element)) return false;
+        return Boolean(target.closest("a,button,input,label,.action-btn"));
+    }
+
+    refreshSelectedRowHighlight() {
+        if (!this.enableInteractiveRowSelection) return;
+
+        const $table = $(this.tableElement);
+        const pageRows = $table.bootstrapTable("getData", { useCurrentPage: true }) || [];
+        const rowElements = this.tableElement.querySelectorAll("tbody tr[data-index]");
+
+        rowElements.forEach((rowElement, rowPosition) => {
+            const rowData = pageRows[rowPosition];
+            const idxNeuron = Number.parseInt(rowData?.idx_neuron, 10);
+            const isSelected = Number.isInteger(idxNeuron) && this.isRowSelected(idxNeuron, rowData);
+            rowElement.classList.toggle("encoding-row-selected", isSelected);
+            rowElement.setAttribute("aria-selected", isSelected ? "true" : "false");
+        });
     }
 
     // table UI control

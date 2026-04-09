@@ -8,6 +8,9 @@ export class NeuronSelector {
 
         this.plotManager = plotManager;
         this.connectomeGraph = connectomeGraph;
+        this.syncDelayMs = 500;
+        this.pendingSelectionSyncTimer = null;
+        this.appliedSelection = new Set();
 
         // Initialize the TomSelect selector
         this.selector = this.initSelector();
@@ -48,8 +51,9 @@ export class NeuronSelector {
             valueField: 'idx_neuron',
             labelField: 'name',
             searchField: ['name'],
-            onItemAdd: (value, item) => this.selectorNeuronAdd(value, item),
-            onItemRemove: (value, item) => this.selectorNeuronRemove(value, item),
+            onItemAdd: () => this.scheduleSelectionSync(),
+            onItemRemove: () => this.scheduleSelectionSync(),
+            onChange: () => this.scheduleSelectionSync(),
             sortField: (a, b) => {
                 const item_a =  this.selector.options[a.id];
                 const item_b =  this.selector.options[b.id];        
@@ -71,6 +75,7 @@ export class NeuronSelector {
      */
     clearSelector() {
         this.selector.clear(); // clear(true) silent doesn't work; manually handling it if needed
+        this.scheduleSelectionSync();
     }
 
     addLabelToConnectome(optionData) {
@@ -122,5 +127,39 @@ export class NeuronSelector {
 
             this.connectomeGraph.infoPanel.hidePanel()
         }
+    }
+
+    getCurrentSelectionSet() {
+        return new Set(this.selector.items.map((value) => String(value)));
+    }
+
+    scheduleSelectionSync() {
+        if (this.pendingSelectionSyncTimer) {
+            clearTimeout(this.pendingSelectionSyncTimer);
+        }
+        this.pendingSelectionSyncTimer = window.setTimeout(() => {
+            this.flushSelectionSync();
+        }, this.syncDelayMs);
+    }
+
+    flushSelectionSync() {
+        if (this.pendingSelectionSyncTimer) {
+            clearTimeout(this.pendingSelectionSyncTimer);
+            this.pendingSelectionSyncTimer = null;
+        }
+
+        const selectedNow = this.getCurrentSelectionSet();
+        const toRemove = Array.from(this.appliedSelection).filter((value) => !selectedNow.has(value));
+        const toAdd = Array.from(selectedNow).filter((value) => !this.appliedSelection.has(value));
+
+        toRemove.forEach((value) => {
+            this.selectorNeuronRemove(value);
+        });
+
+        toAdd.forEach((value) => {
+            this.selectorNeuronAdd(value);
+        });
+
+        this.appliedSelection = selectedNow;
     }
 }
