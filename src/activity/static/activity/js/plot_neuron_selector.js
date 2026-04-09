@@ -11,6 +11,7 @@ export class NeuronSelector {
         this.syncDelayMs = 500;
         this.pendingSelectionSyncTimer = null;
         this.appliedSelection = new Set();
+        this.suppressSelectionSync = false;
 
         // Initialize the TomSelect selector
         this.selector = this.initSelector();
@@ -51,9 +52,15 @@ export class NeuronSelector {
             valueField: 'idx_neuron',
             labelField: 'name',
             searchField: ['name'],
-            onItemAdd: () => this.scheduleSelectionSync(),
-            onItemRemove: () => this.scheduleSelectionSync(),
-            onChange: () => this.scheduleSelectionSync(),
+            onItemAdd: () => {
+                if (!this.suppressSelectionSync) this.scheduleSelectionSync();
+            },
+            onItemRemove: () => {
+                if (!this.suppressSelectionSync) this.scheduleSelectionSync();
+            },
+            onChange: () => {
+                if (!this.suppressSelectionSync) this.scheduleSelectionSync();
+            },
             sortField: (a, b) => {
                 const item_a =  this.selector.options[a.id];
                 const item_b =  this.selector.options[b.id];        
@@ -74,8 +81,13 @@ export class NeuronSelector {
      * Clears all selections from the selector.
      */
     clearSelector() {
-        this.selector.clear(); // clear(true) silent doesn't work; manually handling it if needed
-        this.scheduleSelectionSync();
+        this.suppressSelectionSync = true;
+        try {
+            this.selector.clear(); // clear all selected items in the UI
+        } finally {
+            this.suppressSelectionSync = false;
+        }
+        this.scheduleSelectionSync(0);
     }
 
     addLabelToConnectome(optionData) {
@@ -133,13 +145,13 @@ export class NeuronSelector {
         return new Set(this.selector.items.map((value) => String(value)));
     }
 
-    scheduleSelectionSync() {
+    scheduleSelectionSync(delayMs = this.syncDelayMs) {
         if (this.pendingSelectionSyncTimer) {
             clearTimeout(this.pendingSelectionSyncTimer);
         }
         this.pendingSelectionSyncTimer = window.setTimeout(() => {
             this.flushSelectionSync();
-        }, this.syncDelayMs);
+        }, delayMs);
     }
 
     flushSelectionSync() {
@@ -152,14 +164,25 @@ export class NeuronSelector {
         const toRemove = Array.from(this.appliedSelection).filter((value) => !selectedNow.has(value));
         const toAdd = Array.from(selectedNow).filter((value) => !this.appliedSelection.has(value));
 
-        toRemove.forEach((value) => {
-            this.selectorNeuronRemove(value);
-        });
+        if (toRemove.length === 0 && toAdd.length === 0) return;
 
-        toAdd.forEach((value) => {
-            this.selectorNeuronAdd(value);
-        });
+        const wasURLSyncPaused = Boolean(this.plotManager.isURLSyncPaused);
+        this.plotManager.setURLSyncPaused(true);
+        try {
+            toRemove.forEach((value) => {
+                this.selectorNeuronRemove(value);
+            });
 
-        this.appliedSelection = selectedNow;
+            toAdd.forEach((value) => {
+                this.selectorNeuronAdd(value);
+            });
+
+            this.appliedSelection = selectedNow;
+        } finally {
+            this.plotManager.setURLSyncPaused(wasURLSyncPaused);
+            if (!wasURLSyncPaused) {
+                this.plotManager.flushURLSync();
+            }
+        }
     }
 }

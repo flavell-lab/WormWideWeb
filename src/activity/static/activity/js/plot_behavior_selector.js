@@ -44,7 +44,28 @@ export class BehaviorSelector {
     }
 
     clearSelector() {
-        this.selector.clear();
+        const selectedValues = [...this.selector.items];
+        if (selectedValues.length === 0) {
+            this.selector.clear();
+            return;
+        }
+
+        const wasURLSyncPaused = Boolean(this.plotManager.isURLSyncPaused);
+        this.plotManager.setURLSyncPaused(true);
+        try {
+            // Clear UI state first without firing per-item callbacks.
+            this.selector.clear(true);
+
+            // Remove traces once in a batched URL-sync window.
+            selectedValues.forEach((value) => {
+                this.selectorRemove(value);
+            });
+        } finally {
+            this.plotManager.setURLSyncPaused(wasURLSyncPaused);
+            if (!wasURLSyncPaused) {
+                this.plotManager.flushURLSync();
+            }
+        }
     }
 
     plot_behavior() {

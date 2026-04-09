@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const buttonClear = document.getElementById("clearSelectors")
     buttonClear.addEventListener('click', () => {
         neuronSelector.clearSelector();
+        neuronSelector.flushSelectionSync();
         behaviorSelector.clearSelector();
         plotManager.renderCor();
     });
