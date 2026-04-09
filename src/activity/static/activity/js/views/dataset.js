@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="col-md-1">${getDatasetTypePill(typeId, datasetTypes)}</div>
                 <div class="col-md-6">${datasetTypes[typeId].description}</div>
             </div>
-        </div>`).join();
+        </div>`).join("");
     typeLegendHTML += `<h6 class="mb-0">Common</h6><div class="row gy-1 mb-3">${htmlCommonBadges}</div>`
         
     // papers
