@@ -115,9 +115,11 @@ export class NeuronBehaviorPlot {
         this.pendingNeuronURLSync = false;
         this.pendingBehaviorURLSync = false;
 
-        this.corNeuronMaxCellSize = 32;
-
-        this.corBehaviorMaxCellSize = 32;
+        this.corNeuronMaxCellSize = 16;
+        this.corNeuronScope = "selected";
+        this.corNeuronOrderMode = "order";
+        this.corNeuronClusterOrderCache = new Map();
+        this.corBehaviorMaxCellSize = 16;
     }
 
     /**
@@ -631,6 +633,61 @@ export class NeuronBehaviorPlot {
         });
     }
 
+    getCorMatrixLayout({
+        wrapElement,
+        nColumns,
+        nRows,
+        maxCellSize,
+        legendFontSize,
+    }) {
+        const safeColumns = Math.max(1, Number.parseInt(nColumns, 10) || 1);
+        const safeRows = Math.max(1, Number.parseInt(nRows, 10) || 1);
+        const safeMaxCellSize = Math.max(1, Number.parseInt(maxCellSize, 10) || 1);
+        const safeFontSize = Number.isFinite(legendFontSize) ? legendFontSize : 12;
+        const overlapThreshold = Math.max(8, Math.ceil(safeFontSize * 0.95));
+        const wrapWidth = Math.max(180, wrapElement?.clientWidth || 480);
+
+        let showXTickLabels = true;
+        let showYTickLabels = true;
+
+        const computeMargins = () => ({
+            t: 20,
+            r: 20,
+            b: showXTickLabels ? 120 : 20,
+            l: showYTickLabels ? 120 : 20,
+        });
+
+        const computeCellSize = (margins) => {
+            const usableWidth = Math.max(24, Math.floor(wrapWidth - margins.l - margins.r));
+            return Math.max(1, Math.min(safeMaxCellSize, Math.floor(usableWidth / safeColumns)));
+        };
+
+        let margins = computeMargins();
+        let cellSize = computeCellSize(margins);
+        showXTickLabels = cellSize >= overlapThreshold;
+        showYTickLabels = cellSize >= overlapThreshold;
+
+        margins = computeMargins();
+        cellSize = computeCellSize(margins);
+        showXTickLabels = cellSize >= overlapThreshold;
+        showYTickLabels = cellSize >= overlapThreshold;
+
+        margins = computeMargins();
+        cellSize = computeCellSize(margins);
+
+        const plotWidth = Math.max(120, cellSize * safeColumns + margins.l + margins.r);
+        const plotHeight = Math.max(120, cellSize * safeRows + margins.t + margins.b);
+
+        return {
+            cellSize,
+            margins,
+            plotWidth,
+            plotHeight,
+            showXTickLabels,
+            showYTickLabels,
+        };
+    }
+
     getCorNeuronIndexList() {
         const idxList = [];
         const seen = new Set();
@@ -641,6 +698,161 @@ export class NeuronBehaviorPlot {
             idxList.push(idx);
         });
         return idxList;
+    }
+
+    getAllCorNeuronIndexList() {
+        const idxList = [];
+        const seen = new Set();
+        Object.keys(this.data?.neuron || {}).forEach((idxNeuron) => {
+            const idx = Number.parseInt(idxNeuron, 10);
+            if (!Number.isInteger(idx) || idx < 1 || seen.has(idx)) return;
+            seen.add(idx);
+            idxList.push(idx);
+        });
+        idxList.sort((a, b) => a - b);
+        return idxList;
+    }
+
+    getCorNeuronIndexListByScope() {
+        return this.corNeuronScope === "all"
+            ? this.getAllCorNeuronIndexList()
+            : this.getCorNeuronIndexList();
+    }
+
+    setCorNeuronScope(scope = "selected") {
+        const normalizedScope = scope === "all" ? "all" : "selected";
+        if (this.corNeuronScope === normalizedScope) return;
+        this.corNeuronScope = normalizedScope;
+        if (this.collapseCorElement.classList.contains("show")) {
+            this.renderCorNeuron();
+            this.renderCorBehavior();
+        }
+    }
+
+    setCorNeuronOrderMode(mode = "order") {
+        const normalizedMode = mode === "cluster" ? "cluster" : "order";
+        if (this.corNeuronOrderMode === normalizedMode) return;
+        this.corNeuronOrderMode = normalizedMode;
+        if (this.collapseCorElement.classList.contains("show")) {
+            this.renderCorNeuron();
+            this.renderCorBehavior();
+        }
+    }
+
+    getNeuronCorrelationDistance(idxNeuron1, idxNeuron2) {
+        if (idxNeuron1 === idxNeuron2) return 0;
+        const correlation = this.getNeuronCorrelation(idxNeuron1, idxNeuron2);
+        if (typeof correlation !== "number" || Number.isNaN(correlation)) return 1;
+        const clamped = Math.max(-1, Math.min(1, correlation));
+        return 1 - clamped;
+    }
+
+    getClusteredNeuronOrder(idxNeurons) {
+        if (!Array.isArray(idxNeurons) || idxNeurons.length <= 2) {
+            return [...(idxNeurons || [])].sort((a, b) => a - b);
+        }
+
+        const sortedIdx = [...idxNeurons].sort((a, b) => a - b);
+        const cacheKey = sortedIdx.join(",");
+        if (this.corNeuronClusterOrderCache.has(cacheKey)) {
+            return [...this.corNeuronClusterOrderCache.get(cacheKey)];
+        }
+
+        const pairDistanceCache = new Map();
+        const getPairDistance = (idxA, idxB) => {
+            const minIdx = Math.min(idxA, idxB);
+            const maxIdx = Math.max(idxA, idxB);
+            const key = `${minIdx},${maxIdx}`;
+            if (pairDistanceCache.has(key)) {
+                return pairDistanceCache.get(key);
+            }
+            const distance = this.getNeuronCorrelationDistance(minIdx, maxIdx);
+            pairDistanceCache.set(key, distance);
+            return distance;
+        };
+
+        const getClusterDistance = (clusterA, clusterB) => {
+            let distanceTotal = 0;
+            let pairCount = 0;
+            clusterA.members.forEach((idxA) => {
+                clusterB.members.forEach((idxB) => {
+                    distanceTotal += getPairDistance(idxA, idxB);
+                    pairCount += 1;
+                });
+            });
+            return pairCount > 0 ? distanceTotal / pairCount : 0;
+        };
+
+        const orientMergedOrder = (orderA, orderB) => {
+            const orientationCandidates = [
+                [orderA, orderB],
+                [orderA, [...orderB].reverse()],
+                [[...orderA].reverse(), orderB],
+                [[...orderA].reverse(), [...orderB].reverse()],
+            ];
+
+            let bestOrientation = orientationCandidates[0];
+            let bestBoundaryDistance = Number.POSITIVE_INFINITY;
+
+            orientationCandidates.forEach(([leftOrder, rightOrder]) => {
+                const leftTail = leftOrder[leftOrder.length - 1];
+                const rightHead = rightOrder[0];
+                const boundaryDistance = getPairDistance(leftTail, rightHead);
+                if (boundaryDistance < bestBoundaryDistance) {
+                    bestBoundaryDistance = boundaryDistance;
+                    bestOrientation = [leftOrder, rightOrder];
+                }
+            });
+
+            return [...bestOrientation[0], ...bestOrientation[1]];
+        };
+
+        const clusters = sortedIdx.map((idxNeuron) => ({
+            members: [idxNeuron],
+            order: [idxNeuron],
+        }));
+
+        while (clusters.length > 1) {
+            let bestI = 0;
+            let bestJ = 1;
+            let bestDistance = getClusterDistance(clusters[0], clusters[1]);
+
+            for (let i = 0; i < clusters.length; i += 1) {
+                for (let j = i + 1; j < clusters.length; j += 1) {
+                    const distance = getClusterDistance(clusters[i], clusters[j]);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestI = i;
+                        bestJ = j;
+                    }
+                }
+            }
+
+            const clusterA = clusters[bestI];
+            const clusterB = clusters[bestJ];
+            const mergedCluster = {
+                members: [...clusterA.members, ...clusterB.members],
+                order: orientMergedOrder(clusterA.order, clusterB.order),
+            };
+
+            const firstIndex = Math.min(bestI, bestJ);
+            const secondIndex = Math.max(bestI, bestJ);
+            clusters.splice(secondIndex, 1);
+            clusters.splice(firstIndex, 1);
+            clusters.push(mergedCluster);
+        }
+
+        const clusteredOrder = clusters[0].order;
+        this.corNeuronClusterOrderCache.set(cacheKey, clusteredOrder);
+        return [...clusteredOrder];
+    }
+
+    getCorNeuronDisplayIndexList() {
+        const idxNeurons = this.getCorNeuronIndexListByScope();
+        if (this.corNeuronOrderMode === "cluster") {
+            return this.getClusteredNeuronOrder(idxNeurons);
+        }
+        return [...idxNeurons].sort((a, b) => a - b);
     }
 
     getCorNeuronName(idxNeuron) {
@@ -882,19 +1094,22 @@ export class NeuronBehaviorPlot {
 
         if (!matrixElement) return;
 
-        const idxNeurons = this.getCorNeuronIndexList();
+        const idxNeurons = this.getCorNeuronDisplayIndexList();
         const behaviorCodes = this.getCorBehaviorCodes();
         const nNeurons = idxNeurons.length;
         const nBehaviors = behaviorCodes.length;
 
         if (nNeurons < 1) {
+            const isAllScope = this.corNeuronScope === "all";
             Plotly.react(matrixElement, [], {
                 height: 160,
                 margin: { t: 8, r: 8, b: 8, l: 8 },
                 xaxis: { visible: false, fixedrange: true },
                 yaxis: { visible: false, fixedrange: true },
                 annotations: [{
-                    text: "Select at least 1 neuron to view behavioral strips.",
+                    text: isAllScope
+                        ? "No neurons available in this dataset."
+                        : "Select at least 1 neuron to view behavioral strips.",
                     x: 0.5,
                     y: 0.5,
                     xref: "paper",
@@ -908,7 +1123,9 @@ export class NeuronBehaviorPlot {
                 responsive: true,
             });
             this.setCorBehaviorDetail(detailElement, {
-                message: "<strong>Need neurons:</strong> select at least 1 neuron to render behavior strips.",
+                message: isAllScope
+                    ? "<strong>No neurons:</strong> this dataset has no neurons to render."
+                    : "<strong>Need neurons:</strong> select at least 1 neuron to render behavior strips.",
                 warning: true,
             });
             return;
@@ -960,17 +1177,15 @@ export class NeuronBehaviorPlot {
             }
         }
 
-        const wrapWidth = matrixWrapElement?.clientWidth || 480;
-        const usablePixels = Math.max(96, Math.floor(wrapWidth - 24));
-        const cellSize = Math.min(this.corBehaviorMaxCellSize, Math.max(1, Math.floor(usablePixels / nNeurons)));
-        const stripWidth = Math.max(nBehaviors, cellSize * nBehaviors);
-        const stripHeight = Math.max(nNeurons, cellSize * nNeurons);
-
-        const margins = { t: 20, r: 24, b: 120, l: 120 };
-        const plotWidth = stripWidth + margins.l + margins.r;
-        const plotHeight = stripHeight + margins.t + margins.b;
         const bodyStyles = window.getComputedStyle(document.body);
         const legendFontSize = this.getMainPlotLegendFontSize();
+        const matrixLayout = this.getCorMatrixLayout({
+            wrapElement: matrixWrapElement,
+            nColumns: nBehaviors,
+            nRows: nNeurons,
+            maxCellSize: this.corBehaviorMaxCellSize,
+            legendFontSize,
+        });
         const plotFont = {
             family: bodyStyles.fontFamily,
             size: Number.isFinite(legendFontSize) ? legendFontSize : 12,
@@ -985,8 +1200,8 @@ export class NeuronBehaviorPlot {
                 y: yAxis,
                 z: zMatrix,
                 customdata: customData,
-                xgap: 1,
-                ygap: 1,
+                xgap: 0,
+                ygap: 0,
                 colorscale: PLOTLY_COLOR_SCALES.PiYG,
                 showscale: false,
                 zmid: 0,
@@ -996,9 +1211,9 @@ export class NeuronBehaviorPlot {
                 hovertemplate: "<b>%{customdata[0]}</b><br>%{customdata[1]}<br>Pearson r: %{customdata[2]}<extra></extra>",
             }],
             {
-                width: plotWidth,
-                height: plotHeight,
-                margin: margins,
+                width: matrixLayout.plotWidth,
+                height: matrixLayout.plotHeight,
+                margin: matrixLayout.margins,
                 font: plotFont,
                 xaxis: {
                     tickmode: "array",
@@ -1007,6 +1222,9 @@ export class NeuronBehaviorPlot {
                     tickangle: -90,
                     range: [-0.5, nBehaviors - 0.5],
                     fixedrange: true,
+                    showticklabels: matrixLayout.showXTickLabels,
+                    ticks: matrixLayout.showXTickLabels ? "outside" : "",
+                    ticklen: matrixLayout.showXTickLabels ? 4 : 0,
                     scaleanchor: "y",
                     scaleratio: 1,
                     constrain: "domain",
@@ -1018,6 +1236,9 @@ export class NeuronBehaviorPlot {
                     ticktext: neuronLabels,
                     range: [nNeurons - 0.5, -0.5],
                     fixedrange: true,
+                    showticklabels: matrixLayout.showYTickLabels,
+                    ticks: matrixLayout.showYTickLabels ? "outside" : "",
+                    ticklen: matrixLayout.showYTickLabels ? 4 : 0,
                     constrain: "domain",
                     tickfont: { size: plotFont.size },
                 },
@@ -1065,17 +1286,20 @@ export class NeuronBehaviorPlot {
 
         if (!matrixElement) return;
 
-        const idxNeurons = this.getCorNeuronIndexList();
+        const idxNeurons = this.getCorNeuronDisplayIndexList();
         const nNeurons = idxNeurons.length;
 
         if (nNeurons < 2) {
+            const isAllScope = this.corNeuronScope === "all";
             Plotly.react(matrixElement, [], {
                 height: 160,
                 margin: { t: 8, r: 8, b: 8, l: 8 },
                 xaxis: { visible: false, fixedrange: true },
                 yaxis: { visible: false, fixedrange: true },
                 annotations: [{
-                    text: "2 or more neurons need to be selected.",
+                    text: isAllScope
+                        ? "Need at least 2 neurons in this dataset."
+                        : "2 or more neurons need to be selected.",
                     x: 0.5,
                     y: 0.5,
                     xref: "paper",
@@ -1089,7 +1313,9 @@ export class NeuronBehaviorPlot {
                 responsive: true,
             });
             this.setCorNeuronDetail(detailElement, {
-                message: "<strong>Need more neurons:</strong> select at least 2 neurons to render the matrix.",
+                message: isAllScope
+                    ? "<strong>Need more neurons:</strong> this dataset has fewer than 2 neurons to render."
+                    : "<strong>Need more neurons:</strong> select at least 2 neurons to render the matrix.",
                 warning: true,
             });
             return;
@@ -1107,16 +1333,15 @@ export class NeuronBehaviorPlot {
             }
         }
 
-        const wrapWidth = matrixWrapElement?.clientWidth || 480;
-        const usableMatrixPixels = Math.max(96, Math.floor(wrapWidth - 24));
-        const cellSize = Math.min(this.corNeuronMaxCellSize, Math.max(1, Math.floor(usableMatrixPixels / nNeurons)));
-        const matrixSide = Math.max(nNeurons, cellSize * nNeurons);
-
-        const margins = { t: 24, r: 24, b: 120, l: 120 };
-        const plotWidth = matrixSide + margins.l + margins.r;
-        const plotHeight = matrixSide + margins.t + margins.b;
         const bodyStyles = window.getComputedStyle(document.body);
         const legendFontSize = this.getMainPlotLegendFontSize();
+        const matrixLayout = this.getCorMatrixLayout({
+            wrapElement: matrixWrapElement,
+            nColumns: nNeurons,
+            nRows: nNeurons,
+            maxCellSize: this.corNeuronMaxCellSize,
+            legendFontSize,
+        });
         const plotFont = {
             family: bodyStyles.fontFamily,
             size: Number.isFinite(legendFontSize) ? legendFontSize : 12,
@@ -1131,8 +1356,8 @@ export class NeuronBehaviorPlot {
                 y: axis,
                 z: zMatrix,
                 customdata: customData,
-                xgap: 1,
-                ygap: 1,
+                xgap: 0,
+                ygap: 0,
                 colorscale: PLOTLY_COLOR_SCALES.PiYG,
                 showscale: false,
                 zmid: 0,
@@ -1142,9 +1367,9 @@ export class NeuronBehaviorPlot {
                 hovertemplate: "<b>%{customdata[0]}</b> vs <b>%{customdata[1]}</b><br>Pearson r: %{z:.3f}<extra></extra>",
             }],
             {
-                width: plotWidth,
-                height: plotHeight,
-                margin: margins,
+                width: matrixLayout.plotWidth,
+                height: matrixLayout.plotHeight,
+                margin: matrixLayout.margins,
                 font: plotFont,
                 xaxis: {
                     tickmode: "array",
@@ -1153,6 +1378,9 @@ export class NeuronBehaviorPlot {
                     tickangle: -90,
                     range: [-0.5, nNeurons - 0.5],
                     fixedrange: true,
+                    showticklabels: matrixLayout.showXTickLabels,
+                    ticks: matrixLayout.showXTickLabels ? "outside" : "",
+                    ticklen: matrixLayout.showXTickLabels ? 4 : 0,
                     scaleanchor: "y",
                     scaleratio: 1,
                     constrain: "domain",
@@ -1164,6 +1392,9 @@ export class NeuronBehaviorPlot {
                     ticktext: labels,
                     range: [nNeurons - 0.5, -0.5],
                     fixedrange: true,
+                    showticklabels: matrixLayout.showYTickLabels,
+                    ticks: matrixLayout.showYTickLabels ? "outside" : "",
+                    ticklen: matrixLayout.showYTickLabels ? 4 : 0,
                     constrain: "domain",
                     tickfont: { size: plotFont.size },
                 },

@@ -459,11 +459,33 @@
 </div>
 
 <div class="container-xxxl collapse mb-3" id="collapseCor">
-  <div class="row">
-    <div class="col-md-6">
+  <div class="row correlation-cards-row">
+    <div class="col-12 correlation-neural-col">
       <div class="card card-body">
-        <h5>Neural Correlation</h5>
-        <p>Correlation (Pearson correlation coefficeint) among the selected neurons</p>
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+          <h5 class="mb-0">Neural Correlation</h5>
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-muted">Scope</span>
+              <div class="btn-group btn-group-sm" role="group" aria-label="Neural correlation scope">
+                <input type="radio" class="btn-check" name="cor-neuron-scope" id="cor_neuron_scope_selected" value="selected" autocomplete="off" checked>
+                <label class="btn btn-outline-secondary" for="cor_neuron_scope_selected">Selected</label>
+                <input type="radio" class="btn-check" name="cor-neuron-scope" id="cor_neuron_scope_all" value="all" autocomplete="off">
+                <label class="btn btn-outline-secondary" for="cor_neuron_scope_all">All</label>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-muted">Sort</span>
+              <div class="btn-group btn-group-sm" role="group" aria-label="Neural correlation ordering">
+                <input type="radio" class="btn-check" name="cor-neuron-order-mode" id="cor_neuron_order_order" value="order" autocomplete="off" checked>
+                <label class="btn btn-outline-secondary" for="cor_neuron_order_order">Order</label>
+                <input type="radio" class="btn-check" name="cor-neuron-order-mode" id="cor_neuron_order_cluster" value="cluster" autocomplete="off">
+                <label class="btn btn-outline-secondary" for="cor_neuron_order_cluster">Cluster</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="mt-2">Correlation (Pearson correlation coefficeint) among selected neurons or all neurons in this dataset.</p>
         <div id="cor_neuron" class="cor-neuron-section">
           <div class="cor-neuron-content">
             <div id="cor_neuron_matrix_wrap" class="cor-neuron-matrix-wrap">
@@ -483,7 +505,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-12 correlation-behavior-col">
       <div class="card card-body">
         <h5>Behavioral Correlation</h5>
         <p>Correlation (Pearson correlation coefficeint) as interactive strips (rows: neurons, columns: behaviors)</p>

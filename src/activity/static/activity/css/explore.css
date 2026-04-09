@@ -66,11 +66,11 @@
     min-width: 0;
     display: flex;
     justify-content: center;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .cor-neuron-matrix-plot {
-    min-width: 280px;
+    min-width: 0;
 }
 
 .cor-neuron-detail {
@@ -102,11 +102,11 @@
     min-width: 0;
     display: flex;
     justify-content: center;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .cor-behavior-matrix-plot {
-    min-width: 280px;
+    min-width: 0;
 }
 
 .cor-behavior-detail {
@@ -178,4 +178,22 @@
 
 .cor-summary-empty {
     color: #6b7280;
+}
+
+#cor_neuron_top3 {
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+@media (min-width: 768px) {
+    .correlation-cards-row > .correlation-neural-col {
+        flex: 0 0 70%;
+        max-width: 70%;
+    }
+
+    .correlation-cards-row > .correlation-behavior-col {
+        flex: 0 0 30%;
+        max-width: 30%;
+    }
 }

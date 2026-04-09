@@ -84,6 +84,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // init PlotManager
     const plotManager = await initPlotManager(data);
+    const corNeuronScopeInputs = document.querySelectorAll('input[name="cor-neuron-scope"]');
+    const corNeuronOrderModeInputs = document.querySelectorAll('input[name="cor-neuron-order-mode"]');
+
+    const applyCorNeuronControlsFromUI = () => {
+        const checkedScopeInput = document.querySelector('input[name="cor-neuron-scope"]:checked');
+        const scope = checkedScopeInput?.value === "all" ? "all" : "selected";
+        plotManager.setCorNeuronScope(scope);
+
+        const checkedOrderModeInput = document.querySelector('input[name="cor-neuron-order-mode"]:checked');
+        const orderMode = checkedOrderModeInput?.value === "cluster" ? "cluster" : "order";
+        plotManager.setCorNeuronOrderMode(orderMode);
+    };
+
+    corNeuronScopeInputs.forEach((scopeInput) => {
+        scopeInput.addEventListener("change", applyCorNeuronControlsFromUI);
+    });
+    corNeuronOrderModeInputs.forEach((orderModeInput) => {
+        orderModeInput.addEventListener("change", applyCorNeuronControlsFromUI);
+    });
+    applyCorNeuronControlsFromUI();
 
     /*
         Connectome
