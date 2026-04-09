@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Neural Activity - Find Neuron{% endblock %}
+{% block title %}Neural Activity - Datasets{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{{ IMPORT_CDN.tom_select_css.url }}"
   integrity="{{ IMPORT_CDN.tom_select_css.integrity }}"
@@ -135,10 +135,10 @@
 {{ dataset_types|json_script:"activity-dataset-types" }}
 {{ dataset_type_per_paper|json_script:"activity-dataset-type-per-paper" }}
 {{ papers|json_script:"activity-dataset-papers" }}
-<script>const data = JSON.parse(JSON.parse(document.getElementById('activity-dataset-data').textContent));</script>
-<script>const datasetTypes = JSON.parse(JSON.parse(document.getElementById('activity-dataset-types').textContent));</script>
-<script>const paperDatasetTypes = JSON.parse(JSON.parse(document.getElementById('activity-dataset-type-per-paper').textContent));</script>
-<script>const papers = JSON.parse(JSON.parse(document.getElementById('activity-dataset-papers').textContent));</script>
+<script>const data = JSON.parse(document.getElementById('activity-dataset-data').textContent);</script>
+<script>const datasetTypes = JSON.parse(document.getElementById('activity-dataset-types').textContent);</script>
+<script>const paperDatasetTypes = JSON.parse(document.getElementById('activity-dataset-type-per-paper').textContent);</script>
+<script>const papers = JSON.parse(document.getElementById('activity-dataset-papers').textContent);</script>
 
 <script type="module" src="{% static 'core/js/tomselect_plugin.js' %}" defer></script>
 <script type="module" src="{% static 'activity/js/views/dataset.js' %}" defer></script>

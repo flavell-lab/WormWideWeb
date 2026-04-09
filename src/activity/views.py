@@ -183,6 +183,20 @@ def dataset(request):
     cache_key = _activity_cache_key("dataset_data")
     context = cache.get(cache_key)
     if context is None:
+        dataset_rows = list(
+            GCaMPDataset.objects.select_related("paper").prefetch_related("dataset_type")
+        )
+        dataset_type_rows = list(GCaMPDatasetType.objects.select_related("paper"))
+        paper_rows = list(
+            GCaMPPaper.objects.only("paper_id", "title_short").prefetch_related(
+                "dataset_types"
+            )
+        )
+
+        dataset_paper_ids = {
+            ds.paper.paper_id for ds in dataset_rows if ds.paper and ds.paper.paper_id
+        }
+
         # Build list of datasets with required fields.
         datasets = [
             {
@@ -195,7 +209,8 @@ def dataset(request):
                 "max_t": ds.max_t,
                 "avg_timestep": ds.avg_timestep,
             }
-            for ds in GCaMPDataset.objects.all()
+            for ds in dataset_rows
+            if ds.paper is not None
         ]
 
         # Build mapping for dataset types.
@@ -207,38 +222,34 @@ def dataset(request):
                 "paper": dt.paper.paper_id if dt.paper else "common",
                 "background-color": dt.color_background,
             }
-            for dt in GCaMPDatasetType.objects.all()
+            for dt in dataset_type_rows
         }
 
-        # Optimize fetching papers in one query.
-        paper_ids = GCaMPDataset.objects.values_list("paper", flat=True).distinct()
-        papers = GCaMPPaper.objects.filter(pk__in=paper_ids).only(
-            "paper_id", "title_short"
-        )
+        # Build mapping for papers used by at least one dataset.
         dataset_papers = {
             paper.paper_id: {
                 "paper_id": paper.paper_id,
                 "title_short": paper.title_short,
             }
-            for paper in papers
+            for paper in paper_rows
+            if paper.paper_id in dataset_paper_ids
         }
 
         # Build mapping of dataset types per paper.
         dataset_type_per_paper = {
             "papers": {
                 paper.paper_id: [dtype.type_id for dtype in paper.dataset_types.all()]
-                for paper in GCaMPPaper.objects.all()
+                for paper in paper_rows
+                if paper.paper_id in dataset_paper_ids
             },
-            "common": [
-                dt.type_id for dt in GCaMPDatasetType.objects.filter(paper=None)
-            ],
+            "common": [dt.type_id for dt in dataset_type_rows if dt.paper is None],
         }
 
         context = {
-            "datasets": json.dumps(datasets),
-            "dataset_types": json.dumps(dataset_types),
-            "dataset_type_per_paper": json.dumps(dataset_type_per_paper),
-            "papers": json.dumps(dataset_papers),
+            "datasets": datasets,
+            "dataset_types": dataset_types,
+            "dataset_type_per_paper": dataset_type_per_paper,
+            "papers": dataset_papers,
         }
         cache.set(cache_key, context, timeout=ACTIVITY_CACHE_TTL_LONG)
 
