@@ -1,5 +1,5 @@
 const APPROX_DATASET_SIZE_MB = 10;
-export const MAX_SELECTED_ZIP_DOWNLOADS = 10;
+export const MAX_SELECTED_ZIP_DOWNLOADS = 20;
 const JSZIP_ESM_URL = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm";
 
 let jsZipCtorPromise = null;
