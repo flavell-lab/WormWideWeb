@@ -117,15 +117,60 @@ document.addEventListener('DOMContentLoaded', async() => {
         Dataset type info
     */
     const typeLegend = document.getElementById("datasetTypeLegend")
-    const badgesHTML = Object.keys(data.neuropal_dataset_type).map(typeId=>
-        `<div class="col-12">
-            <div class="row justify-content-start">
-                <div class="col-sm-3">${getDatasetTypePill(typeId, data.neuropal_dataset_type)}</div>
-                <div class="col-sm-8">${data.neuropal_dataset_type[typeId].description}</div>
-            </div>
-        </div>`
-    ).join("")
-    typeLegend.innerHTML = `<div class="row gy-1 mb-3">${badgesHTML}</div>`
+    const datasetTypes = data.neuropal_dataset_type || {}
+    const papers = Array.isArray(data.papers) ? data.papers : []
+    const paperTitleById = {}
+    papers.forEach((paper) => {
+        if (!paper?.paper_id) return
+        paperTitleById[paper.paper_id] = paper.title || paper.paper_id
+    })
+
+    const commonTypeIds = []
+    const paperTypeIds = {}
+    Object.keys(datasetTypes).forEach((typeId) => {
+        const typeMeta = datasetTypes[typeId] || {}
+        const explicitPaper = typeMeta.paper || typeMeta.paper_id
+        const inferredPaper = typeId.includes("-") ? typeId.split("-")[0] : "common"
+        const paperId = explicitPaper || inferredPaper
+
+        if (paperId === "common") {
+            commonTypeIds.push(typeId)
+            return
+        }
+
+        if (!paperTypeIds[paperId]) {
+            paperTypeIds[paperId] = []
+        }
+        paperTypeIds[paperId].push(typeId)
+    })
+
+    let typeLegendHTML = ""
+    if (commonTypeIds.length > 0) {
+        const htmlCommonBadges = commonTypeIds.map((typeId) =>
+            `<div class="col-12">
+                <div class="row justify-content-start">
+                    <div class="col-md-1">${getDatasetTypePill(typeId, datasetTypes)}</div>
+                    <div class="col-md-6">${datasetTypes[typeId].description}</div>
+                </div>
+            </div>`
+        ).join("")
+        typeLegendHTML += `<h6 class="mb-0">Common</h6><div class="row gy-1 mb-3">${htmlCommonBadges}</div>`
+    }
+
+    Object.keys(paperTypeIds).sort().forEach((paperId) => {
+        const htmlPaperBadges = paperTypeIds[paperId].map((typeId) =>
+            `<div class="col-12">
+                <div class="row justify-content-start">
+                    <div class="col-md-1">${getDatasetTypePill(typeId, datasetTypes)}</div>
+                    <div class="col-md-6">${datasetTypes[typeId].description}</div>
+                </div>
+            </div>`
+        ).join("")
+        const paperTitle = paperTitleById[paperId] || paperId
+        typeLegendHTML += `<h6 class="mb-0">${paperTitle}</h6><div class="row gy-1 mb-3">${htmlPaperBadges}</div>`
+    })
+
+    typeLegend.innerHTML = typeLegendHTML || '<p class="text-muted mb-0">No dataset type info available.</p>'
 
     /*
         Tour
