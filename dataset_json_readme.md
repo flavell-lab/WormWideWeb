@@ -40,6 +40,8 @@ Each dataset JSON is an object with these keys:
 | `pumping` | number[] or null | Yes (key), value can be null | Importer accepts `null` |
 | `reversal_events` | array of `[start_idx, end_idx]` | Yes | Timepoint index intervals for reversal shading |
 
+Note: unlike the raw HDF5 files, the θh_pos_is_ventral info is already factored into each dataset. No further correction is needed.
+
 ### `metadata`
 
 | Key | Type | Required | Notes |
