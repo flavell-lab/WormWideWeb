@@ -203,6 +203,82 @@ export function plotBehavior(plotElement, listT, behavior, label, traceId, color
     plotData(plotElement, listT, behavior, label, '2', traceId, color)
 }
 
+function getFiniteRange(values) {
+    if (!Array.isArray(values)) return null;
+
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+
+    values.forEach((value) => {
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue)) return;
+        if (numericValue < minValue) minValue = numericValue;
+        if (numericValue > maxValue) maxValue = numericValue;
+    });
+
+    if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) return null;
+    return { min: minValue, max: maxValue };
+}
+
+function getNeuronTraceRange(plot) {
+    if (!plot || !Array.isArray(plot.data)) return null;
+
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    let hasNeuronTrace = false;
+
+    plot.data.forEach((trace) => {
+        if (!trace?.id || !String(trace.id).startsWith("n_")) return;
+
+        const traceRange = getFiniteRange(trace.y);
+        if (!traceRange) return;
+
+        minValue = Math.min(minValue, traceRange.min);
+        maxValue = Math.max(maxValue, traceRange.max);
+        hasNeuronTrace = true;
+    });
+
+    if (!hasNeuronTrace) return null;
+    return { min: minValue, max: maxValue };
+}
+
+export function computeReversalHeightRange(plot, marginFraction = 0.05) {
+    const neuronRange = getNeuronTraceRange(plot);
+    if (!neuronRange) {
+        return { y0: -1, y1: 1 };
+    }
+
+    let { min: y0, max: y1 } = neuronRange;
+
+    if (y0 === y1) {
+        const epsilon = Math.max(Math.abs(y0) * marginFraction, 0.1);
+        return {
+            y0: y0 - epsilon,
+            y1: y1 + epsilon
+        };
+    }
+
+    const padding = (y1 - y0) * marginFraction;
+    return {
+        y0: y0 - padding,
+        y1: y1 + padding
+    };
+}
+
+export function buildReversalHeightRelayoutUpdate(plot, y0, y1) {
+    const update = {};
+    if (!plot?.layout || !Array.isArray(plot.layout.shapes)) return update;
+
+    plot.layout.shapes.forEach((shape, index) => {
+        if (shape?.name && String(shape.name).startsWith("rev_")) {
+            update[`shapes[${index}].y0`] = y0;
+            update[`shapes[${index}].y1`] = y1;
+        }
+    });
+
+    return update;
+}
+
 export function findTrace(plot, traceId) {
     const plotData = plot.data
     for (var i=0; i < plotData.length; i++) {
@@ -310,6 +386,8 @@ export function initReversal(plot, plotElementId, reversals, colorReversal, avgT
         plot.layout.shapes = [];
     }
 
+    const { y0, y1 } = computeReversalHeightRange(plot);
+
     // Iterate over reversal events and add to shapes
     reversals.forEach((reversal, index) => {
         const [i_s, i_e] = reversal;
@@ -319,9 +397,9 @@ export function initReversal(plot, plotElementId, reversals, colorReversal, avgT
         const shape = {
             type: "rect",
             x0: t_s,
-            y0: -10,
+            y0,
             x1: t_e,
-            y1: 10,
+            y1,
             name: `rev_${index}`,
             visible: true,
             line: {

@@ -5,7 +5,8 @@ import {
     initEvent,
     toggleEvent,
     initReversal,
-    toggleReversal
+    toggleReversal,
+    buildReversalHeightRelayoutUpdate
 } from './plot_data.js';
 
 import { removeFromList, minArray, maxArray, initSwitch, getLocalBool } from '/static/core/js/utility.js';
@@ -438,6 +439,11 @@ export class NeuronBehaviorPlot {
             "xaxis.range": xRange
         };
 
+        Object.assign(
+            range,
+            buildReversalHeightRelayoutUpdate(this.plot, y_min, y_max)
+        );
+
         Plotly.relayout(this.plot, range).catch(error => {
             console.error("Error resetting axes:", error);
         });
@@ -476,6 +482,11 @@ export class NeuronBehaviorPlot {
             "yaxis.range": yRange,
             "xaxis.range": xRange
         };
+
+        Object.assign(
+            range,
+            buildReversalHeightRelayoutUpdate(this.plot, y_min, y_max)
+        );
 
         Plotly.relayout(this.plot, range).catch(error => {
             console.error("Error resetting axes:", error);
