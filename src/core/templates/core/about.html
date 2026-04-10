@@ -6,9 +6,21 @@
 {% endblock %}
 
 {% block main %}
-<div class="container py-5">
+<div class="container py-5 about-page">
+    <div class="row gx-2 gy-4 about-layout">
+        <aside class="col-lg-3 col-xl-2 ps-lg-0">
+            <nav class="about-toc" aria-label="About page sections">
+                <p class="about-toc__label">On this page</p>
+                <a class="about-toc__link" href="#about-overview" data-toc-link>Overview</a>
+                <a class="about-toc__link" href="#about-code-data" data-toc-link>Code &amp; Data</a>
+                <a class="about-toc__link" href="#atanas_kim_2023" data-toc-link>Citation-original WWW</a>
+                <a class="about-toc__link" href="#connectome_citation" data-toc-link>Citation-connectome</a>
+                <a class="about-toc__link" href="#other_citation" data-toc-link>Citation-other papers</a>
+            </nav>
+        </aside>
+        <div class="col-lg-9 col-xl-10 about-content">
     <!-- About Section -->
-    <section>
+    <section id="about-overview" class="about-section-anchor">
         <div class="bg-light p-5 rounded-3">
             <h1 class="display-5 fw-bold mb-3">About</h1>
 
@@ -71,7 +83,7 @@
     </section>
 
     <!-- Credit Section -->
-    <section class="mt-5">
+    <section class="mt-5 about-section-anchor">
         <div class="p-4 bg-white shadow-sm rounded-3">
             <div class="col">
                 <h3 class="fw-semibold">Credits</h3>
@@ -97,7 +109,7 @@
     </section>
 
     <!-- Code & Data Section -->
-    <section class="row g-4 mt-3">
+    <section id="about-code-data" class="row g-4 mt-3 about-section-anchor">
         <div class="col-lg-6">
             <div class="p-4 bg-white shadow-sm rounded-3">
                 <h3 class="fw-semibold">Data Processing & Analysis Code</h3>
@@ -117,7 +129,7 @@
                 </a>
             </div>
         </div>
-        <div id="data_repo" class="col-lg-6">
+        <div id="data_repo" class="col-lg-6 about-section-anchor">
             <div class="p-4 bg-white shadow-sm rounded-3">
                 <h3 class="fw-semibold">Atanas & Kim et al., 2023 Datasets</h3>
                 <p>
@@ -137,10 +149,18 @@
         </div>
     </section>
 
-    <div class="my-5">
-        <hr>
-    </div>
+    <div id="about-citations" class="about-section-anchor">
+        <div class="my-5">
+            <hr>
+        </div>
 
-    {% include 'core/citation.html' %}
+        {% include 'core/citation.html' %}
+    </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="{% static 'core/js/about_toc.js' %}" defer></script>
 {% endblock %}
