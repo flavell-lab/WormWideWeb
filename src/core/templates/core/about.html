@@ -12,10 +12,11 @@
             <nav class="about-toc" aria-label="About page sections">
                 <p class="about-toc__label">On this page</p>
                 <a class="about-toc__link" href="#about-overview" data-toc-link>Overview</a>
+                <a class="about-toc__link" href="#about-credits" data-toc-link>Credits</a>
                 <a class="about-toc__link" href="#about-code-data" data-toc-link>Code &amp; Data</a>
-                <a class="about-toc__link" href="#atanas_kim_2023" data-toc-link>Citation-original WWW</a>
-                <a class="about-toc__link" href="#connectome_citation" data-toc-link>Citation-connectome</a>
-                <a class="about-toc__link" href="#other_citation" data-toc-link>Citation-other papers</a>
+                <a class="about-toc__link" href="#atanas_kim_2023" data-toc-link>Original Study Citation</a>
+                <a class="about-toc__link" href="#connectome_citation" data-toc-link>Connectome Citations</a>
+                <a class="about-toc__link" href="#other_citation" data-toc-link>Other Dataset Citations</a>
             </nav>
         </aside>
         <div class="col-lg-9 col-xl-10 about-content">
@@ -36,9 +37,9 @@
             <div class="row align-items-center">
                 <div class="col-md-6">
                     <p class="lead">
-                        This web app was created by <a href="https://github.com/goldenratio1618" target="_blank">Adam
-                            Atanas</a> and <a href="https://jungsoo.kim" target="_blank">Jungsoo Kim</a> from the <a
-                            href="https://flavell.mit.edu/" target="_blank">Flavell Lab</a> at the Massachusetts
+                        This web app was created by <a href="https://github.com/goldenratio1618" target="_blank" rel="noopener noreferrer">Adam
+                            Atanas</a> and <a href="https://jungsoo.kim" target="_blank" rel="noopener noreferrer">Jungsoo Kim</a> from the <a
+                            href="https://flavell.mit.edu/" target="_blank" rel="noopener noreferrer">Flavell Lab</a> at the Massachusetts
                         Institute of Technology (MIT).
                     </p>
                 </div>
@@ -58,7 +59,7 @@
                             </div>
                         </div>
                         <div class="text-center">
-                            <img src="{% static '/core/img/jungsoo_kim.webp' %}" class="rounded-circle" alt="Jungsoo Kim"
+                            <img src="{% static 'core/img/jungsoo_kim.webp' %}" class="rounded-circle" alt="Jungsoo Kim"
                                 style="width: 100px; height: 100px; object-fit: cover;">
                             <p class="mt-2 mb-0 fw-bold">Jungsoo Kim</p>
                             <div class="btn-group mt-2" role="group">
@@ -83,7 +84,7 @@
     </section>
 
     <!-- Credit Section -->
-    <section class="mt-5 about-section-anchor">
+    <section id="about-credits" class="mt-5 about-section-anchor">
         <div class="p-4 bg-white shadow-sm rounded-3">
             <div class="col">
                 <h3 class="fw-semibold">Credits</h3>
@@ -95,7 +96,7 @@
             <!-- Website Development -->
             <div class="row row-cols-1 row-cols-sm-6 g-3">
                 <div class="col d-flex flex-column align-items-center">
-                    <img src="{% static '/core/img/alex_hiser.webp' %}" class="rounded-circle" alt="Alex Hiser"
+                    <img src="{% static 'core/img/alex_hiser.webp' %}" class="rounded-circle" alt="Alex Hiser"
                         style="width: 100px; height: 100px; object-fit: cover;">
                     <p class="mt-2 mb-0 fw-bold">Alex Hiser</p>
                     <div class="btn-group mt-2" role="group">
@@ -123,7 +124,7 @@
                         more
                     </li>
                 </ul>
-                <a href="https://github.com/flavell-lab/AtanasKim-Cell2023" target="_blank"
+                <a href="https://github.com/flavell-lab/AtanasKim-Cell2023" target="_blank" rel="noopener noreferrer"
                     class="btn btn-custom-primary">
                     <i class="bi bi-github"></i> Explore Code
                 </a>
@@ -142,7 +143,7 @@
                     <br>
                     <strong>processed_h5.tar.bz2</strong> contains all datasets from Atanas & Kim et al., 2023. in HDF5.
                 </p>
-                <a href="https://doi.org/10.5281/zenodo.8150514" target="_blank" class="btn btn-custom-primary">
+                <a href="https://doi.org/10.5281/zenodo.8150514" target="_blank" rel="noopener noreferrer" class="btn btn-custom-primary">
                     <i class="bi bi-file-earmark"></i> Data Repository
                 </a>
             </div>
