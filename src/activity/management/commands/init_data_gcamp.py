@@ -11,6 +11,8 @@ import numpy as np
 import time
 import json
 import os
+import csv
+import re
 from core.utility import sha256
 
 PATH_CONFIG_GCAMP_NEURON_MAP = ["config", "gcamp_neuron_name_map_manual.json"]
@@ -18,6 +20,7 @@ PATH_CONFIG_GCAMP_CLASS_MAP = ["config", "gcamp_neuron_class_name_map_manual.jso
 PATH_PAPER = ["activity", "papers.json"]
 PATH_TYPE = ["activity", "dataset_types.json"]
 PATH_EVENT_STYLE = ["activity", "event_styles.json"]
+PATH_ACTIVITY_RAW = ["activity", "raw"]
 
 """
 
@@ -231,6 +234,186 @@ Import functions
 """
 
 
+def parse_t_range(value):
+    if value is None:
+        return None
+
+    value = str(value).strip()
+    if not value:
+        return None
+
+    match = re.fullmatch(r"(\d+)\s*:\s*(\d+)", value)
+    if match is None:
+        raise ValueError(f"Invalid t_range format '{value}'. Expected 'start:end'.")
+
+    start_idx = int(match.group(1))
+    end_idx = int(match.group(2))
+    if start_idx < 1:
+        raise ValueError(f"Invalid t_range '{value}'. start must be >= 1.")
+    if end_idx < start_idx:
+        raise ValueError(f"Invalid t_range '{value}'. end must be >= start.")
+
+    return (start_idx, end_idx)
+
+
+def load_t_range_lookup(self, paper_id):
+    path_csv = get_dataset_path([*PATH_ACTIVITY_RAW, f"{paper_id}.csv"])
+    if not os.path.exists(path_csv):
+        return {}
+
+    lookup = {}
+    with open(path_csv, mode="r", newline="") as file:
+        reader = csv.DictReader(file)
+        for row_number, row in enumerate(reader, start=2):
+            try:
+                t_range = parse_t_range(row.get("t_range"))
+            except ValueError as exc:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Skipping invalid t_range in {paper_id}.csv:{row_number}. {exc}"
+                    )
+                )
+                continue
+
+            if t_range is None:
+                continue
+
+            keys = []
+            for key_name in ("uid", "dataset", "filename"):
+                value = row.get(key_name)
+                if value is None:
+                    continue
+                value = value.strip()
+                if not value:
+                    continue
+                keys.append(value)
+                if key_name == "filename":
+                    keys.append(os.path.splitext(value)[0])
+
+            if not keys:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Skipping t_range in {paper_id}.csv:{row_number} because uid/dataset/filename is missing."
+                    )
+                )
+                continue
+
+            for key in set(keys):
+                lookup[key] = t_range
+
+    return lookup
+
+
+def crop_event_indices(event_indices, start_idx, end_idx):
+    if not isinstance(event_indices, list):
+        return event_indices
+
+    cropped = []
+    for index in event_indices:
+        try:
+            idx = int(index)
+        except (TypeError, ValueError):
+            continue
+
+        # Support both 1-based and 0-based event indices.
+        if start_idx <= idx <= end_idx:
+            cropped.append(idx - start_idx + 1)
+        elif (start_idx - 1) <= idx < end_idx:
+            cropped.append(idx - (start_idx - 1))
+
+    return cropped
+
+
+def crop_reversal_events(reversal_events, start_idx, end_idx):
+    if not isinstance(reversal_events, list):
+        return reversal_events
+
+    cropped = []
+    for reversal in reversal_events:
+        if not isinstance(reversal, (list, tuple)) or len(reversal) < 2:
+            continue
+        try:
+            start = int(reversal[0])
+            end = int(reversal[1])
+        except (TypeError, ValueError):
+            continue
+
+        if end < start_idx or start > end_idx:
+            continue
+
+        start_clamped = max(start, start_idx) - start_idx + 1
+        end_clamped = min(end, end_idx) - start_idx + 1
+        if end_clamped < start_clamped:
+            continue
+        cropped.append([start_clamped, end_clamped])
+
+    return cropped
+
+
+def crop_data_to_t_range(self, data, t_range, dataset_key):
+    start_idx, end_idx = t_range
+    timing = data.get("timing", {})
+    max_t = timing.get("max_t")
+
+    if isinstance(max_t, int) and max_t > 0:
+        if start_idx > max_t:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Skipping t_range crop for {dataset_key}: start index {start_idx} exceeds max_t {max_t}."
+                )
+            )
+            return
+        if end_idx > max_t:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Clamping t_range end for {dataset_key}: {end_idx} -> {max_t}."
+                )
+            )
+            end_idx = max_t
+
+    if end_idx < start_idx:
+        self.stdout.write(
+            self.style.WARNING(
+                f"Skipping t_range crop for {dataset_key}: invalid range {start_idx}:{end_idx}."
+            )
+        )
+        return
+
+    slice_start = start_idx - 1
+    slice_end = end_idx
+
+    gcamp = data.get("gcamp", {})
+    for key in ("trace_array", "trace_array_original"):
+        traces = gcamp.get(key)
+        if isinstance(traces, list):
+            gcamp[key] = [
+                trace[slice_start:slice_end] if isinstance(trace, list) else trace
+                for trace in traces
+            ]
+
+    behavior = data.get("behavior", {})
+    if "reversal_events" in behavior:
+        behavior["reversal_events"] = crop_reversal_events(
+            behavior["reversal_events"], start_idx, end_idx
+        )
+
+    for key in ("velocity", "head_angle", "angular_velocity", "pumping"):
+        value = behavior.get(key)
+        if isinstance(value, list):
+            behavior[key] = value[slice_start:slice_end]
+
+    timestamps = timing.get("timestamp_confocal")
+    if isinstance(timestamps, list):
+        timing["timestamp_confocal"] = timestamps[slice_start:slice_end]
+
+    events = timing.get("event")
+    if isinstance(events, dict):
+        for event_key, event_indices in list(events.items()):
+            events[event_key] = crop_event_indices(event_indices, start_idx, end_idx)
+
+    timing["max_t"] = end_idx - start_idx + 1
+
+
 def check_list_lengths(
     self,
     list_trace_array,
@@ -293,6 +476,7 @@ def import_gcamp_data(
     neuron_class_cache=None,
     paper_cache=None,
     dataset_type_cache=None,
+    t_range_lookup=None,
 ):
     if neuron_class_cache is None:
         neuron_class_cache = {nc.name: nc for nc in NeuronClass.objects.all()}
@@ -305,12 +489,36 @@ def import_gcamp_data(
         }
 
     data = load_json(self, path_json)
+    metadata = data["metadata"]
+    if t_range_lookup:
+        lookup_keys = []
+        for key in ("uid", "dataset", "dataset_name", "source_filename"):
+            value = metadata.get(key)
+            if not isinstance(value, str):
+                continue
+            value = value.strip()
+            if not value:
+                continue
+            lookup_keys.append(value)
+            if key == "source_filename":
+                lookup_keys.append(os.path.splitext(value)[0])
+
+        for key in lookup_keys:
+            t_range = t_range_lookup.get(key)
+            if t_range is not None:
+                crop_data_to_t_range(
+                    self,
+                    data,
+                    t_range,
+                    metadata.get("uid", os.path.basename(path_json)),
+                )
+                break
+
     gcamp = data["gcamp"]
     behavior = data["behavior"]
     timing = data["timing"]
     labels = data.get("label", None)
     encoding = data.get("encoding", None)
-    metadata = data["metadata"]
 
     # import neurons
     list_trace_array = gcamp["trace_array"]
@@ -671,6 +879,7 @@ def import_all_gcamp(self):
     n = 0
     for paper_id in papers:
         dir_datasets = get_dataset_path(["activity", "data", paper_id])
+        t_range_lookup = load_t_range_lookup(self, paper_id)
 
         json_files = [f for f in os.listdir(dir_datasets) if f.endswith(".json")]
 
@@ -689,6 +898,7 @@ def import_all_gcamp(self):
                 neuron_class_cache,
                 paper_cache,
                 dataset_type_cache,
+                t_range_lookup,
             )
             n = n + 1
             # except Exception as e:
