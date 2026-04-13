@@ -1,7 +1,6 @@
 import { DatasetNeuronSelector } from '../find_neuron_selector.js';
 import { DatasetTable } from '../find_neuron_table.js';
 import { setLocalBool, getLocalBool, getDatasetTypePill } from "/static/core/js/utility.js"
-import { renderPaperArchiveDownloadButtons } from '../paper_archive_downloads.js';
 
 async function initData() {
     const url = "/activity/api/data/find_neuron/";
@@ -120,7 +119,6 @@ document.addEventListener('DOMContentLoaded', async() => {
     const typeLegend = document.getElementById("datasetTypeLegend")
     const datasetTypes = data.neuropal_dataset_type || {}
     const papers = Array.isArray(data.papers) ? data.papers : []
-    renderPaperArchiveDownloadButtons("datasetInfoPaperDownloads", papers);
     const paperTitleById = {}
     papers.forEach((paper) => {
         if (!paper?.paper_id) return

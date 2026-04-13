@@ -1,7 +1,6 @@
 import { DatasetTable } from '../find_dataset_table.js';
 import { PaperDatasetSelector } from '../find_dataset_selector.js';
 import { getDatasetTypePill } from '/static/core/js/utility.js';
-import { renderPaperArchiveDownloadButtons } from '../paper_archive_downloads.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     /*
@@ -28,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     buttonDownloadSelected.addEventListener('click', async () => {
         await datasetTable.downloadSelected(buttonDownloadSelected);
     });
-    renderPaperArchiveDownloadButtons("datasetInfoPaperDownloads", papers);
 
     /*
         Dataset type info
