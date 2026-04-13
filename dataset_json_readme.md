@@ -64,6 +64,14 @@ Each value currently contains:
 
 `label`, `neuron_class`, `LR`, `DV`, `region`, `roi_id`, `confidence`
 
+- `label`: label (e.g. AVAL)
+- `neuron_class`: neuron class (e.g. AVA)
+- `LR`: left or right if applicable
+- `DV`: dorsal or ventral if applicable
+- `region`: region where the neuron is (for reference only)
+- `roi_id`: ROI segment id number
+- `confidence`: labeling confidence (higher confidence -> higher identity conviction)
+
 Note that `roi_id` is the segmentation roi id, not the neuron number here.
 
 
