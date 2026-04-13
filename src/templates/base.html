@@ -90,7 +90,7 @@
                     </ul>
                 </li>
 
-                  <li class="nav-item {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
+                  <li class="nav-item {% if request.resolver_match.url_name == 'about' or request.resolver_match.url_name == 'about-datasets' %}active{% endif %}">
                       <a class="nav-link" href="{% url 'about' %}">About</a>
                   </li>
               </ul>

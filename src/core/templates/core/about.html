@@ -130,21 +130,18 @@
                 </a>
             </div>
         </div>
-        <div id="data_repo" class="col-lg-6 about-section-anchor">
+        <div class="col-lg-6 about-section-anchor">
             <div class="p-4 bg-white shadow-sm rounded-3">
-                <h3 class="fw-semibold">Atanas & Kim et al., 2023 Datasets</h3>
+                <h3 class="fw-semibold">Datasets &amp; Downloads</h3>
                 <p>
-                    If you'd like to access full datasets from the original study releasing this website, please refer to the following data
-                    repository.
+                    Browse the dedicated Datasets page for per-paper download links and a detailed explanation of what is included in each
+                    download format (HDF5 and JSON).
                     <br>
                     <br>
-                    You can download all datasets at once, and the HDF5 files contain all information (i.e. behavior variables that were not included in this website) for each animal.
-                    <br>
-                    <br>
-                    <strong>processed_h5.tar.bz2</strong> contains all datasets from Atanas & Kim et al., 2023. in HDF5.
+                    It also compares HDF5 and JSON contents specifically for this project.
                 </p>
-                <a href="https://doi.org/10.5281/zenodo.8150514" target="_blank" rel="noopener noreferrer" class="btn btn-custom-primary">
-                    <i class="bi bi-file-earmark"></i> Data Repository
+                <a href="{% url 'about-datasets' %}" class="btn btn-custom-primary">
+                    <i class="bi bi-table"></i> View Datasets Page
                 </a>
             </div>
         </div>

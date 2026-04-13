@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}About - Datasets{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/about.css' %}">
+{% endblock %}
+
+{% block main %}
+<div class="container py-5 about-page">
+    <div class="row">
+        <div class="col-12 about-content">
+            <section id="datasets-overview" class="about-section-anchor">
+                <div class="bg-light p-5 rounded-3">
+                    <h1 class="display-6 fw-bold mb-3">Datasets</h1>
+                    <p class="lead mb-3">
+                        This page summarizes paper-level dataset coverage and download options for WormWideWeb activity datasets.
+                    </p>
+                    <p class="mb-0">
+                        You can download complete paper archives as JSON or go to each paper repository for full HDF5 bundles.
+                    </p>
+                </div>
+            </section>
+
+            <section id="datasets-paper-table" class="mt-5 about-section-anchor">
+                <div class="p-4 bg-white shadow-sm rounded-3">
+                    <h3 class="fw-semibold mb-3">Datasets by Paper</h3>
+                    <div class="table-responsive about-table-wrapper">
+                        <table class="table align-middle mb-0 about-datasets-table">
+                            <thead>
+                                <tr>
+                                    <th>Paper</th>
+                                    <th># of datasets</th>
+                                    <th>NeuroPAL coverage</th>
+                                    <th>Encoding data</th>
+                                    <th>HDF5 archive</th>
+                                    <th>JSON archive</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'about' %}#atanas_kim_2023" target="_blank" rel="noopener noreferrer" class="about-paper-link" data-bs-toggle="tooltip" data-bs-title="Brain-wide representations of behavior spanning multiple timescales and states in <i>C. elegans</i>">
+                                            Atanas &amp; Kim et al., 2023
+                                        </a>
+                                    </td>
+                                    <td>68</td>
+                                    <td><span class="badge rounded-pill text-bg-warning">Partial</span></td>
+                                    <td><span class="badge rounded-pill text-bg-success">All</span></td>
+                                    <td>
+                                        <a href="https://zenodo.org/records/19388374" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-custom-primary">
+                                            <i class="bi bi-file-earmark"></i> Repository
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="/activity/api/data/download/paper/atanas_kim_2023/" class="btn btn-sm btn-custom-primary">
+                                            <i class="bi bi-download"></i> JSON Archive
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'about' %}#dag_nwabudike_kang_2023" target="_blank" rel="noopener noreferrer" class="about-paper-link" data-bs-toggle="tooltip" data-bs-title="Dissecting the functional organization of the <i>C. elegans</i> serotonergic system at whole-brain scale">
+                                            Dag, Nwabudike &amp; Kang et al., 2023
+                                        </a>
+                                    </td>
+                                    <td>15</td>
+                                    <td><span class="badge rounded-pill text-bg-warning">Partial</span></td>
+                                    <td><span class="badge rounded-pill text-bg-secondary">Not Available</span></td>
+                                    <td>
+                                        <a href="https://zenodo.org/records/19414639" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-custom-primary">
+                                            <i class="bi bi-file-earmark"></i> Repository
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="/activity/api/data/download/paper/dag_nwabudike_kang_2023/" class="btn btn-sm btn-custom-primary">
+                                            <i class="bi bi-download"></i> JSON Archive
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'about' %}#pradhan_madan_2025" target="_blank" rel="noopener noreferrer" class="about-paper-link" data-bs-toggle="tooltip" data-bs-title="Pathogen infection induces sickness behaviors through neuromodulators linked to stress and satiety in <i>C. elegans</i>">
+                                            Pradhan &amp; Madan et al., 2025
+                                        </a>
+                                    </td>
+                                    <td>8</td>
+                                    <td><span class="badge rounded-pill text-bg-success">All</span></td>
+                                    <td><span class="badge rounded-pill text-bg-secondary">Not Available</span></td>
+                                    <td>
+                                        <a href="https://zenodo.org/records/19511989" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-custom-primary">
+                                            <i class="bi bi-file-earmark"></i> Repository
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="/activity/api/data/download/paper/pradhan_madan_2025/" class="btn btn-sm btn-custom-primary">
+                                            <i class="bi bi-download"></i> JSON Archive
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="datasets-hdf5-vs-json" class="mt-5 about-section-anchor">
+                <div class="p-4 bg-white shadow-sm rounded-3">
+                    <h3 class="fw-semibold mb-3">HDF5 vs JSON</h3>
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <div class="p-3 border rounded-3 h-100">
+                                <h5 class="fw-semibold">HDF5 Repository Bundles</h5>
+                                <p class="mb-2">
+                                    The repository bundle (<code>processed_h5.tar.bz2</code>) is the full processed source package used by the project pipeline.
+                                </p>
+                                <ul class="mb-0">
+                                    <li>Includes the full per-animal HDF5 datasets.</li>
+                                    <li>Includes behavior and analysis data not included in website JSON exports.</li>
+                                    <li>For papers with NeuroPAL label or encoding data, there're extra artfifacts available.</li>
+                                    <li><code>θh_pos_is_ventral</code> sign correction must be applied per dataset for head-angle-related behavior traces.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="p-3 border rounded-3 h-100">
+                                <h5 class="fw-semibold">JSON Archive Bundles</h5>
+                                <p class="mb-2">
+                                    The JSON archive is a web-focused export used by WormWideWeb pages and APIs.
+                                </p>
+                                <ul class="mb-0">
+                                    <li>Includes all essential behavior and neural time series and timing info.</li>
+                                    <li>Includes metadata checksums and optional NeuroPAL labels and/or encoding data if available.</li>
+                                    <li>Omits source fields that are not used in the current web app.</li>
+                                    <li>JSON field-level details: <a href="https://github.com/flavell-lab/WormWideWeb/blob/main/dataset_json_readme.md" target="_blank" rel="noopener noreferrer">dataset_json_readme.md</a></li>
+                                    <li><code>θh_pos_is_ventral</code> correction is already applied.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="datasets-notes" class="mt-5 about-section-anchor">
+                <div class="p-4 bg-white shadow-sm rounded-3">
+                    <h3 class="fw-semibold mb-3">Notes</h3>
+                    <h4>General</h4>
+                    <ul class="mb-0">
+                        <li>Use HDF5 repository bundles when you need full source coverage and project-internal fields.</li>
+                        <li>Use JSON archives when you want direct compatibility with WormWideWeb analysis and visualization flows.</li>
+                        <li>Per-dataset JSON downloads are also available from the Neural Activity pages.</li>
+                    </ul>
+                    <br>
+                    <h4><code>θh_pos_is_ventral</code> Correction</h4>
+                    <ul class="mb-0">
+                        <li>Use this flag to set the correct sign convention for head-angle-related behaviors (for example, head angle and angular velocity).</li>
+                        <li>For raw HDF5 workflows, apply correction per dataset: <code>dv_correction = θh_pos_is_ventral ? -1 : 1</code>.</li>
+                        <li>For WormWideWeb JSON archives, this correction is already applied.</li>
+                        <li>The per-dataset flag is listed in each paper manifest CSV in <a href="https://github.com/flavell-lab/WormWideWeb-data/tree/main/activity/raw">this repository</a>.</li>
+                    </ul>
+                    <br>
+                    <h4>Neural traces</h4>
+                    <ul class="mb-0">
+                        <li><code>trace_original</code>: raw neural activity traces from each neuron (unscaled source signal)</li>
+                        <li><code>trace_array</code>: z-scored neural activity traces derived from <code>trace_original</code> (standardized per neuron)</li>
+                        <li><code>trace_array_F20</code>: neural traces normalized by each neuron's 20th percentile of raw activity (F20 baseline)</li>
+                        <li><code>trace_array_Fmean</code>: neural traces normalized by each neuron's mean raw activity (Fmean baseline)</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const tooltipTriggerList = [].slice.call(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    tooltipTriggerList.forEach((tooltipTriggerEl) => {
+        new bootstrap.Tooltip(tooltipTriggerEl, {
+            container: "body",
+            trigger: "hover focus",
+            html: true,
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -23,6 +23,12 @@ def about(request):
     return render(request, "core/about.html", context)
 
 
+def about_datasets(request):
+    context = {}
+
+    return render(request, "core/about_datasets.html", context)
+
+
 def is_healthy(request):
     try:
         connection.ensure_connection()

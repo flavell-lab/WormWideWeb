@@ -54,3 +54,23 @@
         padding-left: 0.55rem;
     }
 }
+
+.about-table-wrapper {
+    border: 1px solid #e9edf3;
+    border-radius: 0.7rem;
+}
+
+.about-datasets-table thead th {
+    font-size: 0.88rem;
+    color: #5f6f82;
+    white-space: nowrap;
+}
+
+.about-datasets-table td {
+    vertical-align: middle;
+}
+
+#about-citations .btn {
+    font-size: 0.86rem;
+    padding: 0.3rem 0.58rem;
+}
