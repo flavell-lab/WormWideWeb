@@ -135,6 +135,14 @@
                         <li>The per-dataset flag is listed in each paper manifest CSV in <a href="https://github.com/flavell-lab/WormWideWeb-data/tree/main/activity/raw">this repository</a>.</li>
                     </ul>
                     <br>
+                    <h4>Behavior traces</h4>
+                    <ul class="mb-0">
+                        <li><code>velocity</code> (<code>v</code>): locomotion velocity, unit <code>0.1 mm/s</code>.</li>
+                        <li><code>head_angle</code> (<code>hc</code>, shown as Head Curve): head angle / curvature signal, unit <code>rad</code>.</li>
+                        <li><code>angular_velocity</code> (<code>av</code>): angular velocity signal, unit <code>rad/s</code>.</li>
+                        <li><code>pumping</code> (<code>f</code>, shown as Feeding): pharyngeal pumping rate, unit <code>pumps/s</code> (optional in some datasets).</li>
+                    </ul>
+                    <br>
                     <h4>Neural traces</h4>
                     <ul class="mb-0">
                         <li><code>trace_original</code>: raw neural activity traces from each neuron (unscaled source signal)</li>
