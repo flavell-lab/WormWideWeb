@@ -14,6 +14,7 @@ class GCaMPPaper(models.Model):
     paper_id = models.CharField(max_length=100, unique=True)
     title_full = models.CharField(max_length=300)
     title_short = models.CharField(max_length=100)
+    repository_url = models.CharField(max_length=300, blank=True, default="")
 
     class Meta:
         verbose_name = "GCaMP Paper"

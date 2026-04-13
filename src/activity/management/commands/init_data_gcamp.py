@@ -43,6 +43,29 @@ def load_json(self, path_json):
         return json.load(file)
 
 
+def build_repository_url(paper_entry):
+    if not isinstance(paper_entry, dict):
+        return ""
+
+    repository = paper_entry.get("repository")
+    if not isinstance(repository, dict):
+        return ""
+
+    repo_type = str(repository.get("type", "")).strip().lower()
+    record_id = str(repository.get("record_id", "")).strip()
+    if not record_id:
+        return ""
+
+    if record_id.startswith("http://") or record_id.startswith("https://"):
+        return record_id
+
+    if repo_type == "zenodo":
+        return f"https://zenodo.org/records/{record_id}"
+    if repo_type == "dryad":
+        return f"https://doi.org/{record_id}"
+    return ""
+
+
 """
 
 Math functions
@@ -735,6 +758,7 @@ def import_all_paper(self):
                 paper_id=paper["paper_id"],
                 title_short=paper["title_short"],
                 title_full=paper["title_full"],
+                repository_url=build_repository_url(paper),
             )
             n += 1
         except Exception as e:

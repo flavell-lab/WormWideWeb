@@ -4,11 +4,9 @@ from django.http import HttpResponse
 from django.db import connection
 from django.views.decorators.http import require_GET
 from django.urls import reverse
-from django.conf import settings
 from connectome.views import connectome_datasets
 from activity.models import GCaMPDataset
 from collections import defaultdict
-from pathlib import Path
 import json
 
 CORE_PAGE_CACHE_TTL = 60 * 60 * 6
@@ -26,55 +24,6 @@ def about(request):
     context = {"connectome_data": json.loads(connectome_datasets())}
 
     return render(request, "core/about.html", context)
-
-
-def _load_activity_paper_metadata():
-    metadata_path = Path(settings.BASE_DIR).parent / "initial_data" / "activity" / "papers.json"
-    if not metadata_path.exists():
-        return {}
-
-    try:
-        with metadata_path.open("r") as file:
-            papers = json.load(file)
-    except Exception:
-        return {}
-
-    if not isinstance(papers, list):
-        return {}
-
-    metadata = {}
-    for paper in papers:
-        if not isinstance(paper, dict):
-            continue
-        paper_id = paper.get("paper_id")
-        if not paper_id:
-            continue
-        metadata[paper_id] = paper
-
-    return metadata
-
-
-def _build_repository_url(metadata_entry):
-    if not isinstance(metadata_entry, dict):
-        return None
-
-    repository = metadata_entry.get("repository")
-    if not isinstance(repository, dict):
-        return None
-
-    repo_type = str(repository.get("type", "")).strip().lower()
-    record_id = str(repository.get("record_id", "")).strip()
-    if not record_id:
-        return None
-
-    if record_id.startswith("http://") or record_id.startswith("https://"):
-        return record_id
-
-    if repo_type == "zenodo":
-        return f"https://zenodo.org/records/{record_id}"
-    if repo_type == "dryad":
-        return f"https://doi.org/{record_id}"
-    return None
 
 
 def _format_paper_tooltip(title_full):
@@ -100,6 +49,7 @@ def about_datasets(request):
             "paper_id": "",
             "title_short": "",
             "title_full": "",
+            "repository_url": "",
             "total_datasets": 0,
             "neuropal_datasets": 0,
             "encoding_datasets": 0,
@@ -110,6 +60,7 @@ def about_datasets(request):
         "paper__paper_id",
         "paper__title_short",
         "paper__title_full",
+        "paper__repository_url",
         "n_labeled",
         "encoding",
     )
@@ -123,6 +74,8 @@ def about_datasets(request):
         stats["paper_id"] = paper_id
         stats["title_short"] = dataset.paper.title_short
         stats["title_full"] = dataset.paper.title_full
+        if dataset.paper.repository_url:
+            stats["repository_url"] = dataset.paper.repository_url
         stats["total_datasets"] += 1
 
         if dataset.n_labeled > 0:
@@ -130,7 +83,6 @@ def about_datasets(request):
         if bool(dataset.encoding):
             stats["encoding_datasets"] += 1
 
-    paper_metadata = _load_activity_paper_metadata()
     dataset_papers = []
 
     for paper_id, stats in paper_stats.items():
@@ -139,7 +91,6 @@ def about_datasets(request):
             stats["neuropal_datasets"], total, include_counts=True
         )
         encoding_badge = _coverage_badge(stats["encoding_datasets"], total)
-        repository_url = _build_repository_url(paper_metadata.get(paper_id, {}))
 
         dataset_papers.append(
             {
@@ -150,7 +101,7 @@ def about_datasets(request):
                 "neuropal_badge": neuropal_badge,
                 "encoding_badge": encoding_badge,
                 "open_url": f"{reverse('activity-dataset')}?p={paper_id}",
-                "hdf_repository_url": repository_url,
+                "hdf_repository_url": stats["repository_url"] or None,
                 "json_archive_url": reverse(
                     "activity-download_paper_archive", args=[paper_id]
                 ),
