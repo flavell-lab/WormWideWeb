@@ -147,4 +147,8 @@ GitHub.sublime-settings
 .history
 What we are ignoring and not with this Django .gitignore#
 
-
+# uv/Python project files
+pyproject.toml
+uv.lock
+.python-version
+.venv/
