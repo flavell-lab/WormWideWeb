@@ -39,8 +39,8 @@ def _coverage_badge(count, total, include_counts=False):
     if count >= total:
         return {"label": "All", "variant": "success"}
     if include_counts:
-        return {"label": f"Partial ({count} of {total})", "variant": "warning"}
-    return {"label": "Partial", "variant": "warning"}
+        return {"label": f"Available ({count} of {total})", "variant": "success"}
+    return {"label": "Available", "variant": "success"}
 
 
 def about_datasets(request):
