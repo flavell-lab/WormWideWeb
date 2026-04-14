@@ -152,3 +152,6 @@ pyproject.toml
 uv.lock
 .python-version
 .venv/
+
+# misc
+.DS_Store
